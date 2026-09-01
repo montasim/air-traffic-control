@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#101a18" />
+    <meta name="description" content="Vector Approach, an offline air traffic routing game." />
+    <link rel="icon" href="/icon.svg" />
+    <link
+      rel="preload"
+      href="/fonts/BarlowCondensed-Bold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/AtkinsonHyperlegible-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <title>Vector Approach</title>
+  </head>
+  <body>
+    <!--
+      THESIS: A living regional-airport atlas, not one fixed field or a dashboard over the airspace.
+      OWN-WORLD: Mineral terrain, credible civil runways, bone markings, and cyan/amber/coral reserved for live aircraft signals.
+      STORY: Choose a field, read its geography, draw a confident approach, land safely, and earn broader controller clearance.
+      FIRST VIEWPORT: A focused map roster and career clearance sit over the selected full-screen airfield; active play removes everything except score, best, and pause.
+      FORM: User-pinned connected-airfield direction, expanded into four original code-native maps; implementation key regional-atlas-2026-09-01.
+      FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <main id="app">
+      <section class="game-frame" aria-label="Vector Approach game">
+        <div id="game" class="game-canvas" aria-label="Airspace"></div>
+        <p id="route-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></p>
+
+        <aside id="route-coachmark" class="route-coachmark" hidden>
+          <span class="route-coachmark-label">Approach control</span>
+          <strong id="route-coachmark-copy">Select an aircraft to plot its approach.</strong>
+        </aside>
+
+        <header class="hud" aria-label="Game status">
+          <div class="hud-stat hud-score">
+            <span>Score</span>
+            <strong id="score">00</strong>
+          </div>
+          <div class="hud-stat hud-best">
+            <span>Best</span>
+            <strong id="best">00</strong>
+          </div>
+          <button id="pause-button" class="icon-button" type="button" aria-label="Pause game" disabled>
+            <span id="pause-icon" class="button-icon" aria-hidden="true"></span>
+          </button>
+        </header>
+
+        <section
+          id="start-panel"
+          class="panel intro-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="start-title"
+          aria-describedby="start-description"
+        >
+          <div class="panel-content intro-content">
+            <h1 id="start-title">Vector Approach</h1>
+            <p id="start-description">Draw each aircraft to its matching landing zone and avoid collisions.</p>
+
+            <div class="career-summary" aria-label="Controller career">
+              <span>Current clearance</span>
+              <strong id="current-rank">Control Trainee</strong>
+              <small id="rank-progress">Loading career…</small>
+            </div>
+
+            <fieldset class="map-selection">
+              <legend>Choose an airfield</legend>
+              <div id="map-options" class="map-options" role="radiogroup" aria-label="Airfields"></div>
+            </fieldset>
+
+            <div class="audio-settings" aria-label="Sound settings">
+              <button class="audio-toggle" type="button" data-audio-toggle aria-label="Sound effects" aria-pressed="true">
+                <span class="button-icon" data-audio-icon aria-hidden="true"></span>
+                <span data-audio-label>Sound on</span>
+              </button>
+              <label>
+                <span>Effects volume</span>
+                <input type="range" min="0" max="100" step="5" value="80" data-audio-volume />
+              </label>
+            </div>
+
+            <button id="start-button" class="primary-button button-with-icon" type="button">
+              <span id="start-icon" class="button-icon" aria-hidden="true"></span>
+              <span class="button-label">Play <span id="selected-map-name">Saltmarsh Gateway</span></span>
+            </button>
+          </div>
+        </section>
+
+        <section
+          id="pause-panel"
+          class="panel compact-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-title"
+          hidden
+        >
+          <div class="panel-content">
+            <h2 id="pause-title">Paused</h2>
+            <div class="audio-settings compact-audio" aria-label="Sound settings">
+              <button class="audio-toggle" type="button" data-audio-toggle aria-label="Sound effects" aria-pressed="true">
+                <span class="button-icon" data-audio-icon aria-hidden="true"></span>
+                <span data-audio-label>Sound on</span>
+              </button>
+              <label>
+                <span>Effects volume</span>
+                <input type="range" min="0" max="100" step="5" value="80" data-audio-volume />
+              </label>
+            </div>
+            <div class="panel-actions">
+              <button id="resume-button" class="primary-button button-with-icon" type="button">
+                <span id="resume-icon" class="button-icon" aria-hidden="true"></span>
+                <span id="resume-label" class="button-label">Resume</span>
+              </button>
+              <button id="restart-from-pause" class="secondary-button button-with-icon" type="button">
+                <span id="restart-from-pause-icon" class="button-icon" aria-hidden="true"></span>
+                <span class="button-label">Restart</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section
+          id="gameover-panel"
+          class="panel compact-panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gameover-code"
+          aria-describedby="gameover-copy"
+          hidden
+        >
+          <div class="panel-content">
+            <h2 id="gameover-code">Collision</h2>
+            <p id="gameover-copy" class="visually-hidden">Two aircraft collided.</p>
+            <dl class="result-grid" aria-label="Game result">
+              <div>
+                <dt>Score</dt>
+                <dd id="final-score">00</dd>
+              </div>
+              <div>
+                <dt>Best</dt>
+                <dd id="final-best">00</dd>
+              </div>
+            </dl>
+            <p id="career-result" class="career-result" aria-live="polite">Recording shift…</p>
+            <div class="panel-actions">
+              <button id="restart-button" class="primary-button button-with-icon" type="button">
+                <span id="restart-icon" class="button-icon" aria-hidden="true"></span>
+                <span class="button-label">Play again</span>
+              </button>
+              <button id="choose-map-button" class="secondary-button button-with-icon" type="button">
+                <span id="choose-map-icon" class="button-icon" aria-hidden="true"></span>
+                <span class="button-label">Choose map</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
