@@ -2,14 +2,23 @@
 name: Vector Approach
 description: "A local-first regional-airport atlas descended from the raised saltmarsh airfield."
 colors:
-  interface-ink: "#101a18"
-  panel-glass: "rgba(13, 26, 25, 0.9)"
-  panel-solid: "#122321"
-  control-glass: "rgba(12, 24, 23, 0.76)"
-  bone: "#f2f0e8"
-  muted: "#b5c0b9"
-  interface-accent: "#72d3c5"
-  interface-accent-hover: "#8cddd1"
+  interface-ink: "#111315"
+  panel-glass: "rgba(25, 28, 31, 0.97)"
+  panel-solid: "#191c1f"
+  control-glass: "rgba(23, 26, 29, 0.94)"
+  bone: "#f4f0e7"
+  muted: "#c7c1b7"
+  interface-accent: "#82b8c4"
+  interface-accent-hover: "#9ac8d1"
+  scrollbar: "#5f848c"
+  roster-river-muted: "#48575b"
+  roster-desert-muted: "#655d50"
+  roster-twin-muted: "#59594f"
+  roster-locked: "#252c2f"
+  range-track: "#4a5054"
+  modal-scrim: "rgba(0, 0, 0, 0.48)"
+  aircraft-body: "#f3ead5"
+  aircraft-keyline: "#102a3a"
   marsh-deep: "#263e38"
   marsh: "#3c5a4f"
   marsh-high: "#526b5d"
@@ -56,6 +65,36 @@ typography:
     fontSize: "1rem"
     fontWeight: 400
     lineHeight: 1.45
+  small:
+    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
+    fontSize: "0.75rem"
+    fontWeight: 400
+    lineHeight: 1.28
+  compact:
+    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
+    fontSize: "0.8125rem"
+    fontWeight: 400
+    lineHeight: 1.3
+  coach:
+    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.35
+  rank:
+    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
+    fontSize: "1.25rem"
+    fontWeight: 700
+    lineHeight: 1
+  short-headline:
+    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
+    fontSize: "clamp(1.75rem, 5vmin, 2.25rem)"
+    fontWeight: 700
+    lineHeight: 0.98
+  control-icon:
+    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
+    fontSize: "19px"
+    fontWeight: 700
+    lineHeight: 1
   control:
     fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
     fontSize: "1.0625rem"
@@ -75,8 +114,10 @@ typography:
     lineHeight: 1
     fontFeature: '"lnum" 1, "tnum" 1'
 rounded:
+  micro: "2px"
+  scrollbar: "6px"
   compact: "12px"
-  standard: "14px"
+  standard: "12px"
 spacing:
   label-gap: "4px"
   action-gap: "10px"
@@ -164,10 +205,10 @@ The interface is a quiet clearance desk laid over the selected map. One wide ope
 **Key Characteristics:**
 
 - Four distinct geographic fields held together by one civil-airfield construction language.
-- Dark glass, bone type, condensed operational labels, and restrained cyan selection.
-- Muted biome colors beneath invariant cyan, amber, and coral aircraft signals.
+- Opaque graphite controls, warm-white type, condensed operational labels, and restrained clearance-blue selection.
+- Muted biome colors beneath warm-neutral aircraft bodies with limited cyan, amber, and coral class signals.
 - A responsive map roster that stays readable instead of collapsing into miniature cards.
-- Code-native static worlds composited once, with semantic audio synthesized locally.
+- Layered static worlds composited once from optional terrain plates plus code-native airport geometry, with semantic audio synthesized locally.
 
 ## Colors
 
@@ -193,21 +234,22 @@ The atlas grows outward from tidal green into olive river fields, a mineral dese
 - **Aircraft Cyan** (`aircraft-cyan`): liner silhouettes, compatible runway beacons, and matching route guidance.
 - **Aircraft Amber** (`aircraft-amber`): commuter silhouettes and their contextual destination cues.
 - **Aircraft Coral** (`aircraft-coral`): rotorcraft silhouettes and helipad cues; `guidance-invalid` appears only for missed acquisition.
-- **Interface Cyan** (`interface-accent`, `interface-accent-hover`): the selected roster card, range input, primary action, promotion emphasis, and focus-worthy confirmation.
+- **Clearance Blue** (`interface-accent`, `interface-accent-hover`): the selected roster card, range input, primary action, promotion emphasis, and focus-worthy confirmation; it is quieter and less saturated than aircraft cyan.
 
 ### Neutral
 
 - **Interface Ink** (`interface-ink`): the browser background and darkest UI ground.
 - **Bone** (`bone`): primary UI text, focus outlines, and high-contrast controls.
 - **Muted Sage** (`muted`): descriptions, career progress, card detail, and HUD labels.
-- **Panel and Control Glass** (`panel-glass`, `control-glass`): translucent operational overlays; `panel-solid` is the reduced-transparency fallback.
+- **Panel and Control Graphite** (`panel-glass`, `control-glass`): near-opaque neutral operational overlays; `panel-solid` is the fully opaque reduced-transparency fallback.
+- **Aircraft Body and Keyline** (`aircraft-body`, `aircraft-keyline`): warm neutral paint and a cool charcoal perimeter keep every class visible over grass, water, pavement, and mineral terrain without depending on saturation.
 - **Polder Shadow** (`polder-shadow`): the dark construction edge inherited from the raised-airfield world.
 
 ### Named Rules
 
 **The Signal Reservation Rule.** Cyan, amber, and coral belong to aircraft, selected destination beacons, transient guidance, and narrowly scoped interface confirmation; scenery never borrows their saturation.
 
-**The Atlas Family Rule.** A map earns identity through terrain hue, water geometry, and field arrangement; runway asphalt, bone paint, amber taxiway detail, interface glass, and aircraft signals do not change by biome.
+**The Atlas Family Rule.** A map earns identity through terrain hue, water geometry, and field arrangement; runway asphalt, bone paint, restrained taxiway detail, graphite interface surfaces, and aircraft signals do not change by biome.
 
 ## Typography
 
@@ -258,7 +300,7 @@ Logical worlds are 1600 × 900 in landscape and 900 × 1600 in portrait; near-sq
 
 Depth is a hybrid of tonal construction and restrained overlay lift. Map geography uses nested tonal bands, pavement shoulders, surface wear, roof highlights, water shelves, and small south-east structural offsets rather than photorealistic texture. DOM HUD controls use a quiet 0 4px 18px shadow, roster selection adds a bounded 0 7px 24px lift and inner cyan line, and modal content uses a deeper 0 22px 60px shadow. Translucent blur switches to the solid panel token when reduced transparency is requested.
 
-Every selected map paints its terrain, water, pavements, runway surfaces, wear, markings, facilities, and bounded labels into one native-size static render texture at depth -20. Temporary vector graphics are destroyed after composition; live aircraft, selection, routes, warnings, and guidance remain separate and visually dominant.
+Every selected map composes its terrain, water, pavements, runway surfaces, wear, markings, facilities, and bounded labels into one native-size static render texture at depth -20. An approved orientation-specific terrain plate may replace only the scenery phase; airport and interaction geometry remain code-native. Temporary source images and vector graphics are destroyed after composition; live aircraft, selection, routes, warnings, and guidance remain separate and visually dominant.
 
 ### Shadow Vocabulary
 
@@ -269,11 +311,11 @@ Every selected map paints its terrain, water, pavements, runway surfaces, wear, 
 
 ### Named Rules
 
-**The One-Texture World Rule.** Build each map's scenery depth once from deterministic code-native layers; never add decorative per-frame scenery work, remote textures, or image-backed terrain.
+**The One-Texture World Rule.** Build each map's static world once from one local terrain-only plate plus deterministic code-native operational layers, or entirely from code-native layers when no plate is approved. Never add decorative per-frame scenery work, remote textures, or airport geometry baked into imagery.
 
 ## Shapes
 
-The atlas pairs organic geography with straight engineered infrastructure. Saltmarsh pools and field polygons, the River Bend curve, Desert Parallel's washes and coast fragments, and Twin Banks' dividing river use irregular or smoothed geometry. Runways, shoulders, taxiways, thresholds, hold lines, stands, aprons, bridges, signs, and facilities stay crisp and civil. Aircraft remain sharp vector silhouettes with restrained shadows.
+The atlas pairs softly painterly organic geography with straight engineered infrastructure. Saltmarsh pools and field polygons, the River Bend curve, Desert Parallel's washes and coast fragments, and Twin Banks' dividing river use broad restrained value masses. Runways, shoulders, taxiways, thresholds, hold lines, stands, aprons, signs, and facilities stay crisp and civil. Aircraft use sharp class-specific silhouettes, warm-neutral bodies, limited class accents, cool charcoal keylines, and restrained runtime shadows.
 
 Interface surfaces use gently rounded operational rectangles: 14px for panels, roster cards, career/result regions, buttons, audio controls, HUD tiles, and pause; 12px for the smaller coachmark. Map cards reserve a 36px rectangular geographic band at the top rather than using image thumbnails. Avoid pills and ornamental containers. Canvas circles remain functional capture areas, selection rings, helipad geometry, lights, or guidance anchors.
 
@@ -281,7 +323,7 @@ Interface surfaces use gently rounded operational rectangles: 14px for panels, r
 
 ### Atlas Start Panel
 
-The opening panel is the system's widest container: dark glass, a thin bone line, 14px corners, responsive 22–34px padding, and one 220ms rise/fade. It shows the selected map behind a blurred scrim and presents the title, career, roster, sound controls, and play action as one decision flow. Reduced transparency uses the solid panel token.
+The opening panel is the system's widest container: near-opaque graphite, 12px corners, responsive 22–34px padding, and one 220ms rise/fade. It shows the selected map behind a darkened scrim and presents the title, career, roster, sound controls, and play action as one decision flow. Reduced transparency uses the solid panel token with no blur.
 
 ### Career Summary
 
@@ -331,13 +373,13 @@ The coachmark is a single-session, non-interactive strip up to 380px wide with a
 
 ### Do:
 
-- Do preserve the raised saltmarsh system as the atlas parent: credible civil infrastructure, mineral terrain, bone paint, amber taxiway detail, dark glass, and open airspace.
+- Do preserve the raised saltmarsh system as the atlas parent: credible civil infrastructure, mineral terrain, bone paint, restrained taxiway detail, neutral graphite interface surfaces, and open airspace.
 - Do make all four maps recognizable through the documented geographic invariant while keeping aircraft and guidance behavior visually consistent.
 - Do keep roster names, difficulty or unlock state, record state, and descriptions bound to the map registry and local career.
 - Do show the higher cross-orientation best in the roster and the current-orientation best in active HUD and result surfaces.
 - Do use the horizontal snap roster at 720px and below and the shipped short-landscape compaction at 480px height and below.
 - Do adapt scenery density through mobile, tablet, and desktop budgets while preserving playable geometry.
-- Do use bundled fonts, inline Hugeicons, synthesized Web Audio, and code-native map geometry so the complete system works offline.
+- Do use bundled fonts, inline Hugeicons, synthesized Web Audio, local terrain plates, and code-native operational geometry so the complete system works offline.
 
 ### Don't:
 

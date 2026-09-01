@@ -16,7 +16,7 @@ Vector Approach is a local-first regional routing game. Players choose one of fo
 
 ## Positioning
 
-The game combines one-stroke route drawing with a small atlas of operationally believable civil airfields. Saltmarsh Gateway, River Bend, Desert Parallel, and Twin Banks are original, offline, code-native maps with distinct geography and traffic character. The incumbent raised-saltmarsh visual system remains the family resemblance: mineral terrain, credible runway infrastructure, bone markings, and restrained contextual landing feedback instead of a dashboard over the airspace.
+The game combines one-stroke route drawing with a small atlas of operationally believable civil airfields. Saltmarsh Gateway, River Bend, Desert Parallel, and Twin Banks are original, offline maps with responsive code-native airport geometry and distinct geography. Approved local terrain plates may supply the quiet painterly scenery beneath those calibrated operational surfaces. The incumbent raised-saltmarsh visual system remains the family resemblance: mineral terrain, credible runway infrastructure, bone markings, and restrained contextual landing feedback instead of a dashboard over the airspace.
 
 ## Operating Context
 
@@ -24,7 +24,7 @@ The game is played full-screen with mouse, touch, or pen. Sessions are short, ai
 
 ## Capabilities and Constraints
 
-- Phaser and TypeScript power four original code-native maps: Saltmarsh Gateway, River Bend, Desert Parallel, and Twin Banks.
+- Phaser and TypeScript power four original maps whose runways, landing zones, collision geometry, and responsive layouts remain code-native; optional terrain-only plates are local, orientation-specific, and presentation-only.
 - Every map supplies responsive portrait, landscape, and near-square geometry while sharing the same aircraft types, landing semantics, guidance language, and offline rendering pipeline.
 - The local career contains seven controller ranks. Saltmarsh Gateway and River Bend are available to a Control Trainee; Desert Parallel unlocks at Control Assistant; Twin Banks unlocks at Tower Controller; later ranks extend the career without hiding additional maps.
 - Promotions combine cumulative safe landings, shifts played, qualifying best scores, and performance across distinct maps.

@@ -33,18 +33,25 @@
   --type-hud-label: 0.6875rem;
   --type-hud-value: clamp(1.5rem, 4vmin, 2rem);
   font-family: var(--font-interface);
-  color: #f2f0e8;
-  background: #101a18;
+  color: #f4f0e7;
+  background: #111315;
   font-synthesis: none;
-  --ink: #101a18;
-  --panel: rgba(13, 26, 25, 0.9);
-  --panel-solid: #122321;
-  --bone: #f2f0e8;
-  --muted: #b5c0b9;
-  --accent: #72d3c5;
-  --line: rgba(242, 240, 232, 0.2);
-  --control: rgba(12, 24, 23, 0.76);
-  --radius: 14px;
+  --ink: #111315;
+  --panel: rgba(25, 28, 31, 0.97);
+  --panel-solid: #191c1f;
+  --surface: #22262a;
+  --surface-raised: #292e32;
+  --bone: #f4f0e7;
+  --muted: #c7c1b7;
+  --muted-strong: #d8d2c8;
+  --accent: #82b8c4;
+  --accent-hover: #9ac8d1;
+  --accent-ink: #10191b;
+  --line: rgba(244, 240, 231, 0.18);
+  --line-strong: rgba(244, 240, 231, 0.32);
+  --control: rgba(23, 26, 29, 0.94);
+  --scrim: rgba(10, 11, 13, 0.7);
+  --radius: 12px;
 }
 
 * {
@@ -66,10 +73,36 @@ body {
   inset: 0;
   min-width: 320px;
   background: var(--ink);
+  scrollbar-color: var(--accent) rgba(244, 240, 231, 0.08);
+  scrollbar-width: thin;
 }
 
 button {
   font: inherit;
+}
+
+button,
+input {
+  accent-color: var(--accent);
+}
+
+*::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(244, 240, 231, 0.06);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #5f848c;
+  border: 2px solid #1a1d20;
+  border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 ::selection {
@@ -77,8 +110,9 @@ button {
   background: var(--accent);
 }
 
-button:focus-visible {
-  outline: 3px solid var(--bone);
+button:focus-visible,
+input:focus-visible {
+  outline: 3px solid var(--accent);
   outline-offset: 3px;
 }
 
@@ -123,14 +157,12 @@ button:focus-visible {
 .hud-stat {
   position: absolute;
   top: max(12px, env(safe-area-inset-top));
-  min-width: 68px;
-  padding: 7px 10px 8px;
+  min-width: 64px;
+  padding: 6px 9px 7px;
   color: var(--bone);
   background: var(--control);
-  border: 1px solid rgba(242, 240, 232, 0.16);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 4px 18px rgba(7, 16, 15, 0.2);
-  backdrop-filter: blur(8px);
 }
 
 .hud-score {
@@ -148,7 +180,7 @@ button:focus-visible {
   font-family: var(--font-display);
   font-size: var(--type-hud-label);
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -176,8 +208,8 @@ button:focus-visible {
   width: min(calc(100% - 112px), 380px);
   padding: 11px 14px 12px;
   color: var(--bone);
-  background: rgba(13, 30, 28, 0.94);
-  border: 1px solid rgba(114, 211, 197, 0.4);
+  background: rgba(24, 27, 30, 0.98);
+  border: 1px solid rgba(130, 184, 196, 0.5);
   border-radius: 12px;
   pointer-events: none;
   transform: translateX(-50%);
@@ -191,7 +223,7 @@ button:focus-visible {
 
 .route-coachmark-label {
   margin-bottom: 4px;
-  color: #8bdfd3;
+  color: var(--accent);
   font-family: var(--font-display);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -218,10 +250,8 @@ button:focus-visible {
   place-items: center;
   color: var(--bone);
   background: var(--control);
-  border: 1px solid rgba(242, 240, 232, 0.22);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
-  box-shadow: 0 4px 18px rgba(7, 16, 15, 0.24);
-  backdrop-filter: blur(8px);
   cursor: pointer;
   pointer-events: auto;
   transition: background-color 140ms ease, transform 140ms ease;
@@ -236,7 +266,9 @@ button:focus-visible {
 }
 
 .icon-button:hover:not(:disabled) {
-  background: rgba(18, 39, 36, 0.92);
+  color: var(--accent-hover);
+  background: var(--surface-raised);
+  border-color: rgba(130, 184, 196, 0.62);
 }
 
 .icon-button:active:not(:disabled) {
@@ -261,8 +293,8 @@ button:focus-visible {
     max(16px, env(safe-area-inset-bottom))
     max(16px, env(safe-area-inset-left));
   place-items: center;
-  background: rgba(8, 18, 17, 0.48);
-  backdrop-filter: blur(3px);
+  background: var(--scrim);
+  backdrop-filter: blur(2px) saturate(0.72);
 }
 
 .panel-content {
@@ -270,10 +302,8 @@ button:focus-visible {
   padding: clamp(22px, 5vw, 34px);
   color: var(--bone);
   background: var(--panel);
-  border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 22px 60px rgba(4, 12, 11, 0.34);
-  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.48);
   animation: panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -321,7 +351,7 @@ button:focus-visible {
   padding: 12px 0;
   margin: -8px 0 18px;
   align-items: baseline;
-  border-block: 1px solid rgba(242, 240, 232, 0.13);
+  border-block: 1px solid var(--line);
 }
 
 .career-summary > span,
@@ -376,8 +406,8 @@ button:focus-visible {
   overflow: hidden;
   color: var(--bone);
   text-align: left;
-  background: rgba(242, 240, 232, 0.045);
-  border: 1px solid rgba(242, 240, 232, 0.18);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   cursor: pointer;
   transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
@@ -390,25 +420,25 @@ button:focus-visible {
   left: 0;
   height: 36px;
   content: "";
-  background: #3c5a4f;
-  box-shadow: inset 0 -1px rgba(242, 240, 232, 0.16);
+  background: #505852;
+  box-shadow: inset 0 -1px rgba(244, 240, 231, 0.14);
 }
 
 .map-option[data-map-id="river-bend"]::before {
-  background: #315b5b;
+  background: #48575b;
 }
 
 .map-option[data-map-id="desert-parallel"]::before {
-  background: #8a7048;
+  background: #655d50;
 }
 
 .map-option[data-map-id="twin-banks"]::before {
-  background: linear-gradient(105deg, #81683f 0 46%, #356167 47% 54%, #466445 55%);
+  background: #59594f;
 }
 
 .map-option:hover:not(.is-locked) {
-  background: rgba(242, 240, 232, 0.08);
-  border-color: rgba(242, 240, 232, 0.4);
+  background: var(--surface-raised);
+  border-color: var(--line-strong);
 }
 
 .map-option:active:not(.is-locked) {
@@ -416,13 +446,15 @@ button:focus-visible {
 }
 
 .map-option.is-selected {
-  border-color: var(--accent);
-  box-shadow: 0 7px 24px rgba(4, 12, 11, 0.24), inset 0 0 0 1px var(--accent);
+  border: 2px solid var(--accent);
+  background: #252c2f;
 }
 
 .map-option.is-locked {
   cursor: not-allowed;
-  opacity: 0.58;
+  opacity: 0.72;
+  background: #1d2023;
+  filter: saturate(0.28);
 }
 
 .map-option strong,
@@ -443,7 +475,7 @@ button:focus-visible {
 
 .map-option span {
   margin-top: 5px;
-  color: #c9d1cb;
+  color: var(--muted-strong);
   font-family: var(--font-display);
   font-size: 0.75rem;
   letter-spacing: 0.035em;
@@ -468,19 +500,24 @@ button:focus-visible {
 
 .audio-toggle {
   display: inline-flex;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 13px;
   align-items: center;
   gap: 8px;
   color: var(--bone);
-  background: transparent;
-  border: 1px solid rgba(242, 240, 232, 0.25);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   cursor: pointer;
 }
 
 .audio-toggle:hover {
-  background: rgba(242, 240, 232, 0.07);
+  background: var(--surface-raised);
+  border-color: rgba(130, 184, 196, 0.58);
+}
+
+.audio-toggle[aria-pressed="true"] .button-icon {
+  color: var(--accent);
 }
 
 .audio-settings label {
@@ -491,11 +528,48 @@ button:focus-visible {
 }
 
 .audio-settings input[type="range"] {
+  appearance: none;
   width: 100%;
-  min-height: 44px;
+  min-height: 48px;
   margin: 0;
-  accent-color: var(--accent);
+  background: transparent;
   cursor: pointer;
+}
+
+.audio-settings input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: #4a5054;
+  border-radius: 2px;
+}
+
+.audio-settings input[type="range"]::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  appearance: none;
+  background: var(--accent);
+  border: 3px solid var(--panel-solid);
+  border-radius: 50%;
+}
+
+.audio-settings input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: #4a5054;
+  border-radius: 2px;
+}
+
+.audio-settings input[type="range"]::-moz-range-progress {
+  height: 4px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.audio-settings input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 3px solid var(--panel-solid);
+  border-radius: 50%;
 }
 
 .compact-audio {
@@ -512,7 +586,7 @@ button:focus-visible {
 }
 
 .career-result.is-promotion {
-  color: #8bdfd3 !important;
+  color: var(--accent) !important;
   font-family: var(--font-display) !important;
   font-size: 1.125rem !important;
   font-weight: 600 !important;
@@ -573,25 +647,25 @@ button:focus-visible {
 }
 
 .primary-button {
-  color: #10201e;
+  color: var(--accent-ink);
   background: var(--accent);
   border: 1px solid var(--accent);
 }
 
 .secondary-button {
   color: var(--bone);
-  background: transparent;
-  border: 1px solid rgba(242, 240, 232, 0.32);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
 }
 
 .primary-button:hover:not(:disabled) {
-  background: #8cddd1;
-  border-color: #8cddd1;
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
 }
 
 .secondary-button:hover:not(:disabled) {
-  background: rgba(242, 240, 232, 0.08);
-  border-color: rgba(242, 240, 232, 0.48);
+  background: var(--surface-raised);
+  border-color: rgba(130, 184, 196, 0.58);
 }
 
 .primary-button:active:not(:disabled),
@@ -614,8 +688,7 @@ button:focus-visible {
 
 .result-grid div {
   padding: 14px 16px;
-  background: rgba(242, 240, 232, 0.06);
-  border: 1px solid rgba(242, 240, 232, 0.12);
+  background: var(--surface);
   border-radius: var(--radius);
 }
 
@@ -676,17 +749,17 @@ button:focus-visible {
 @keyframes score-landed {
   0% {
     background: var(--control);
-    box-shadow: 0 4px 18px rgba(7, 16, 15, 0.2);
+    color: var(--bone);
     transform: translateY(0);
   }
   34% {
-    background: rgba(40, 82, 73, 0.98);
-    box-shadow: 0 8px 26px rgba(114, 211, 197, 0.2);
-    transform: translateY(2px);
+    background: #2b373a;
+    color: var(--accent-hover);
+    transform: translateY(1px);
   }
   100% {
     background: var(--control);
-    box-shadow: 0 4px 18px rgba(7, 16, 15, 0.2);
+    color: var(--bone);
     transform: translateY(0);
   }
 }
@@ -712,23 +785,26 @@ button:focus-visible {
 
   .intro-panel .intro-content {
     width: min(100%, 820px);
-    padding: 14px 18px;
+    padding: 10px 14px;
   }
 
   .panel h1,
   .panel h2 {
-    font-size: 1.875rem;
+    font-size: 1.75rem;
   }
 
-  .panel p {
-    margin: 8px 0 14px;
-    font-size: var(--type-body);
+  .intro-panel .panel p {
+    max-width: none;
+    margin: 4px 0 8px;
+    font-size: 0.875rem;
+    line-height: 1.3;
+    white-space: nowrap;
   }
 
   .intro-panel .career-summary {
     grid-template-columns: auto auto 1fr;
-    padding: 7px 0;
-    margin: -2px 0 8px;
+    padding: 6px 0;
+    margin: 0 0 6px;
   }
 
   .intro-panel .career-summary small {
@@ -736,7 +812,11 @@ button:focus-visible {
   }
 
   .intro-panel .map-selection {
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+  }
+
+  .intro-panel .map-selection legend {
+    margin-bottom: 5px;
   }
 
   .intro-panel .map-options {
@@ -744,12 +824,12 @@ button:focus-visible {
   }
 
   .intro-panel .map-option {
-    min-height: 88px;
-    padding: 34px 9px 8px;
+    min-height: 82px;
+    padding: 31px 9px 7px;
   }
 
   .intro-panel .map-option::before {
-    height: 26px;
+    height: 24px;
   }
 
   .intro-panel .map-option small {
@@ -758,7 +838,8 @@ button:focus-visible {
 
   .intro-panel .audio-settings {
     grid-template-columns: auto 1fr;
-    margin-bottom: 8px;
+    gap: 10px;
+    margin-bottom: 6px;
   }
 
   .panel-actions {
@@ -797,7 +878,7 @@ button:focus-visible {
     overflow-x: auto;
     overscroll-behavior-inline: contain;
     scroll-snap-type: x mandatory;
-    scrollbar-color: rgba(114, 211, 197, 0.55) transparent;
+    scrollbar-color: var(--accent) rgba(244, 240, 231, 0.06);
   }
 
   .map-option {
@@ -820,6 +901,8 @@ button:focus-visible {
 
 @media (pointer: coarse) {
   .icon-button,
+  .audio-toggle,
+  .audio-settings input[type="range"],
   .primary-button,
   .secondary-button {
     min-width: 48px;
@@ -836,7 +919,7 @@ button:focus-visible {
   }
 
   .panel {
-    background: rgba(8, 18, 17, 0.84);
+    background: rgba(10, 11, 13, 0.92);
     backdrop-filter: none;
   }
 }
