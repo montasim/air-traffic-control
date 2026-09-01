@@ -1,0 +1,28 @@
+MODE
+built-in image_gen (referenced-image generation; stylized-concept production sprite)
+
+REFERENCE
+/home/montasim/Work/Personal/Air Control/art/aircraft/approved-sources/helicopter-body-coral.png
+Used only for the compact civil-helicopter subject and right-facing silhouette.
+
+OUTPUT CONTRACT
+Canvas: 1254 x 1254 PNG, RGBA
+Orientation: true top-down orthographic; tail left, nose +X/right
+Main-rotor hub anchor: normalized (0.500, 0.500), pixel (627, 627)
+Lighting: soft northwest / upper-left
+Transparency: genuine alpha; no baked shadow
+
+GENERATION PROMPT
+Use case: stylized-concept.
+Asset type: production master sprite for a top-down air-traffic-control game.
+
+Use the attached approved helicopter body image ONLY as a subject and silhouette reference: compact civil helicopter, short cabin, tapered tail boom, nose pointing right. Do not copy its glossy sticker rendering, saturated palette, black drop shadow, or toy-like proportions.
+
+Create one isolated helicopter BODY sprite in a true 90-degree orthographic top-down view. Longitudinal axis must be perfectly horizontal: tail at left, nose points exactly to +X/right. Include the compact cabin, fuselage, tail boom, stabilizers, and small tail rotor, but absolutely NO main rotor and NO main rotor blades. Place the main-rotor mast/socket exactly at the center of the square canvas; this hub anchor must be normalized (0.500, 0.500). Keep the complete body inside generous transparent margins with no cropping.
+
+Art direction: mature realistic-cartoon aviation illustration; natural, polished game art with shallow believable volume, not children's clip art and not a glossy sticker. Dominant warm-neutral matte ivory/stone painted metal, restrained muted coral accent panels, desaturated blue-charcoal keyline, muted blue-gray canopy glass. Low-to-moderate saturation and calm contrast. Consistent soft northwest light from upper-left, with subtle integrated form shading only. Crisp readable silhouette at small game scale.
+
+Output: square high-resolution PNG with genuine alpha transparency. No background, no ground plane, no cast or baked shadow, no halo, no scenery, no UI, no text, no letters, no logo, no watermark, no glow, no black opaque background, no main rotor. Single centered sprite only.
+
+PRODUCTION ALIGNMENT
+The accepted transparent imagegen result was uniformly scaled to 72% and translated without reshaping so its mast center at source pixel (733, 613) maps to the documented shared hub anchor (627, 627). Transparent padding was retained on all sides.

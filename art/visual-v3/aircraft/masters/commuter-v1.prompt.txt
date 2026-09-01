@@ -1,0 +1,41 @@
+Asset: commuter-v1.png
+Generator: built-in image_gen tool
+Generated: 2026-09-01
+Reference: art/aircraft/approved-sources/lightweight-aircraft-amber.png
+Reference role: silhouette and aircraft subject only; not an edit target or style reference
+Output: 1536 x 1024 RGBA PNG
+SHA-256: ba86e4cd352c75ee430fe14858a973565c9c87ea36e0da89b206c9c773ae522b
+
+BASE GENERATION PROMPT
+
+Use case: stylized-concept
+Asset type: production master sprite for a top-down air-traffic-control game
+Input image: silhouette and aircraft-subject reference only. Do not preserve its glossy sticker rendering, heavy black glow/shadow, saturated yellow body, or exact decoration.
+Primary request: create one polished lightweight regional commuter aircraft sprite, viewed in a mathematically true top-down orthographic view, with its nose pointing exactly toward +X / the right edge.
+Scene/backdrop: genuinely transparent RGBA background, with empty transparent padding around the complete aircraft.
+Subject: compact single-engine propeller commuter aircraft; straight high wings with a clearly rectangular planform, compact cabin/fuselage, short practical tail, small two-blade propeller at the nose. Keep the entire aircraft visible and centered; strong class silhouette at 54–68 CSS pixels.
+Style/medium: mature realistic-cartoon aviation illustration; natural, refined, restrained, clean production game art; shallow believable illustrated volume rather than flat clip art; matte painted metal and subtly varied aluminum surfaces.
+Composition/framing: strict overhead orthographic plan view with no perspective, no three-quarter angle, no tilt, no foreshortening, no visible side profile; longitudinal axis perfectly horizontal; tail left, nose right.
+Lighting/mood: soft north-west light from upper-left, shallow controlled highlights and form shading contained inside the aircraft only.
+Color palette: 65–75% warm-neutral matte ivory and pale aluminum; 15–25% restrained muted amber accent used sparingly on tail, narrow bands, and small wing details; desaturated blue-charcoal 2–3px-equivalent outer keyline; small muted blue-gray canopy glazing. Avoid saturated yellow/orange dominance.
+Materials/textures: subtle panel seams and restrained metal variation that survive downscaling; clean silhouette edges and alpha.
+Constraints: genuine transparency; no baked drop shadow, no ambient black halo, no ground, no runway, no scenery, no text, no logo, no markings that resemble a brand, no watermark; no clipped propeller or wing tips; no fringe or matte contamination around alpha edges.
+Avoid: glossy sticker aesthetic, children's-cartoon proportions, toy-like bulbous shapes, thick black glow, neon colors, dramatic specular highlights, isometric perspective, asymmetric wings, extra engines or propellers.
+
+FINAL ALPHA-CLEANUP PROMPT
+
+Use case: background-extraction
+Asset type: final production master sprite
+Input image: edit target. Preserve the aircraft's exact top-down geometry, ivory/aluminum material, restrained amber markings, canopy, panel lines, orientation, and propeller.
+Primary request: remove every background, glow, bloom, shadow, haze, and semi-transparent aura outside the aircraft. Tighten the RGBA alpha mask exactly to the aircraft's outer blue-charcoal keyline and propeller silhouette.
+Edge requirement: pixels farther than 2 antialiasing pixels outside the visible keyline must have alpha exactly 0; preserve only a clean 1–2px antialiased edge; no dark or light fringe when composited over white, black, olive grass, slate water, or gray runway.
+Composition: keep the full aircraft centered, nose exactly right, with modest transparent padding; do not crop anything.
+Constraints: genuine transparent background; zero baked shadow; zero ambient halo; no checkerboard; no background color; no restyling, recoloring, reshaping, or added details; no text, logo, watermark, ground, or scenery.
+
+DETERMINISTIC ALPHA-MATTE CORRECTION
+
+Corrected: 2026-09-01
+Reason: the generated alpha retained a broad semi-transparent ivory/amber aura that remained visible over dark and colored maps.
+Source SHA-256: 4b8decd611099241608d4f9bfd6505b41e72fdd783ca2b0cc1878305f8093ef1
+Method: treated original alpha >= 220 as the true painted silhouette; preserved every RGB byte inside that silhouette; set its alpha to 255; created a one-pixel-only outer antialias ring from a 3 x 3 maximum-filter dilation and a radius-0.48 Gaussian edge, clipped strictly to that ring; derived each ring pixel's RGB by averaging adjacent silhouette RGB pixels so no previous glow color could survive; set alpha and RGB to zero everywhere outside the one-pixel dilation.
+Validation: 1536 x 1024 RGBA; tight nonzero-alpha bounding box x=262..1158, y=14..984; 247342 opaque silhouette pixels; 4783 antialias-fringe pixels; 0 nonzero-alpha pixels beyond the one-pixel dilation; 0 RGB values changed inside the true silhouette; visually checked at review and 54-68 CSS px scale over black, white, muted olive grass, and slate water checker panels, including the propeller.

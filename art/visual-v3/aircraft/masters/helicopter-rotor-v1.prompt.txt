@@ -1,0 +1,31 @@
+MODE
+built-in image_gen (referenced-image generation plus one targeted correction; stylized-concept production sprite)
+
+REFERENCE
+/home/montasim/Work/Personal/Air Control/art/aircraft/approved-sources/helicopter-rotor.png
+Used only for the four-blade construction and silhouette.
+
+OUTPUT CONTRACT
+Canvas: 1254 x 1254 PNG, RGBA
+Orientation: true top-down orthographic; four blades at cardinal directions
+Main-rotor hub anchor: normalized (0.500, 0.500), pixel (627, 627)
+Lighting: soft northwest / upper-left
+Transparency: genuine alpha; no baked shadow
+
+GENERATION PROMPT
+Use case: stylized-concept.
+Asset type: production master sprite for a top-down air-traffic-control game.
+
+Use the attached approved rotor image ONLY as a subject and construction reference: four equal rotor blades around a centered hub. Do not copy its glossy sticker rendering, saturated palette, heavy black shadow, or toy-like treatment.
+
+Create one isolated four-blade helicopter MAIN ROTOR assembly in a true 90-degree orthographic top-down view. Four equal blades at the cardinal directions, geometrically centered on a compact circular hub. The hub center must be exactly at the center of the square canvas; anchor normalized (0.500, 0.500), matching the body master. Keep all blades fully inside generous transparent margins with no cropping.
+
+Art direction: mature realistic-cartoon aviation illustration; natural, polished game art with shallow believable volume, not children's clip art and not a glossy sticker. Neutral warm ivory/stone matte blades, desaturated blue-charcoal hub hardware and keyline, with only a tiny restrained muted-coral accent on blade tips and/or hub cap. Low-to-moderate saturation and calm contrast. Same soft northwest light from upper-left as the body, with subtle integrated material shading only. Crisp readable silhouette at small game scale.
+
+Output: square high-resolution PNG with genuine alpha transparency. No helicopter body, no background, no ground plane, no cast or baked shadow, no halo, no scenery, no UI, no text, no letters, no logo, no watermark, no glow, no black opaque background. Single centered rotor assembly only.
+
+TARGETED CORRECTION PROMPT
+Preserve the exact four-blade design, cardinal blade orientation, mature matte warm-neutral palette, tiny muted-coral accents, desaturated blue-charcoal keyline, centered hub, proportions, and shallow northwest-lit illustrated volume. Replace the visible baked checkerboard background with genuine alpha transparency. Every pixel outside the rotor silhouette must be transparent. Keep the circular hub center exactly at the square canvas center, normalized anchor (0.500, 0.500), and retain generous transparent margins without cropping. No body, cast shadow, halo, checkerboard, solid background, ground, text, logo, or watermark.
+
+PRODUCTION ALPHA CLEANUP
+The correction retained the generated design but returned the checker preview as RGB. A deterministic edge-connected neutral-background mask converted only the exterior checker field to alpha, preserving all enclosed rotor artwork and the exact centered hub geometry.
