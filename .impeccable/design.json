@@ -1,0 +1,264 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-31T18:41:17Z",
+  "title": "Design System: Vector Approach",
+  "extensions": {
+    "colorMeta": {
+      "interface-ink": {
+        "role": "neutral",
+        "displayName": "Interface Ink",
+        "canonical": "#101a18",
+        "tonalRamp": ["#0a1110", "#101a18", "#19302c", "#2c4842", "#49665f", "#708981", "#a8bbb4", "#edf3ef"]
+      },
+      "panel-solid": {
+        "role": "neutral",
+        "displayName": "Solid Operational Panel",
+        "canonical": "#122321",
+        "tonalRamp": ["#09110f", "#122321", "#1e3733", "#31504a", "#516b65", "#788d87", "#aebdb8", "#edf3f0"]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Interface Bone",
+        "canonical": "#f2f0e8",
+        "tonalRamp": ["#26251f", "#444139", "#666258", "#88837a", "#aaa69d", "#cbc8c0", "#e2e0d9", "#f2f0e8"]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Sage",
+        "canonical": "#b5c0b9",
+        "tonalRamp": ["#19201c", "#2c3731", "#46534c", "#627069", "#7e8c85", "#99a79f", "#b5c0b9", "#edf2ef"]
+      },
+      "interface-accent": {
+        "role": "primary",
+        "displayName": "Interface Cyan",
+        "canonical": "#72d3c5",
+        "tonalRamp": ["#0d2a26", "#16453e", "#22635a", "#318478", "#43a597", "#5bc1b2", "#72d3c5", "#d9f5ef"]
+      },
+      "marsh-deep": {
+        "role": "primary",
+        "displayName": "Deep Tidal Green",
+        "canonical": "#263e38",
+        "tonalRamp": ["#0d1815", "#172a25", "#263e38", "#38554d", "#526b5d", "#73877c", "#9faea6", "#e6ece8"]
+      },
+      "gateway-ground": {
+        "role": "primary",
+        "displayName": "Gateway Field",
+        "canonical": "#293c34",
+        "tonalRamp": ["#0e1713", "#192820", "#293c34", "#3d5449", "#586d61", "#79897f", "#a4b0aa", "#e8edea"]
+      },
+      "gateway-water": {
+        "role": "secondary",
+        "displayName": "Gateway Tidal Water",
+        "canonical": "#315359",
+        "tonalRamp": ["#0d1b1d", "#173034", "#24464b", "#315359", "#4c7074", "#708f92", "#9eb4b5", "#e4eded"]
+      },
+      "river-ground": {
+        "role": "primary",
+        "displayName": "River Olive Field",
+        "canonical": "#323a31",
+        "tonalRamp": ["#141713", "#242923", "#323a31", "#4a5246", "#646d5f", "#838b7e", "#aeb4aa", "#eceeea"]
+      },
+      "river-water": {
+        "role": "secondary",
+        "displayName": "River Bend Water",
+        "canonical": "#38565a",
+        "tonalRamp": ["#101b1d", "#1d3033", "#2a4549", "#38565a", "#537377", "#779195", "#a4b7b8", "#e7efef"]
+      },
+      "desert-ground": {
+        "role": "primary",
+        "displayName": "Mineral Basin",
+        "canonical": "#8a7658",
+        "tonalRamp": ["#231d14", "#3d3223", "#584832", "#705f45", "#8a7658", "#aa9574", "#cbb99b", "#f1e9dc"]
+      },
+      "desert-water": {
+        "role": "secondary",
+        "displayName": "Desert Coast",
+        "canonical": "#314f53",
+        "tonalRamp": ["#0d191b", "#182c2f", "#254246", "#314f53", "#4b6c70", "#708b8e", "#a0b2b4", "#e5eeee"]
+      },
+      "twin-west-ground": {
+        "role": "primary",
+        "displayName": "Twin West Bank",
+        "canonical": "#76694b",
+        "tonalRamp": ["#201b12", "#372f20", "#50442f", "#66583e", "#76694b", "#998865", "#bbaa8b", "#eee8dc"]
+      },
+      "twin-east-ground": {
+        "role": "primary",
+        "displayName": "Twin East Bank",
+        "canonical": "#435b48",
+        "tonalRamp": ["#111c14", "#203125", "#304735", "#435b48", "#5e7763", "#819586", "#aab8ad", "#e8eee9"]
+      },
+      "twin-river": {
+        "role": "secondary",
+        "displayName": "Twin Banks River",
+        "canonical": "#244d54",
+        "tonalRamp": ["#0a191b", "#122d32", "#1b4147", "#244d54", "#3d6b72", "#648b91", "#97b2b5", "#e2edee"]
+      },
+      "marking-bone": {
+        "role": "neutral",
+        "displayName": "Runway Marking Bone",
+        "canonical": "#e4e0cc",
+        "tonalRamp": ["#242117", "#403b2d", "#5d5746", "#7b7563", "#9b9582", "#bbb5a3", "#d4cfbc", "#f0ede3"]
+      },
+      "aircraft-cyan": {
+        "role": "tertiary",
+        "displayName": "Aircraft Cyan",
+        "canonical": "#8bdeda",
+        "tonalRamp": ["#0c2827", "#174442", "#276461", "#3f8581", "#5ba7a2", "#74c6c1", "#8bdeda", "#def7f5"]
+      },
+      "aircraft-amber": {
+        "role": "tertiary",
+        "displayName": "Aircraft Amber",
+        "canonical": "#f0bd66",
+        "tonalRamp": ["#2d200b", "#513915", "#76531f", "#9b702d", "#bf8f3d", "#dca84f", "#f0bd66", "#fff0cf"]
+      },
+      "aircraft-coral": {
+        "role": "tertiary",
+        "displayName": "Aircraft Coral",
+        "canonical": "#f0836f",
+        "tonalRamp": ["#32120e", "#59231b", "#80362b", "#a64c3e", "#c96552", "#df7562", "#f0836f", "#ffe2dc"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Product title in the atlas panel." },
+      "headline": { "displayName": "Headline", "purpose": "Pause and game-over state names." },
+      "body": { "displayName": "Body", "purpose": "Descriptions, progress, modal explanation, and instruction." },
+      "control": { "displayName": "Control", "purpose": "Map names, rank names, and action labels." },
+      "hud-label": { "displayName": "HUD Label", "purpose": "Uppercase score, best, clearance, roster, difficulty, and effects labels." },
+      "hud-value": { "displayName": "HUD Value", "purpose": "Tabular score numerals." }
+    },
+    "shadows": [
+      { "name": "hud-low", "value": "0 4px 18px rgba(7, 16, 15, 0.2)", "purpose": "Quiet lift beneath score and best." },
+      { "name": "control-low", "value": "0 4px 18px rgba(7, 16, 15, 0.24)", "purpose": "Lift beneath the lower-right pause control." },
+      { "name": "roster-selected", "value": "0 7px 24px rgba(4, 12, 11, 0.24), inset 0 0 0 1px #72d3c5", "purpose": "Acknowledges the selected available map without turning every card into a raised tile." },
+      { "name": "modal-structural", "value": "0 22px 60px rgba(4, 12, 11, 0.34)", "purpose": "Separates atlas and compact modal panels from the paused map." }
+    ],
+    "motion": [
+      { "name": "control-state", "value": "140ms ease", "purpose": "Button, roster, and pause background, border, and press transitions." },
+      { "name": "panel-enter", "value": "220ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "One bounded modal rise and fade." },
+      { "name": "coachmark-enter", "value": "220ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "One bounded coachmark rise and fade." },
+      { "name": "score-landed", "value": "520ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Acknowledges a successful landing on the score tile." },
+      { "name": "route-confirmed", "value": "360ms", "purpose": "Transient route confirmation before guidance clears." },
+      { "name": "landing-feedback", "value": "820ms", "purpose": "Runway light sweep or helipad bloom before guidance clears." }
+    ],
+    "breakpoints": [
+      { "name": "roster-horizontal", "value": "720px" },
+      { "name": "mobile-detail-short-side", "value": "520px" },
+      { "name": "desktop-detail-short-side", "value": "700px" },
+      { "name": "desktop-detail-long-side", "value": "1200px" },
+      { "name": "short-landscape-height", "value": "480px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width cyan action used for play, resume, and play-again decisions.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M18.89 12.85C18.54 14.19 16.87 15.14 13.53 17.04C10.3 18.87 8.68 19.79 7.38 19.42C5 18.74 5 16.8 5 12C5 7.2 5 5.26 7.38 4.58C8.68 4.21 10.3 5.13 13.53 6.96C16.87 8.86 18.54 9.81 18.89 11.15C19.04 11.71 19.04 12.29 18.89 12.85Z\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"1.5\"/></svg><span>PLAY SALTMARSH GATEWAY</span></button>",
+      "css": ".ds-btn-primary { display: inline-flex; width: 100%; min-height: 52px; padding: 0 20px; align-items: center; justify-content: center; gap: 0.5rem; color: #10201e; background: var(--accent, #72d3c5); border: 1px solid var(--accent, #72d3c5); border-radius: var(--radius, 14px); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: var(--type-control, 1.0625rem); font-weight: 600; letter-spacing: 0.015em; line-height: 1; white-space: nowrap; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; } .ds-btn-primary svg { flex: 0 0 1.375rem; width: 1.375rem; height: 1.375rem; } .ds-btn-primary:hover:not(:disabled) { background: #8cddd1; border-color: #8cddd1; } .ds-btn-primary:focus-visible { outline: 3px solid var(--bone, #f2f0e8); outline-offset: 3px; } .ds-btn-primary:active:not(:disabled) { transform: scale(0.98); } .ds-btn-primary:disabled { opacity: 0.48; cursor: wait; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Transparent bordered action used for restart or returning to the atlas.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\"><svg viewBox=\"0 0 24 24\" width=\"18\" height=\"18\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M4 6h16M4 12h16M4 18h16\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"/></svg><span>CHOOSE MAP</span></button>",
+      "css": ".ds-btn-secondary { display: inline-flex; width: 100%; min-height: 52px; padding: 0 20px; align-items: center; justify-content: center; gap: 0.5rem; color: var(--bone, #f2f0e8); background: transparent; border: 1px solid rgba(242, 240, 232, 0.32); border-radius: var(--radius, 14px); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: var(--type-control, 1.0625rem); font-weight: 600; letter-spacing: 0.015em; line-height: 1; white-space: nowrap; cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; } .ds-btn-secondary:hover:not(:disabled) { background: rgba(242, 240, 232, 0.08); border-color: rgba(242, 240, 232, 0.48); } .ds-btn-secondary:focus-visible { outline: 3px solid var(--bone, #f2f0e8); outline-offset: 3px; } .ds-btn-secondary:active:not(:disabled) { transform: scale(0.98); }"
+    },
+    {
+      "name": "HUD Stat",
+      "kind": "custom",
+      "refersTo": "hud-stat",
+      "description": "Compact upper-corner score or current-orientation best tile.",
+      "html": "<div class=\"ds-hud-stat\"><span>BEST</span><strong>08</strong></div>",
+      "css": ".ds-hud-stat { min-width: 68px; padding: 7px 10px 8px; color: var(--bone, #f2f0e8); background: var(--control, rgba(12, 24, 23, 0.76)); border: 1px solid rgba(242, 240, 232, 0.16); border-radius: var(--radius, 14px); box-shadow: 0 4px 18px rgba(7, 16, 15, 0.2); backdrop-filter: blur(8px); text-align: right; } .ds-hud-stat span { display: block; color: var(--muted, #b5c0b9); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1; text-transform: uppercase; } .ds-hud-stat strong { display: block; margin-top: 3px; font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: clamp(1.5rem, 4vmin, 2rem); font-variant-numeric: lining-nums tabular-nums; font-weight: 700; line-height: 1; } @media (prefers-reduced-transparency: reduce) { .ds-hud-stat { background: var(--panel-solid, #122321); backdrop-filter: none; } }"
+    },
+    {
+      "name": "Atlas Panel",
+      "kind": "card",
+      "refersTo": "atlas-panel",
+      "description": "Wide opening container for product context, career, map choice, sound, and play.",
+      "html": "<section class=\"ds-atlas-panel\" role=\"dialog\" aria-labelledby=\"ds-atlas-title\"><h1 id=\"ds-atlas-title\">Vector Approach</h1><p>Draw each aircraft to its matching landing zone and avoid collisions.</p></section>",
+      "css": ".ds-atlas-panel { width: min(100%, 880px); padding: clamp(22px, 5vw, 34px); color: var(--bone, #f2f0e8); background: var(--panel, rgba(13, 26, 25, 0.9)); border: 1px solid rgba(242, 240, 232, 0.2); border-radius: var(--radius, 14px); box-shadow: 0 22px 60px rgba(4, 12, 11, 0.34); backdrop-filter: blur(14px); animation: ds-panel-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both; } .ds-atlas-panel h1 { margin: 0; font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: clamp(2.125rem, 7.5vmin, 3.5rem); font-weight: 700; letter-spacing: -0.015em; line-height: 0.98; } .ds-atlas-panel p { max-width: 34ch; margin: 14px 0 24px; color: var(--muted, #b5c0b9); font-family: var(--font-interface, \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif); font-size: 1rem; line-height: 1.45; } @keyframes ds-panel-in { from { opacity: 0; transform: translateY(12px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } } @media (prefers-reduced-transparency: reduce) { .ds-atlas-panel { background: var(--panel-solid, #122321); backdrop-filter: none; } } @media (prefers-reduced-motion: reduce) { .ds-atlas-panel { animation-duration: 0.01ms; } }"
+    },
+    {
+      "name": "Career Summary",
+      "kind": "custom",
+      "refersTo": "career-summary",
+      "description": "Local controller clearance with the next rank's combined progress requirement.",
+      "html": "<div class=\"ds-career\"><span>CURRENT CLEARANCE</span><strong>Control Trainee</strong><small>1/8 safe landings · 1/2 shifts · best 3+ on 1 map</small></div>",
+      "css": ".ds-career { display: grid; grid-template-columns: auto 1fr; gap: 3px 16px; padding: 12px 0; align-items: baseline; border-block: 1px solid rgba(242, 240, 232, 0.13); } .ds-career span { color: var(--muted, #b5c0b9); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1; text-transform: uppercase; } .ds-career strong { color: var(--bone, #f2f0e8); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 1.25rem; line-height: 1; } .ds-career small { grid-column: 2; color: var(--muted, #b5c0b9); font-family: var(--font-interface, \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif); font-size: 0.8125rem; line-height: 1.3; } @media (max-width: 720px) { .ds-career { grid-template-columns: 1fr; } .ds-career small { grid-column: 1; } }"
+    },
+    {
+      "name": "Map Roster Card",
+      "kind": "card",
+      "refersTo": "map-roster-card",
+      "description": "Radio-style field choice carrying biome, difficulty or lock state, best score, and description.",
+      "html": "<button class=\"ds-map-card is-selected\" type=\"button\" role=\"radio\" aria-checked=\"true\"><span class=\"ds-map-band\" aria-hidden=\"true\"></span><strong>Saltmarsh Gateway</strong><span class=\"ds-map-detail\">BEGINNER · BEST 08</span><small>A connected regional airport above quiet tidal fields.</small></button>",
+      "css": ".ds-map-card { position: relative; display: block; width: 100%; min-height: 136px; padding: 49px 12px 12px; overflow: hidden; color: var(--bone, #f2f0e8); text-align: left; background: rgba(242, 240, 232, 0.045); border: 1px solid rgba(242, 240, 232, 0.18); border-radius: var(--radius, 14px); cursor: pointer; transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease; } .ds-map-band { position: absolute; top: 0; right: 0; left: 0; height: 36px; background: #3c5a4f; box-shadow: inset 0 -1px rgba(242, 240, 232, 0.16); } .ds-map-card strong, .ds-map-detail, .ds-map-card small { display: block; } .ds-map-card strong { overflow: hidden; font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 1.0625rem; font-weight: 600; line-height: 1; text-overflow: ellipsis; white-space: nowrap; } .ds-map-detail { margin-top: 5px; color: #c9d1cb; font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 0.75rem; letter-spacing: 0.035em; line-height: 1.1; text-transform: uppercase; } .ds-map-card small { margin-top: 7px; color: var(--muted, #b5c0b9); font-family: var(--font-interface, \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif); font-size: 0.75rem; line-height: 1.28; } .ds-map-card:hover { background: rgba(242, 240, 232, 0.08); border-color: rgba(242, 240, 232, 0.4); } .ds-map-card:focus-visible { outline: 3px solid var(--bone, #f2f0e8); outline-offset: 3px; } .ds-map-card:active { transform: scale(0.985); } .ds-map-card.is-selected { border-color: var(--accent, #72d3c5); box-shadow: 0 7px 24px rgba(4, 12, 11, 0.24), inset 0 0 0 1px var(--accent, #72d3c5); }"
+    },
+    {
+      "name": "Audio Settings",
+      "kind": "custom",
+      "refersTo": "audio-toggle",
+      "description": "Synchronized local sound toggle and effects-volume range used on start and pause.",
+      "html": "<div class=\"ds-audio\"><button type=\"button\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path d=\"M4 10v4h3l4 4V6L7 10H4Z\" stroke=\"currentColor\" stroke-linejoin=\"round\" stroke-width=\"1.5\"/><path d=\"M15 9.5c1.3 1.4 1.3 3.6 0 5M18 7c2.7 2.8 2.7 7.2 0 10\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"/></svg><span>Sound on</span></button><label><span>EFFECTS VOLUME</span><input type=\"range\" min=\"0\" max=\"100\" value=\"80\" /></label></div>",
+      "css": ".ds-audio { display: grid; grid-template-columns: auto minmax(150px, 1fr); gap: 12px 18px; align-items: center; color: var(--bone, #f2f0e8); } .ds-audio button { display: inline-flex; min-height: 44px; padding: 0 13px; align-items: center; gap: 8px; color: inherit; background: transparent; border: 1px solid rgba(242, 240, 232, 0.25); border-radius: var(--radius, 14px); font-family: var(--font-interface, \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif); cursor: pointer; } .ds-audio button:hover { background: rgba(242, 240, 232, 0.07); } .ds-audio button:focus-visible, .ds-audio input:focus-visible { outline: 3px solid var(--bone, #f2f0e8); outline-offset: 3px; } .ds-audio svg { width: 19px; height: 19px; } .ds-audio label { display: grid; grid-template-columns: auto minmax(100px, 1fr); gap: 12px; align-items: center; } .ds-audio label > span { color: var(--muted, #b5c0b9); font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1; text-transform: uppercase; } .ds-audio input { width: 100%; min-height: 44px; margin: 0; accent-color: var(--accent, #72d3c5); cursor: pointer; } @media (max-width: 720px) { .ds-audio { grid-template-columns: 1fr; gap: 5px; } }"
+    },
+    {
+      "name": "Pause Control",
+      "kind": "button",
+      "refersTo": "pause-control",
+      "description": "Safe-area corner control that swaps pause and play glyphs with run state.",
+      "html": "<button class=\"ds-pause-control\" type=\"button\" aria-label=\"Pause game\"><svg viewBox=\"0 0 24 24\" width=\"22\" height=\"22\" fill=\"none\" aria-hidden=\"true\" focusable=\"false\"><circle cx=\"12\" cy=\"12\" r=\"10\" stroke=\"currentColor\" stroke-width=\"1.5\"/><path d=\"M9.5 9V15M14.5 9V15\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-width=\"1.5\"/></svg></button>",
+      "css": ".ds-pause-control { display: grid; width: 48px; height: 48px; padding: 0; place-items: center; color: var(--bone, #f2f0e8); background: var(--control, rgba(12, 24, 23, 0.76)); border: 1px solid rgba(242, 240, 232, 0.22); border-radius: var(--radius, 14px); box-shadow: 0 4px 18px rgba(7, 16, 15, 0.24); backdrop-filter: blur(8px); cursor: pointer; transition: background-color 140ms ease, transform 140ms ease; } .ds-pause-control svg { display: block; width: 1.5rem; height: 1.5rem; } .ds-pause-control:hover:not(:disabled) { background: rgba(18, 39, 36, 0.92); } .ds-pause-control:focus-visible { outline: 3px solid var(--bone, #f2f0e8); outline-offset: 3px; } .ds-pause-control:active:not(:disabled) { transform: scale(0.96); } @media (prefers-reduced-transparency: reduce) { .ds-pause-control { background: var(--panel-solid, #122321); backdrop-filter: none; } }"
+    },
+    {
+      "name": "Route Coachmark",
+      "kind": "custom",
+      "refersTo": "route-coachmark",
+      "description": "Brief single-session instruction that tracks route selection, acquisition, and completion.",
+      "html": "<aside class=\"ds-route-coachmark\"><span>APPROACH CONTROL</span><strong>Draw this aircraft to the highlighted landing area.</strong></aside>",
+      "css": ".ds-route-coachmark { width: min(calc(100% - 112px), 380px); padding: 11px 14px 12px; color: var(--bone, #f2f0e8); background: rgba(13, 30, 28, 0.94); border: 1px solid rgba(114, 211, 197, 0.4); border-radius: 12px; pointer-events: none; animation: ds-coachmark-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both; } .ds-route-coachmark span, .ds-route-coachmark strong { display: block; } .ds-route-coachmark span { margin-bottom: 4px; color: #8bdfd3; font-family: var(--font-display, \"Barlow Condensed\", \"Arial Narrow\", sans-serif); font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.06em; line-height: 1; text-transform: uppercase; } .ds-route-coachmark strong { font-family: var(--font-interface, \"Atkinson Hyperlegible\", \"Segoe UI\", sans-serif); font-size: 0.875rem; font-weight: 400; line-height: 1.35; } @keyframes ds-coachmark-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } @media (prefers-reduced-motion: reduce) { .ds-route-coachmark { animation-duration: 0.01ms; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Raised Saltmarsh Airfield Atlas",
+    "overview": "Vector Approach expands one proven visual world into a regional atlas. The original raised saltmarsh airfield remains the parent language: muted mineral geography, operationally credible civil infrastructure, bone paint, amber taxiway detail, and deliberately open routing space. Saltmarsh Gateway, River Bend, Desert Parallel, and Twin Banks change the terrain story and airfield arrangement without changing the product's visual grammar.\n\nThe interface is a quiet clearance desk laid over the selected map. One wide opening panel presents career state, a four-field roster, sound controls, and the play decision; active play removes that shell and leaves only score, orientation-aware best, route coaching, and pause. Everything visible or audible is bundled, synthesized, or drawn from deterministic code so the atlas keeps its identity offline.",
+    "keyCharacteristics": [
+      "Four distinct geographic fields held together by one civil-airfield construction language.",
+      "Dark glass, bone type, condensed operational labels, and restrained cyan selection.",
+      "Muted biome colors beneath invariant cyan, amber, and coral aircraft signals.",
+      "A responsive map roster that stays readable instead of collapsing into miniature cards.",
+      "Code-native static worlds composited once, with semantic audio synthesized locally."
+    ],
+    "rules": [
+      { "name": "The Signal Reservation Rule", "body": "Cyan, amber, and coral belong to aircraft, selected destination beacons, transient guidance, and narrowly scoped interface confirmation; scenery never borrows their saturation.", "section": "colors" },
+      { "name": "The Atlas Family Rule", "body": "A map earns identity through terrain hue, water geometry, and field arrangement; runway asphalt, bone paint, amber taxiway detail, interface glass, and aircraft signals do not change by biome.", "section": "colors" },
+      { "name": "The Two-Voice Rule", "body": "Barlow Condensed names the field, clearance, state, and action; Atkinson Hyperlegible explains what the player should understand.", "section": "typography" },
+      { "name": "The Open Airspace Rule", "body": "Preserve each map's authored airfield footprint and reserved routing area in every orientation; never enlarge geography or infrastructure until it consumes active approach space.", "section": "layout" },
+      { "name": "The Readable Roster Rule", "body": "Show one complete card per map in registry order; on narrow screens scroll the roster horizontally instead of shrinking or wrapping cards into an unreadable grid.", "section": "layout" },
+      { "name": "The One-Texture World Rule", "body": "Build each map's scenery depth once from deterministic code-native layers; never add decorative per-frame scenery work, remote textures, or image-backed terrain.", "section": "elevation" },
+      { "name": "The Contextual Guidance Rule", "body": "Show target graphics only in response to selection, acquisition, confirmation, or landing; never leave permanent target art over a physical runway or helipad.", "section": "components" },
+      { "name": "The Redundant Audio Rule", "body": "Every synthesized cue confirms a state already expressed visually or textually; muting sound never removes required information.", "section": "components" }
+    ],
+    "dos": [
+      "Do preserve the raised saltmarsh system as the atlas parent: credible civil infrastructure, mineral terrain, bone paint, amber taxiway detail, dark glass, and open airspace.",
+      "Do make all four maps recognizable through the documented geographic invariant while keeping aircraft and guidance behavior visually consistent.",
+      "Do keep roster names, difficulty or unlock state, record state, and descriptions bound to the map registry and local career.",
+      "Do show the higher cross-orientation best in the roster and the current-orientation best in active HUD and result surfaces.",
+      "Do use the horizontal snap roster at 720px and below and the shipped short-landscape compaction at 480px height and below.",
+      "Do adapt scenery density through mobile, tablet, and desktop budgets while preserving playable geometry.",
+      "Do use bundled fonts, inline Hugeicons, synthesized Web Audio, and code-native map geometry so the complete system works offline."
+    ],
+    "donts": [
+      "Don't flatten the atlas into four recolored copies of Saltmarsh Gateway or abandon the incumbent civil-airfield family for unrelated visual worlds.",
+      "Don't spend cyan, amber, or coral on decorative terrain, facilities, water, or roster preview bands.",
+      "Don't treat rivers, pools, coast fragments, bridges, or desert strata as permanent target graphics or undisclosed gameplay hazards.",
+      "Don't squeeze the mobile roster into four columns, wrap it into miniature cards, or hide map lock and record state.",
+      "Don't enlarge a map landmark until it crowds routes, aircraft, HUD exclusions, or touch targets.",
+      "Don't introduce remote terrain, font, icon, texture, or audio dependencies, or recurring per-frame work for static scenery."
+    ]
+  }
+}
