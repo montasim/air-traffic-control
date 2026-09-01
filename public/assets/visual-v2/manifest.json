@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-01",
+  "assets": [
+    {
+      "key": "terrain:river-bend:landscape:v1",
+      "path": "/assets/visual-v2/river-bend/terrain-landscape.webp",
+      "width": 1600,
+      "height": 900,
+      "sha256": "b0ff76bd1753780aa03f3afa4271e1117a5035d8be0fb0176494b5fea655e021"
+    },
+    {
+      "key": "terrain:river-bend:portrait:v1",
+      "path": "/assets/visual-v2/river-bend/terrain-portrait.webp",
+      "width": 900,
+      "height": 1600,
+      "sha256": "9901277b88cbf7f66807d685c4438f32d2e7d4a50fc38ec7932c16bff325a23a"
+    },
+    {
+      "key": "terrain:river-bend:square:v1",
+      "path": "/assets/visual-v2/river-bend/terrain-square.webp",
+      "width": 1200,
+      "height": 1200,
+      "sha256": "fe411d15f7c5ff6c9bbcd9a15abed1bf96eb69c3036c4f7fd31fd4fd4ff7d3ab"
+    }
+  ]
+}

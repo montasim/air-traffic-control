@@ -31,8 +31,25 @@ export interface StaticMapPaintContext<Layout> {
 
 export type StaticMapPainter<Layout> = (context: StaticMapPaintContext<Layout>) => void;
 
+/**
+ * The authored order for a static map. Keeping these phases distinct lets a
+ * map replace its scenery treatment (for example, with an approved terrain
+ * plate) without moving or repainting operational airport geometry.
+ */
+export interface StaticMapLayers<Layout> {
+  readonly scenery: StaticMapPainter<Layout>;
+  readonly operational: StaticMapPainter<Layout>;
+  readonly detail: StaticMapPainter<Layout>;
+}
+
+export type StaticMapPaintPlan<Layout> =
+  | StaticMapPainter<Layout>
+  | StaticMapLayers<Layout>;
+
 export interface StaticMapComposeOptions {
   readonly depth?: number;
+  /** Optional approved terrain-only plate drawn beneath operational geometry. */
+  readonly sceneryTextureKey?: string;
 }
 
 export interface MapDetailBudget {
@@ -47,4 +64,3 @@ export const MAP_DETAIL_BUDGETS: Readonly<Record<WorldDetailLevel, MapDetailBudg
   tablet: { fieldLines: 14, trees: 22, surfaceWear: 14, riverSubdivisions: 8 },
   desktop: { fieldLines: 22, trees: 34, surfaceWear: 22, riverSubdivisions: 12 }
 };
-

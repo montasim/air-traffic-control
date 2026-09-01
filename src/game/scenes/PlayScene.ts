@@ -15,6 +15,7 @@ import {
 } from '../../core/types';
 import type { FeedbackEvent } from '../../app/feedbackEvents';
 import { AIRCRAFT_STYLE } from '../content';
+import { queuePresentationAssets } from '../assets/presentationAssets';
 import { SALTMARSH_GATEWAY_DEFINITION } from '../maps/saltmarsh-gateway';
 import { trafficProfileById } from '../maps/trafficProfiles';
 import type {
@@ -70,6 +71,17 @@ export class PlayScene extends Phaser.Scene {
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION
   ) {
     super('play');
+  }
+
+  preload(): void {
+    const width = this.scale.gameSize.width;
+    const height = this.scale.gameSize.height;
+    const detailLevel = profileForViewport().detailLevel;
+    const preview = this.mapDefinition.prepare({ width, height, detailLevel });
+    queuePresentationAssets(this, {
+      mapId: this.mapDefinition.id,
+      variant: preview.layout.variant
+    });
   }
 
   create(): void {
