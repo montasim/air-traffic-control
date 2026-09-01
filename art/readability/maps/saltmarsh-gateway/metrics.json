@@ -1,0 +1,72 @@
+{
+  "candidates": {
+    "g0-approved": {
+      "bytes": 2913669,
+      "path": "art/readability/maps/saltmarsh-gateway/g0-approved.png",
+      "scenerySaturationReduction": 0.0,
+      "sha256": "d754e81a7c075f309244b1d93d6a92e0d8c00db7af7bb4fad7bd5449bb28d733",
+      "vsApproved": {
+        "operationalPsnrDb": 99.0,
+        "operationalSsim": 1.0,
+        "psnrDb": 99.0,
+        "ssim": 1.0
+      }
+    },
+    "g1-atlas-muted": {
+      "bytes": 2872168,
+      "path": "art/readability/maps/saltmarsh-gateway/g1-atlas-muted.png",
+      "scenerySaturationReduction": 0.154117,
+      "sha256": "5d53e1cd1cc41268008d3fed0120191324faf6c248cc04e19e362098cc4dc1b2",
+      "vsApproved": {
+        "operationalPsnrDb": 26.045302,
+        "operationalSsim": 0.969919,
+        "psnrDb": 25.298218,
+        "ssim": 0.975599
+      }
+    },
+    "g2-airspace-focus": {
+      "bytes": 2876495,
+      "path": "art/readability/maps/saltmarsh-gateway/g2-airspace-focus.png",
+      "scenerySaturationReduction": 0.223752,
+      "sha256": "7fcd4cd703f96fecd1751244d6d10f789dc93cdff2d590214fd98cb5c08a3452",
+      "vsApproved": {
+        "operationalPsnrDb": 50.066904,
+        "operationalSsim": 0.999859,
+        "psnrDb": 24.008057,
+        "ssim": 0.960644
+      }
+    }
+  },
+  "height": 941,
+  "mapId": "saltmarsh-gateway",
+  "metricMaxDimension": 512,
+  "operationalBounds": [
+    [
+      770,
+      55,
+      1575,
+      535
+    ]
+  ],
+  "protectionBounds": [
+    [
+      680,
+      15,
+      1660,
+      610
+    ]
+  ],
+  "selectedGrade": "g2-airspace-focus",
+  "selectionPolicy": {
+    "fallbackGrade": "g0-approved",
+    "operationalSsimMinimum": 0.995,
+    "preferredGrade": "g2-airspace-focus",
+    "scenerySaturationReductionRange": [
+      0.1,
+      0.3
+    ]
+  },
+  "source": "art/maps/approved-concepts/saltmarsh-gateway-landscape-concept.png",
+  "sourceSha256": "1f4f5fc530f9b0992fa3c597b1207aff60a9dca2fef5e36f392ef04a03cec182",
+  "width": 1672
+}

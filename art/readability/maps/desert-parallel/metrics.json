@@ -1,0 +1,72 @@
+{
+  "candidates": {
+    "g0-approved": {
+      "bytes": 2628649,
+      "path": "art/readability/maps/desert-parallel/g0-approved.png",
+      "scenerySaturationReduction": 0.0,
+      "sha256": "41f882fcf4bb086dcfce59539a1e4dc3013bf792851c208a28c16f43e787e2a2",
+      "vsApproved": {
+        "operationalPsnrDb": 99.0,
+        "operationalSsim": 1.0,
+        "psnrDb": 99.0,
+        "ssim": 1.0
+      }
+    },
+    "g1-atlas-muted": {
+      "bytes": 2587493,
+      "path": "art/readability/maps/desert-parallel/g1-atlas-muted.png",
+      "scenerySaturationReduction": 0.154201,
+      "sha256": "4e463c76f93b158904214becd6c9d9c31508edf1d7e5dae454382b9b9339ca1a",
+      "vsApproved": {
+        "operationalPsnrDb": 26.527572,
+        "operationalSsim": 0.976436,
+        "psnrDb": 25.968905,
+        "ssim": 0.979009
+      }
+    },
+    "g2-airspace-focus": {
+      "bytes": 2597367,
+      "path": "art/readability/maps/desert-parallel/g2-airspace-focus.png",
+      "scenerySaturationReduction": 0.214093,
+      "sha256": "dfd4fb54412626c874c9dee50026d5ddbe5def8efc4869aefec6c929deb2a6fa",
+      "vsApproved": {
+        "operationalPsnrDb": 55.116987,
+        "operationalSsim": 0.999902,
+        "psnrDb": 25.686544,
+        "ssim": 0.960194
+      }
+    }
+  },
+  "height": 941,
+  "mapId": "desert-parallel",
+  "metricMaxDimension": 512,
+  "operationalBounds": [
+    [
+      455,
+      170,
+      1460,
+      690
+    ]
+  ],
+  "protectionBounds": [
+    [
+      380,
+      105,
+      1535,
+      755
+    ]
+  ],
+  "selectedGrade": "g2-airspace-focus",
+  "selectionPolicy": {
+    "fallbackGrade": "g0-approved",
+    "operationalSsimMinimum": 0.995,
+    "preferredGrade": "g2-airspace-focus",
+    "scenerySaturationReductionRange": [
+      0.1,
+      0.3
+    ]
+  },
+  "source": "art/maps/approved-concepts/desert-parallel-landscape-concept.png",
+  "sourceSha256": "01f9f6b12064ffd9b817214d886e5075b0472dea129e6f5f8a129922b7db2e42",
+  "width": 1672
+}

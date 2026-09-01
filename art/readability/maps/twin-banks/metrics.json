@@ -1,0 +1,84 @@
+{
+  "candidates": {
+    "g0-approved": {
+      "bytes": 3056281,
+      "path": "art/readability/maps/twin-banks/g0-approved.png",
+      "scenerySaturationReduction": 0.0,
+      "sha256": "743106b3442a3eb49f492430441b799cd871cc1875c83418a5bebf402b3d1f70",
+      "vsApproved": {
+        "operationalPsnrDb": 99.0,
+        "operationalSsim": 1.0,
+        "psnrDb": 99.0,
+        "ssim": 1.0
+      }
+    },
+    "g1-atlas-muted": {
+      "bytes": 3023579,
+      "path": "art/readability/maps/twin-banks/g1-atlas-muted.png",
+      "scenerySaturationReduction": 0.15497,
+      "sha256": "6589b64e98407c677a456f4780dacdbd61f62a56c075f258b60acd5fd04f36bd",
+      "vsApproved": {
+        "operationalPsnrDb": 25.27263,
+        "operationalSsim": 0.954795,
+        "psnrDb": 25.034395,
+        "ssim": 0.960917
+      }
+    },
+    "g2-airspace-focus": {
+      "bytes": 3042309,
+      "path": "art/readability/maps/twin-banks/g2-airspace-focus.png",
+      "scenerySaturationReduction": 0.182197,
+      "sha256": "300850f9a8314e3967c7d0d4d1184bf168d7e34e167c8b2877f700adee93efc7",
+      "vsApproved": {
+        "operationalPsnrDb": 51.067466,
+        "operationalSsim": 0.999864,
+        "psnrDb": 28.513587,
+        "ssim": 0.981595
+      }
+    }
+  },
+  "height": 941,
+  "mapId": "twin-banks",
+  "metricMaxDimension": 512,
+  "operationalBounds": [
+    [
+      65,
+      115,
+      535,
+      690
+    ],
+    [
+      805,
+      125,
+      1575,
+      790
+    ]
+  ],
+  "protectionBounds": [
+    [
+      15,
+      70,
+      610,
+      760
+    ],
+    [
+      720,
+      70,
+      1660,
+      850
+    ]
+  ],
+  "selectedGrade": "g2-airspace-focus",
+  "selectionPolicy": {
+    "fallbackGrade": "g0-approved",
+    "operationalSsimMinimum": 0.995,
+    "preferredGrade": "g2-airspace-focus",
+    "scenerySaturationReductionRange": [
+      0.1,
+      0.3
+    ]
+  },
+  "source": "art/maps/approved-concepts/twin-banks-landscape-concept.png",
+  "sourceSha256": "1607a64b92616cedc0d6fd680abb7f4df9fc9a97d27ce83e24dbd9560f1d2110",
+  "width": 1672
+}

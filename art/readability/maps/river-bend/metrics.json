@@ -1,0 +1,72 @@
+{
+  "candidates": {
+    "g0-approved": {
+      "bytes": 2903768,
+      "path": "art/readability/maps/river-bend/g0-approved.png",
+      "scenerySaturationReduction": 0.0,
+      "sha256": "335a33a679ef0c5e89e44cc98dea05f2515130fb6ff8648c787d8f5b246cac77",
+      "vsApproved": {
+        "operationalPsnrDb": 99.0,
+        "operationalSsim": 1.0,
+        "psnrDb": 99.0,
+        "ssim": 1.0
+      }
+    },
+    "g1-atlas-muted": {
+      "bytes": 2861013,
+      "path": "art/readability/maps/river-bend/g1-atlas-muted.png",
+      "scenerySaturationReduction": 0.158383,
+      "sha256": "9f50d0258204ff4e6573b7e386e370e711be047b7508d0fa9e027eb14264df62",
+      "vsApproved": {
+        "operationalPsnrDb": 26.808317,
+        "operationalSsim": 0.978441,
+        "psnrDb": 25.326219,
+        "ssim": 0.968912
+      }
+    },
+    "g2-airspace-focus": {
+      "bytes": 2874694,
+      "path": "art/readability/maps/river-bend/g2-airspace-focus.png",
+      "scenerySaturationReduction": 0.229081,
+      "sha256": "dcf44d336bfb61c453eccaef82fd6d052d78104d248601765f39a660aab79f91",
+      "vsApproved": {
+        "operationalPsnrDb": 47.984043,
+        "operationalSsim": 0.999797,
+        "psnrDb": 23.7312,
+        "ssim": 0.951039
+      }
+    }
+  },
+  "height": 941,
+  "mapId": "river-bend",
+  "metricMaxDimension": 512,
+  "operationalBounds": [
+    [
+      735,
+      40,
+      1550,
+      510
+    ]
+  ],
+  "protectionBounds": [
+    [
+      655,
+      10,
+      1635,
+      590
+    ]
+  ],
+  "selectedGrade": "g2-airspace-focus",
+  "selectionPolicy": {
+    "fallbackGrade": "g0-approved",
+    "operationalSsimMinimum": 0.995,
+    "preferredGrade": "g2-airspace-focus",
+    "scenerySaturationReductionRange": [
+      0.1,
+      0.3
+    ]
+  },
+  "source": "art/maps/approved-concepts/river-bend-landscape-concept.png",
+  "sourceSha256": "e9a5aaf7887c8bb3d45548062a7c54078cf08d7da2892cabb0da17d9044c9f91",
+  "width": 1672
+}
