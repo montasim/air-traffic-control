@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { createGuidanceGeometry } from '../../src/game/rendering/guidanceGeometry';
+import {
+  createGuidanceGeometry,
+  guidanceStrokeMetrics,
+  guidanceTransientDuration
+} from '../../src/game/rendering/guidanceGeometry';
 
 describe('guidance geometry', () => {
   it('defaults metadata-free targets to a bounded nondirectional pad', () => {
@@ -58,5 +62,24 @@ describe('guidance geometry', () => {
     expect(inferred.approachFarHalfWidth).toBeGreaterThan(
       inferred.approachNearHalfWidth
     );
+  });
+
+  it('keeps the semantic color core inside a wider neutral casing', () => {
+    const compatible = guidanceStrokeMetrics(40, 'compatible');
+    const locked = guidanceStrokeMetrics(40, 'locked');
+    const transient = guidanceStrokeMetrics(40, 'transient');
+
+    for (const stroke of [compatible, locked, transient]) {
+      expect(stroke.casingWidth).toBeGreaterThan(stroke.coreWidth);
+      expect(stroke.casingAlpha).toBeGreaterThan(0);
+      expect(stroke.coreAlpha).toBeGreaterThan(stroke.casingAlpha);
+    }
+    expect(compatible.coreWidth).toBeLessThan(locked.coreWidth);
+    expect(compatible.coreAlpha).toBeLessThan(locked.coreAlpha);
+  });
+
+  it('preserves the established transient guidance durations', () => {
+    expect(guidanceTransientDuration('confirmed')).toBe(360);
+    expect(guidanceTransientDuration('landing-started')).toBe(820);
   });
 });

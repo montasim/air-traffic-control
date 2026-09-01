@@ -1,7 +1,11 @@
 import Phaser from 'phaser';
 import {
   createGuidanceGeometry,
+  guidanceTransientDuration,
+  guidanceStrokeMetrics,
   type GuidanceGeometry,
+  type GuidanceEmphasis,
+  type GuidanceStrokeMetrics,
   type RouteGuidanceTargetKind
 } from './guidanceGeometry';
 
@@ -36,10 +40,9 @@ export interface RouteGuidanceRendererOptions {
   reducedMotion?: boolean;
 }
 
-const CONFIRMED_DURATION_MS = 360;
-const LANDING_PULSE_DURATION_MS = 820;
 const INVALID_COLOR = 0xf3a08d;
-const SURFACE_COLOR = 0x102923;
+const CASING_COLOR = 0x102a3a;
+const QUIET_NEUTRAL = 0xd9cfb7;
 const RUNWAY_LIGHT_COUNT = 6;
 
 /**
@@ -56,6 +59,9 @@ export class RouteGuidanceRenderer {
   private visible = true;
   private geometry: GuidanceGeometry;
   private color: number;
+  private compatibleStroke: GuidanceStrokeMetrics;
+  private lockedStroke: GuidanceStrokeMetrics;
+  private transientStroke: GuidanceStrokeMetrics;
 
   constructor(
     scene: Phaser.Scene,
@@ -64,6 +70,15 @@ export class RouteGuidanceRenderer {
   ) {
     this.geometry = createGuidanceGeometry(target);
     this.color = target.color;
+    this.compatibleStroke = guidanceStrokeMetrics(
+      this.geometry.captureRadius,
+      'compatible'
+    );
+    this.lockedStroke = guidanceStrokeMetrics(this.geometry.captureRadius, 'locked');
+    this.transientStroke = guidanceStrokeMetrics(
+      this.geometry.captureRadius,
+      'transient'
+    );
     this.reducedMotion = options.reducedMotion ?? false;
     this.graphics = scene.add.graphics().setDepth(options.depth ?? 5);
     this.render();
@@ -76,6 +91,15 @@ export class RouteGuidanceRenderer {
   setTarget(target: RouteGuidanceTarget): void {
     this.geometry = createGuidanceGeometry(target);
     this.color = target.color;
+    this.compatibleStroke = guidanceStrokeMetrics(
+      this.geometry.captureRadius,
+      'compatible'
+    );
+    this.lockedStroke = guidanceStrokeMetrics(this.geometry.captureRadius, 'locked');
+    this.transientStroke = guidanceStrokeMetrics(
+      this.geometry.captureRadius,
+      'transient'
+    );
     this.render();
   }
 
@@ -117,9 +141,7 @@ export class RouteGuidanceRenderer {
     if (this.state !== 'confirmed' && this.state !== 'landing-started') return;
 
     this.elapsedMilliseconds += Math.max(0, deltaMilliseconds);
-    const duration = this.state === 'confirmed'
-      ? CONFIRMED_DURATION_MS
-      : LANDING_PULSE_DURATION_MS;
+    const duration = guidanceTransientDuration(this.state);
 
     if (this.elapsedMilliseconds >= duration) {
       this.state = this.restingState;
@@ -158,36 +180,46 @@ export class RouteGuidanceRenderer {
 
   private drawCompatible(): void {
     const { x, y, captureRadius, kind } = this.geometry;
-    this.graphics.fillStyle(this.color, 0.022);
+    const stroke = this.compatibleStroke;
+    this.graphics.fillStyle(this.color, 0.018);
     this.graphics.fillCircle(x, y, captureRadius);
-    this.graphics.lineStyle(2, this.color, 0.52);
+    this.graphics.lineStyle(stroke.casingWidth, CASING_COLOR, stroke.casingAlpha);
+    this.graphics.strokeCircle(x, y, captureRadius);
+    this.graphics.lineStyle(stroke.coreWidth, this.color, stroke.coreAlpha);
     this.graphics.strokeCircle(x, y, captureRadius);
 
     if (kind === 'runway') {
-      this.drawApproachRails(0.56, false);
-      this.drawRunwayClamp(0.46, 1.04, false);
+      this.drawApproachRails('compatible', false);
+      this.drawRunwayClamp('compatible', 1.04, false, 0.72);
     } else {
-      this.drawPadTicks(captureRadius + 3, captureRadius + 10, 0.72, 2.5);
+      this.drawPadTicks(
+        captureRadius + 3,
+        captureRadius + 10,
+        'compatible',
+        0.84
+      );
     }
   }
 
   private drawLocked(): void {
     const { x, y, captureRadius, kind } = this.geometry;
-    const lineWidth = Math.max(2.5, Math.min(4, captureRadius * 0.075));
+    const stroke = this.lockedStroke;
     this.graphics.fillStyle(this.color, 0.055);
     this.graphics.fillCircle(x, y, captureRadius);
-    this.graphics.lineStyle(lineWidth, this.color, 0.98);
+    this.graphics.lineStyle(stroke.casingWidth, CASING_COLOR, stroke.casingAlpha);
+    this.graphics.strokeCircle(x, y, captureRadius);
+    this.graphics.lineStyle(stroke.coreWidth, this.color, stroke.coreAlpha);
     this.graphics.strokeCircle(x, y, captureRadius);
 
     if (kind === 'runway') {
-      this.drawApproachRails(0.94, true);
-      this.drawRunwayClamp(0.98, 1, true);
+      this.drawApproachRails('locked', true);
+      this.drawRunwayClamp('locked', 1, true, 1);
     } else {
       this.drawPadTicks(
         Math.max(6, captureRadius - 12),
         Math.max(10, captureRadius - 3),
-        0.96,
-        lineWidth
+        'locked',
+        1
       );
       this.drawEndpointAnchor(1);
     }
@@ -196,7 +228,7 @@ export class RouteGuidanceRenderer {
   private drawInvalid(): void {
     // Four separated corners communicate a missed acquisition without adding
     // another icon over the runway number or helipad marking.
-    this.drawCornerBrackets(
+    this.drawCornerBracketsCased(
       this.geometry.captureRadius * 0.76,
       Math.max(8, this.geometry.captureRadius * 0.22),
       INVALID_COLOR,
@@ -204,7 +236,28 @@ export class RouteGuidanceRenderer {
     );
   }
 
-  private drawApproachRails(alpha: number, locked: boolean): void {
+  private drawApproachRails(emphasis: GuidanceEmphasis, locked: boolean): void {
+    const stroke = this.strokeFor(emphasis);
+    this.drawApproachRailPass(
+      stroke.casingWidth,
+      CASING_COLOR,
+      stroke.casingAlpha,
+      locked
+    );
+    this.drawApproachRailPass(
+      stroke.coreWidth,
+      this.color,
+      stroke.coreAlpha,
+      locked
+    );
+  }
+
+  private drawApproachRailPass(
+    lineWidth: number,
+    color: number,
+    alpha: number,
+    locked: boolean
+  ): void {
     const {
       x,
       y,
@@ -223,7 +276,7 @@ export class RouteGuidanceRenderer {
     const farX = x + outwardX * approachLength;
     const farY = y + outwardY * approachLength;
 
-    this.graphics.lineStyle(locked ? 3 : 2.25, this.color, alpha);
+    this.graphics.lineStyle(lineWidth, color, alpha);
     for (let side = -1; side <= 1; side += 2) {
       this.graphics.lineBetween(
         nearX + normalX * approachNearHalfWidth * side,
@@ -233,7 +286,7 @@ export class RouteGuidanceRenderer {
       );
     }
 
-    this.graphics.lineStyle(locked ? 2.4 : 1.8, this.color, alpha * 0.68);
+    this.graphics.lineStyle(lineWidth * 0.8, color, alpha * 0.68);
     const gateCount = locked ? 3 : 2;
     for (let index = 1; index <= gateCount; index += 1) {
       const ratio = index / (gateCount + 1);
@@ -251,7 +304,38 @@ export class RouteGuidanceRenderer {
     }
   }
 
-  private drawRunwayClamp(alpha: number, scale: number, filled: boolean): void {
+  private drawRunwayClamp(
+    emphasis: GuidanceEmphasis,
+    scale: number,
+    filled: boolean,
+    alpha: number
+  ): void {
+    const stroke = this.strokeFor(emphasis);
+    this.drawRunwayClampPass(
+      stroke.casingWidth,
+      CASING_COLOR,
+      stroke.casingAlpha * alpha,
+      scale
+    );
+    this.drawRunwayClampPass(
+      stroke.coreWidth,
+      this.color,
+      stroke.coreAlpha * alpha,
+      scale
+    );
+    if (filled) {
+      const { x, y, captureRadius } = this.geometry;
+      this.graphics.fillStyle(this.color, 0.08 * alpha);
+      this.graphics.fillCircle(x, y, captureRadius * 0.4 * scale);
+    }
+  }
+
+  private drawRunwayClampPass(
+    lineWidth: number,
+    color: number,
+    alpha: number,
+    scale: number
+  ): void {
     const {
       x,
       y,
@@ -265,8 +349,7 @@ export class RouteGuidanceRenderer {
     const along = captureRadius * 0.42 * scale;
     const halfWidth = runwayHalfWidth * 0.78 * scale;
     const arm = captureRadius * 0.18 * scale;
-    const lineWidth = Math.max(2.5, Math.min(4.2, captureRadius * 0.08));
-    this.graphics.lineStyle(lineWidth, this.color, alpha);
+    this.graphics.lineStyle(lineWidth, color, alpha);
 
     for (let side = -1; side <= 1; side += 2) {
       const centerX = x + inwardX * along * side;
@@ -290,10 +373,6 @@ export class RouteGuidanceRenderer {
       );
     }
 
-    if (filled) {
-      this.graphics.fillStyle(this.color, 0.08 * alpha);
-      this.graphics.fillCircle(x, y, captureRadius * 0.4 * scale);
-    }
   }
 
   private drawTerminalChevrons(alpha: number, progress: number): void {
@@ -309,7 +388,35 @@ export class RouteGuidanceRenderer {
     const distance = captureRadius * (1.08 - progress * 0.34);
     const arm = captureRadius * 0.23;
     const pointInset = captureRadius * 0.2;
-    this.graphics.lineStyle(3, this.color, alpha * 0.92);
+    const stroke = this.transientStroke;
+    this.drawTerminalChevronPass(
+      stroke.casingWidth,
+      CASING_COLOR,
+      alpha * stroke.casingAlpha,
+      distance,
+      arm,
+      pointInset
+    );
+    this.drawTerminalChevronPass(
+      stroke.coreWidth,
+      this.color,
+      alpha * stroke.coreAlpha,
+      distance,
+      arm,
+      pointInset
+    );
+  }
+
+  private drawTerminalChevronPass(
+    lineWidth: number,
+    color: number,
+    alpha: number,
+    distance: number,
+    arm: number,
+    pointInset: number
+  ): void {
+    const { x, y, inwardX, inwardY, normalX, normalY } = this.geometry;
+    this.graphics.lineStyle(lineWidth, color, alpha);
 
     for (let side = -1; side <= 1; side += 2) {
       const baseX = x + inwardX * distance * side;
@@ -332,13 +439,16 @@ export class RouteGuidanceRenderer {
   }
 
   private drawConfirmed(): void {
-    const progress = Math.min(1, this.elapsedMilliseconds / CONFIRMED_DURATION_MS);
+    const progress = Math.min(
+      1,
+      this.elapsedMilliseconds / guidanceTransientDuration('confirmed')
+    );
     const eased = 1 - Math.pow(1 - progress, 3);
     const alpha = Math.max(0, 1 - progress);
     const scale = this.reducedMotion ? 1 : 1.18 - eased * 0.18;
 
     if (this.geometry.kind === 'runway') {
-      this.drawRunwayClamp(alpha, scale, true);
+      this.drawRunwayClamp('transient', scale, true, alpha);
       this.drawTerminalChevrons(alpha, this.reducedMotion ? 1 : eased);
     } else {
       this.drawPadConfirmation(alpha, scale);
@@ -347,7 +457,10 @@ export class RouteGuidanceRenderer {
   }
 
   private drawLandingStarted(): void {
-    const progress = Math.min(1, this.elapsedMilliseconds / LANDING_PULSE_DURATION_MS);
+    const progress = Math.min(
+      1,
+      this.elapsedMilliseconds / guidanceTransientDuration('landing-started')
+    );
     if (this.geometry.kind === 'runway') {
       this.drawRunwayLightSweep(progress);
     } else {
@@ -357,20 +470,46 @@ export class RouteGuidanceRenderer {
 
   private drawEndpointAnchor(alpha: number, scale = 1): void {
     const { x, y } = this.geometry;
-    this.graphics.fillStyle(this.color, 0.96 * alpha);
-    this.graphics.fillCircle(x, y, 6 * scale);
-    this.graphics.fillStyle(SURFACE_COLOR, 0.92 * alpha);
-    this.graphics.fillCircle(x, y, 2.5 * scale);
+    this.graphics.fillStyle(CASING_COLOR, 0.96 * alpha);
+    this.graphics.fillCircle(x, y, 8 * scale);
+    this.graphics.fillStyle(this.color, 0.98 * alpha);
+    this.graphics.fillCircle(x, y, 5 * scale);
+    this.graphics.fillStyle(QUIET_NEUTRAL, 0.94 * alpha);
+    this.graphics.fillCircle(x, y, 1.8 * scale);
   }
 
   private drawPadTicks(
     innerRadius: number,
     outerRadius: number,
-    alpha: number,
-    lineWidth: number
+    emphasis: GuidanceEmphasis,
+    alpha: number
+  ): void {
+    const stroke = this.strokeFor(emphasis);
+    this.drawPadTickPass(
+      innerRadius,
+      outerRadius,
+      stroke.casingWidth,
+      CASING_COLOR,
+      stroke.casingAlpha * alpha
+    );
+    this.drawPadTickPass(
+      innerRadius,
+      outerRadius,
+      stroke.coreWidth,
+      this.color,
+      stroke.coreAlpha * alpha
+    );
+  }
+
+  private drawPadTickPass(
+    innerRadius: number,
+    outerRadius: number,
+    lineWidth: number,
+    color: number,
+    alpha: number
   ): void {
     const { x, y } = this.geometry;
-    this.graphics.lineStyle(lineWidth, this.color, alpha);
+    this.graphics.lineStyle(lineWidth, color, alpha);
     for (let index = 0; index < 4; index += 1) {
       const angle = index * Math.PI * 0.5;
       const cosine = Math.cos(angle);
@@ -388,8 +527,8 @@ export class RouteGuidanceRenderer {
     const { captureRadius } = this.geometry;
     const outer = captureRadius * 0.88 * scale;
     const inner = outer - captureRadius * 0.24;
-    this.drawPadTicks(inner, outer, alpha, 3.5);
-    this.drawCornerBrackets(
+    this.drawPadTicks(inner, outer, 'transient', alpha);
+    this.drawCornerBracketsCased(
       captureRadius * 0.58 * scale,
       captureRadius * 0.18,
       this.color,
@@ -425,6 +564,13 @@ export class RouteGuidanceRenderer {
 
       this.graphics.fillStyle(this.color, waveAlpha);
       for (let side = -1; side <= 1; side += 2) {
+        this.graphics.fillStyle(CASING_COLOR, waveAlpha * 0.78);
+        this.graphics.fillCircle(
+          centerX + normalX * runwayHalfWidth * side,
+          centerY + normalY * runwayHalfWidth * side,
+          dotRadius + 2
+        );
+        this.graphics.fillStyle(this.color, waveAlpha);
         this.graphics.fillCircle(
           centerX + normalX * runwayHalfWidth * side,
           centerY + normalY * runwayHalfWidth * side,
@@ -434,7 +580,7 @@ export class RouteGuidanceRenderer {
     }
 
     const arrival = this.reducedMotion ? 0.74 : Math.max(0, (progress - 0.48) / 0.52);
-    this.drawRunwayClamp(0.86 * arrival, 1, false);
+    this.drawRunwayClamp('transient', 1, false, 0.86 * arrival);
     this.drawEndpointAnchor(Math.max(0.22, arrival), 1 + arrival * 0.12);
   }
 
@@ -446,8 +592,42 @@ export class RouteGuidanceRenderer {
       : captureRadius * (0.48 + progress * 0.42);
     const inner = captureRadius * 0.26;
     const dotRadius = Math.max(2.4, captureRadius * 0.072);
-    this.graphics.lineStyle(3, this.color, alpha * 0.74);
+    const stroke = this.transientStroke;
+    this.drawPadBloomRays(
+      inner,
+      reach,
+      stroke.casingWidth,
+      CASING_COLOR,
+      alpha * stroke.casingAlpha,
+      dotRadius,
+      false
+    );
+    this.drawPadBloomRays(
+      inner,
+      reach,
+      stroke.coreWidth,
+      this.color,
+      alpha * stroke.coreAlpha,
+      dotRadius,
+      true
+    );
 
+    this.graphics.fillStyle(this.color, alpha * 0.18);
+    this.graphics.fillCircle(x, y, captureRadius * 0.24);
+    this.drawEndpointAnchor(alpha);
+  }
+
+  private drawPadBloomRays(
+    inner: number,
+    reach: number,
+    lineWidth: number,
+    color: number,
+    alpha: number,
+    dotRadius: number,
+    drawDots: boolean
+  ): void {
+    const { x, y } = this.geometry;
+    this.graphics.lineStyle(lineWidth, color, alpha);
     for (let index = 0; index < 8; index += 1) {
       const angle = index * Math.PI * 0.25;
       const cosine = Math.cos(angle);
@@ -458,27 +638,49 @@ export class RouteGuidanceRenderer {
         x + cosine * reach,
         y + sine * reach
       );
-      this.graphics.fillStyle(this.color, alpha * 0.86);
-      this.graphics.fillCircle(
-        x + cosine * reach,
-        y + sine * reach,
-        dotRadius
-      );
+      if (drawDots) {
+        this.graphics.fillStyle(color, alpha * 0.86);
+        this.graphics.fillCircle(
+          x + cosine * reach,
+          y + sine * reach,
+          dotRadius
+        );
+      }
     }
+  }
 
-    this.graphics.fillStyle(this.color, alpha * 0.18);
-    this.graphics.fillCircle(x, y, captureRadius * 0.24);
-    this.drawEndpointAnchor(alpha);
+  private drawCornerBracketsCased(
+    radius: number,
+    armLength: number,
+    color: number,
+    alpha: number
+  ): void {
+    const stroke = this.transientStroke;
+    this.drawCornerBrackets(
+      radius,
+      armLength,
+      CASING_COLOR,
+      alpha * stroke.casingAlpha,
+      stroke.casingWidth
+    );
+    this.drawCornerBrackets(
+      radius,
+      armLength,
+      color,
+      alpha * stroke.coreAlpha,
+      stroke.coreWidth
+    );
   }
 
   private drawCornerBrackets(
     radius: number,
     armLength: number,
     color: number,
-    alpha: number
+    alpha: number,
+    lineWidth: number
   ): void {
     const { x, y } = this.geometry;
-    this.graphics.lineStyle(3, color, alpha);
+    this.graphics.lineStyle(lineWidth, color, alpha);
     for (let index = 0; index < 4; index += 1) {
       const sideX = index === 0 || index === 3 ? -1 : 1;
       const sideY = index < 2 ? -1 : 1;
@@ -497,5 +699,11 @@ export class RouteGuidanceRenderer {
         cornerY - sideY * armLength
       );
     }
+  }
+
+  private strokeFor(emphasis: GuidanceEmphasis): GuidanceStrokeMetrics {
+    if (emphasis === 'compatible') return this.compatibleStroke;
+    if (emphasis === 'locked') return this.lockedStroke;
+    return this.transientStroke;
   }
 }

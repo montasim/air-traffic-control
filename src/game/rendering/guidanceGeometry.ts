@@ -32,6 +32,48 @@ export interface GuidanceGeometry {
   runwayHalfWidth: number;
 }
 
+export type GuidanceEmphasis = 'compatible' | 'locked' | 'transient';
+export type GuidanceTransientKind = 'confirmed' | 'landing-started';
+
+export const GUIDANCE_TRANSIENT_DURATION_MS: Readonly<Record<GuidanceTransientKind, number>> = {
+  confirmed: 360,
+  'landing-started': 820
+};
+
+export function guidanceTransientDuration(kind: GuidanceTransientKind): number {
+  return GUIDANCE_TRANSIENT_DURATION_MS[kind];
+}
+
+export interface GuidanceStrokeMetrics {
+  readonly casingWidth: number;
+  readonly coreWidth: number;
+  readonly casingAlpha: number;
+  readonly coreAlpha: number;
+}
+
+/**
+ * Keeps guidance legible without letting passive targets compete with moving
+ * aircraft. The dark casing is always wider than the semantic color core.
+ */
+export function guidanceStrokeMetrics(
+  captureRadius: number,
+  emphasis: GuidanceEmphasis
+): GuidanceStrokeMetrics {
+  const radius = Math.max(16, finiteOr(captureRadius, 16));
+  const coreWidth = emphasis === 'compatible'
+    ? Math.max(1.8, Math.min(2.4, radius * 0.052))
+    : emphasis === 'locked'
+      ? Math.max(2.5, Math.min(3.4, radius * 0.07))
+      : Math.max(2.6, Math.min(3.6, radius * 0.075));
+
+  return {
+    casingWidth: coreWidth + (emphasis === 'compatible' ? 2.2 : 3.2),
+    coreWidth,
+    casingAlpha: emphasis === 'compatible' ? 0.46 : 0.82,
+    coreAlpha: emphasis === 'compatible' ? 0.62 : 0.98
+  };
+}
+
 function finiteOr(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isFinite(value) ? value : fallback;
 }
