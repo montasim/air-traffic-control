@@ -1338,7 +1338,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-tools { grid-column: 1; grid-row: 3; margin: 0; gap: 0; }
   #start-panel .home-tools button { padding: 8px; font-size: 14px; }
   #start-panel .departure-board { grid-column: 2; grid-row: 1 / 4; padding: 12px 18px 16px; }
-  #start-panel .home-preview { display: none; }
+  #start-panel .home-preview { display: block; height: 70px; margin: -12px -18px 8px; }
   #start-panel #field-title { font-size: 26px; }
   #start-panel #field-record { margin: 6px 0 10px; }
   #start-panel #difficulty-description { margin: 6px 0 10px; }
