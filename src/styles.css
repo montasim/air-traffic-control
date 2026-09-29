@@ -48,6 +48,12 @@ body,
 body {
   min-width: 320px;
 }
+/* The outlined native cursor stays legible over grass, water, and runways.
+   Its center is the exact route-drawing hotspot, including while dragging. */
+#game canvas,
+#practice-field {
+  cursor: url("./ui/route-cursor.svg") 16 16, crosshair;
+}
 button,
 input {
   font: inherit;

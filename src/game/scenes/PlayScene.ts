@@ -154,7 +154,6 @@ export class PlayScene extends Phaser.Scene {
     );
     this.routeGuidance.setVisible(false);
 
-    this.input.setDefaultCursor("crosshair");
     this.input.on("pointerdown", this.handlePointerDown, this);
     this.input.on("pointermove", this.handlePointerMove, this);
     this.input.on("pointerup", this.handlePointerUp, this);
