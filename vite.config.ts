@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
-  plugins: [
+export default defineConfig(({ mode }) => ({
+  plugins: mode === 'desktop' ? [] : [
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
@@ -36,4 +36,4 @@ export default defineConfig({
     sourcemap: true,
     chunkSizeWarningLimit: 1600
   }
-});
+}));

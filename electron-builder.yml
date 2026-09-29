@@ -1,0 +1,46 @@
+appId: dev.montasim.airtrafficcontrol
+productName: Air Traffic Control
+executableName: air-traffic-control
+artifactName: air-traffic-control_${version}_${arch}.${ext}
+asar: true
+npmRebuild: false
+directories:
+  output: release
+files:
+  - electron/main.cjs
+  - dist-desktop/**/*
+  - build/icons/512x512.png
+  - package.json
+  - '!node_modules/**/*'
+linux:
+  syncDesktopName: true
+  category: Game
+  icon: build/icons
+  description: >-
+    Draw flight paths, land aircraft, and avoid collisions across nine airfields.
+    Choose three difficulty levels, unlock locations through a local career,
+    and collect achievements. Play offline with progress saved on your device.
+  synopsis: Draw flight paths, land aircraft, and avoid collisions
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: snap
+      arch: [x64]
+snapcraft:
+  base: core24
+  core24:
+    confinement: strict
+    grade: stable
+    useLXD: true
+    title: Air Traffic Control
+    summary: Draw flight paths, land aircraft, and avoid collisions
+    plugs:
+      - audio-playback
+      - browser-support
+      - desktop
+      - desktop-legacy
+      - gsettings
+      - network
+      - opengl
+      - wayland
+      - x11

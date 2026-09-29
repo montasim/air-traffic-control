@@ -3,7 +3,6 @@ import { DIFFICULTY_LABELS, DIFFICULTY_DESCRIPTIONS, isDifficulty, type Difficul
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
 import { renderCareer as renderCareerPage } from "./ui/career";
 import Phaser from "phaser";
-import { registerSW } from "virtual:pwa-register";
 import type { FeedbackEvent } from "./app/feedbackEvents";
 import { GameAudio, WebAudioBackend } from "./audio";
 import type { GameOverReason, SimulationSnapshot } from "./core/types";
@@ -929,7 +928,9 @@ const disposePreviews = createMapPreviews((id, url) => {
   card?.style.setProperty("--map-preview", `url("${url}")`);
 });
 window.addEventListener("pagehide", disposePreviews, { once: true });
-registerSW({ immediate: true });
+if (import.meta.env.MODE !== "desktop") {
+  void import("virtual:pwa-register").then(({ registerSW }) => registerSW({ immediate: true }));
+}
 
 review?.mountReviewControls((reason, score) => {
   playScene()?.pauseRun();
