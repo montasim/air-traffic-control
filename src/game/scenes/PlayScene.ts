@@ -42,6 +42,7 @@ import {
   type RouteGuidanceTarget,
 } from "../rendering/RouteGuidanceRenderer";
 import { profileForViewport } from "../viewport";
+import { aircraftSelectionRadius } from "../../core/aircraftSelection";
 
 const GUIDANCE_REJECTION_DURATION = 380;
 const GUIDANCE_CONFIRMATION_DURATION = 400;
@@ -247,8 +248,13 @@ export class PlayScene extends Phaser.Scene {
     for (const aircraft of this.simulation.snapshot().aircraft) {
       if (aircraft.state === "landing") continue;
       const candidateDistance = distance(point, aircraft.position);
-      const hitRadius =
-        aircraft.collisionRadius * (precision === "coarse" ? 4 : 3);
+      const hitRadius = aircraftSelectionRadius(
+        aircraft.type,
+        this.collisionScales[aircraft.type],
+        Math.min(this.game.canvas.clientWidth / this.scale.gameSize.width,
+          this.game.canvas.clientHeight / this.scale.gameSize.height),
+        precision === "coarse",
+      );
       if (
         candidateDistance <= hitRadius &&
         candidateDistance < nearestDistance

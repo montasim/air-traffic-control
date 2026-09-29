@@ -54,6 +54,10 @@ export const AIRCRAFT_TARGET_CSS_MAJOR_AXIS: Readonly<Record<AircraftType, numbe
   rotor: 70
 };
 
+export const AIRCRAFT_MOBILE_CSS_MAJOR_AXIS: Readonly<Record<AircraftType, number>> = {
+  liner: 48, commuter: 44, rotor: 44
+};
+
 /**
  * Keeps aircraft readable after the fixed logical world is scaled onto a
  * small screen. This exact scale is shared by sprites and airframe collision outlines.
@@ -70,7 +74,11 @@ export function aircraftPresentationScale(
   );
   const unscaledCssMajorAxis = AIRCRAFT_SILHOUETTES[type].majorAxis * displayScale;
   if (!Number.isFinite(unscaledCssMajorAxis) || unscaledCssMajorAxis <= 0) return 1;
-  const requested = AIRCRAFT_TARGET_CSS_MAJOR_AXIS[type] / unscaledCssMajorAxis;
+  const shortSide = Math.min(renderedCssSize.width, renderedCssSize.height);
+  const blend = Math.max(0, Math.min(1, (shortSide - 430) / (700 - 430)));
+  const target = AIRCRAFT_MOBILE_CSS_MAJOR_AXIS[type] +
+    blend * (AIRCRAFT_TARGET_CSS_MAJOR_AXIS[type] - AIRCRAFT_MOBILE_CSS_MAJOR_AXIS[type]);
+  const requested = target / unscaledCssMajorAxis;
   return Math.max(1, Math.min(3, requested));
 }
 
