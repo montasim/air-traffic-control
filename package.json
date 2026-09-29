@@ -1,5 +1,5 @@
 {
-  "name": "vector-approach",
+  "name": "air-traffic-control",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -21,5 +21,18 @@
     "vite": "8.2.2",
     "vite-plugin-pwa": "1.3.0",
     "vitest": "4.1.11"
-  }
+  },
+  "description": "A browser air traffic control game with nine airfields, three difficulty levels, and local career progression.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/montasim/air-traffic-control.git"
+  },
+  "bugs": {
+    "url": "https://github.com/montasim/air-traffic-control/issues"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "packageManager": "npm@11.13.0"
 }
