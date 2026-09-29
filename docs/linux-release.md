@@ -1,0 +1,169 @@
+# Linux desktop and Snap Store releases
+
+Air Traffic Control packages the complete game in Electron. No development server or
+internet connection is required to play. The application uses a sandboxed renderer
+without Node.js access. The `aircontrol://game` origin serves only bundled assets.
+Desktop builds exclude the web service worker; updates come from the installed package.
+
+## Build
+
+Use Node.js 24 and npm 11 on Linux x86-64:
+
+```bash
+npm ci
+npm run desktop          # Build and run locally
+npm run package:linux    # Portable AppImage
+npm run package:snap     # Snap Store package
+```
+
+Outputs are in `release/`:
+
+- `air-traffic-control_0.1.0_x86_64.AppImage`
+- `air-traffic-control_0.1.0_amd64.snap`
+- `linux-unpacked/air-traffic-control` (unpacked executable)
+
+The version comes from `package.json`; filenames change when the version changes.
+`npm run package:dir` builds just the unpacked application. Packaging commands explicitly
+disable publishing. `electron-builder.yml` defines the application identity, icons,
+packaged files, and Linux targets. The PNG icon is a raster version of `public/icon.svg`.
+
+Snap builds follow ISPCine's Electron Builder setup: `core24`, strict confinement,
+and an isolated LXD build. Install Snapcraft and LXD if they are not available:
+
+```bash
+sudo snap install snapcraft --classic
+sudo snap install lxd
+sudo usermod -aG lxd "$USER"
+# Log out and back in for group membership, then initialize LXD if needed:
+lxd init --minimal
+npm run package:snap
+```
+
+Do not reinitialize an existing LXD setup. Builds need network access to obtain
+Electron, the base image, and GNOME runtime packages. See the
+[Electron Builder Snap documentation](https://www.electron.build/v26/docs/snap/).
+
+## Verify
+
+```bash
+npm test
+npm run build
+npm run package:dir
+ELECTRON_EXECUTABLE=release/linux-unpacked/air-traffic-control npm run test:desktop
+```
+
+The Electron smoke test requires a graphical session (or `xvfb-run -a` in CI). It
+checks startup, bundled textures/fonts, renderer isolation, starting and pausing a
+shift, and saved difficulty after a restart. It uses a temporary profile.
+
+For the actual confined package, install locally and play a shift with audio:
+
+```bash
+sudo snap install --dangerous release/air-traffic-control_0.1.0_amd64.snap
+snap run air-traffic-control
+```
+
+Here `--dangerous` permits a locally built, unsigned Snap; confinement remains strict.
+Check native Wayland and X11 where available. Verify that saves survive a package
+refresh before promoting the first release to stable.
+
+The desktop has its own IndexedDB saves, separate from browser saves. Snap stores
+its Electron profile in `$SNAP_USER_COMMON/air-traffic-control`, shared across
+revisions. Snap refreshes should retain progress; removing app data erases it.
+Snapd manages store updates; there is no separate Electron updater.
+
+## Publish to Snap Store
+
+The store name `air-traffic-control` was registered on 2026-09-29 under the
+`montasimmamun` publisher account. Registration reserves the name; it does not
+upload a build or publish the app. Keep `executableName` in `electron-builder.yml`
+aligned with this registered name.
+
+```bash
+snapcraft login
+snapcraft whoami
+snapcraft upload release/air-traffic-control_0.1.0_amd64.snap --release=edge
+```
+
+Complete the title, description, icon, screenshots, license, contact, and website
+in the [Snap Store dashboard](https://dashboard.snapcraft.io/). Test the store-installed
+edge revision, then promote the reviewed revision:
+
+```bash
+snapcraft status air-traffic-control
+snapcraft release air-traffic-control <revision> stable
+```
+
+Increment the package version with `npm version patch --no-git-tag-version` before
+subsequent releases, rebuild, and upload. Store registration, upload, review, and
+promotion are separate from creating local build artifacts.
+
+The `Linux desktop` GitHub Actions workflow builds and smoke-tests an AppImage on
+manual dispatch or a `v*` tag push, then retains it as a workflow artifact. It does
+not upload to the Snap Store. See Canonical's [upload command reference](https://documentation.ubuntu.com/snapcraft/9.0/reference/commands/upload/)
+for store upload behavior.
+
+## Verified local artifact (2026-09-29)
+
+`release/air-traffic-control_0.1.0_amd64.snap` was built successfully (106 MiB).
+Archive inspection confirmed the name `air-traffic-control`, title
+`Air Traffic Control`, version `0.1.0`, amd64 architecture, MIT license,
+`core24`, strict confinement, GNOME/GPU command chains, icon, and desktop launcher.
+The bundled `app.asar` SHA-256 matches the unpacked desktop application that passed
+the gameplay and persistence smoke test. Checksums are in `release/SHA256SUMS`.
+
+Snapcraft reported one non-fatal GPU lint warning for Electron's bundled
+`app/libvulkan.so.1`; the GNOME GPU content interface and launch wrapper are present.
+Revision **1** was uploaded, accepted by Store review, released to `latest/edge`,
+then promoted to `latest/stable` on 2026-09-29 under publisher `montasimmamun`.
+The exact Store revision was installed with strict confinement in the Ubuntu 24.04
+LXD environment. Automated checks passed for startup, local fonts and textures,
+renderer isolation, starting and pausing gameplay, and saved difficulty after restart.
+The test used Xvfb; hardware GPU/Wayland behavior and audible playback were not tested.
+
+Published Snap SHA-256:
+`4d15856d6452ded4fb9743fa76fc3a1762170ef76d5470c4925f9c97461cb299`
+
+Install the stable release:
+
+```bash
+sudo snap install air-traffic-control
+snap run air-traffic-control
+```
+
+## Local build environment troubleshooting
+
+The first Snap build failed when the managed LXD container could resolve DNS but
+could not reach external services. Snapcraft initially timed out at
+`snap unset system proxy.http`, then failed at `apt update`.
+
+Applying ISPCine's forwarding rules below restored connectivity on 2026-09-29;
+a request from the build container to `https://api.snapcraft.io` returned HTTP 200.
+The `iptables -C` commands report “Bad rule” when a rule is absent; the commands
+after `||` then insert that rule. That initial message alone does not mean the
+repair failed.
+
+ISPCine's release guide documents LXD forwarding problems on the same host.
+Have an administrator check the firewall's forwarding policy for `lxdbr0` and
+restore container access to the Snap Store and Ubuntu package repositories.
+For an iptables-managed host, that guide uses these narrowly scoped checks/rules:
+
+```bash
+sudo iptables -C FORWARD -i lxdbr0 -j ACCEPT || sudo iptables -I FORWARD 1 -i lxdbr0 -j ACCEPT
+sudo iptables -C FORWARD -o lxdbr0 -j ACCEPT || sudo iptables -I FORWARD 1 -o lxdbr0 -j ACCEPT
+```
+
+If UFW or another firewall manager owns these rules, configure its routed-traffic
+policy instead. These direct rules may not survive a reboot. Then retry
+`npm run package:snap`. Avoid disabling the firewall globally.
+
+### Electron Builder launcher path
+
+Electron Builder 26.15.3 emits `desktop: meta/gui/air-traffic-control.desktop`
+in its generated core24 recipe, but that path exists only in the finished Snap.
+Snapcraft 9.1.3 consequently fails while generating the desktop file.
+`scripts/package-snap.mjs` removes that redundant recipe entry before Snapcraft
+runs. Snapcraft discovers the generated `snap/gui/air-traffic-control.desktop`
+automatically, matching ISPCine's working package. The script also includes the
+license, support links, source repository, and website from `package.json`. Keep using `npm run package:snap`
+so this workaround runs; reassess it when upgrading Electron Builder.

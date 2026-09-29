@@ -54,6 +54,26 @@ Open the local URL printed by Vite, choose an airfield, and start a flight. No A
 | `npm run build` | Type-check and build production assets into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
+## Linux desktop
+
+The Electron version bundles the game for offline play on Linux x86-64, with separate
+local saves from the browser version.
+
+Install the published Linux release from the Snap Store:
+
+```bash
+sudo snap install air-traffic-control
+```
+
+```bash
+npm run desktop       # Build and run Electron
+npm run package:linux # Build an AppImage in release/
+npm run package:snap  # Build a strictly confined core24 Snap (requires Snapcraft + LXD)
+```
+
+See [Linux builds and Snap Store publishing](docs/linux-release.md) for prerequisites,
+verification, installation, and publishing commands.
+
 ## Saves, sound, and offline use
 
 Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
