@@ -2,7 +2,7 @@ import { DIFFICULTIES, DIFFICULTY_LABELS, type DifficultyId } from '../core/diff
 import { ACHIEVEMENTS } from '../progression/achievements';
 import { MAP_DEFINITIONS } from '../game/maps/registry';
 import type { MapId } from '../game/maps/mapIds';
-import { RANK_CATALOG, rankDefinition, rankIndex, isMapUnlocked } from '../progression/ranks';
+import { RANK_CATALOG, rankDefinition, rankIndex, isMapUnlocked, promotionProgress } from '../progression/ranks';
 import type { GameSaveV3 } from '../storage/gameSave';
 import { mountHugeIcon, type AppIconName } from './hugeicons';
 
@@ -17,7 +17,6 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
   const current = rankDefinition(save.career.earnedRankId);
   const level = rankIndex(current.id);
   const next = RANK_CATALOG[level + 1];
-  const best = (id: MapId) => Math.max(...Object.values(save.mapRecords[id].bestScores));
   const overview = node('div', 'career-overview');
   const identity = node('section', 'controller-card');
   identity.setAttribute('aria-label', 'Current clearance');
@@ -36,10 +35,11 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
   promotion.append(node('p', 'career-eyebrow', next ? 'Your next clearance' : 'Career complete'), node('h3', '', next?.name ?? 'Chief of the airspace'));
   if (next) {
     const r = next.requirements;
+    const progress = promotionProgress(save.career, save.mapRecords, r.qualifyingBestScore);
     const requirements: [string, number, number][] = [
       ['Safe landings', save.career.totalSafeLandings, r.minimumSafeLandings],
       ['Completed shifts', save.career.shiftsPlayed, r.minimumShifts],
-      [`Airfields with a best of ${r.qualifyingBestScore}+`, MAP_DEFINITIONS.filter(map => best(map.id) >= r.qualifyingBestScore).length, r.minimumDistinctMaps],
+      [`Airfields with a best of ${r.qualifyingBestScore}+`, progress.distinctMaps, r.minimumDistinctMaps],
     ];
     promotion.append(node('p', 'promotion-caption', 'Complete all three objectives to earn your promotion.'));
     const objectives = node('div', 'promotion-objectives');

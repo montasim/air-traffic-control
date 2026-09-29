@@ -21,6 +21,7 @@ import {
   isMapUnlocked,
   rankDefinition,
   rankIndex,
+  promotionProgress,
 } from "./progression/ranks";
 import {
   createGameStore,
@@ -361,8 +362,8 @@ function rankProgressCopy(): string {
   const next = RANK_CATALOG[currentIndex + 1];
   if (!next) return "Highest clearance earned.";
   const requirements = next.requirements;
-  const mapLabel = requirements.minimumDistinctMaps === 1 ? "map" : "maps";
-  return `${currentSave.career.totalSafeLandings}/${requirements.minimumSafeLandings} safe landings · ${currentSave.career.shiftsPlayed}/${requirements.minimumShifts} shifts · best ${requirements.qualifyingBestScore}+ on ${requirements.minimumDistinctMaps} ${mapLabel}`;
+  const progress = promotionProgress(currentSave.career, currentSave.mapRecords, requirements.qualifyingBestScore);
+  return `${currentSave.career.totalSafeLandings}/${requirements.minimumSafeLandings} safe landings · ${currentSave.career.shiftsPlayed}/${requirements.minimumShifts} shifts · ${progress.distinctMaps}/${requirements.minimumDistinctMaps} airfields with a best of ${requirements.qualifyingBestScore}+`;
 }
 
 function renderCareer(): void {
