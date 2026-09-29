@@ -123,7 +123,7 @@ mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
 mountHugeIcon(elements.restartIcon, "restart", 18);
 mountHugeIcon(elements.chooseMapIcon, "home", 18);
-for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart"] as const) {
+for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close"] as const) {
   document.querySelectorAll<HTMLElement>(`[data-ui-icon="${name}"]`).forEach(target => {
     mountHugeIcon(target, name, 18);
   });
@@ -185,6 +185,8 @@ let volumeSaveTimer = 0;
 let promotionAudioTimer = 0;
 let focusBeforePanel: HTMLElement | null = null;
 let routeCoachCompleted = routeCoachWasCompleted();
+let routeCoachDismissed = false;
+try { routeCoachDismissed = sessionStorage.getItem("vector-approach:route-coach-dismissed") === "1"; } catch { /* Session-only fallback. */ }
 let routeCoachTimer = 0;
 let scorePulseTimer = 0;
 
@@ -244,7 +246,7 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
     });
   });
   nextGame.events.on("route-coach", (stage: "selected" | "locked" | "set") => {
-    if (routeCoachCompleted) return;
+    if (routeCoachCompleted || routeCoachDismissed) return;
     window.clearTimeout(routeCoachTimer);
     elements.routeCoachmarkCopy.textContent =
       stage === "selected"
@@ -343,6 +345,13 @@ function hideRouteCoachmark(): void {
   window.clearTimeout(routeCoachTimer);
   elements.routeCoachmark.hidden = true;
 }
+
+document.querySelector("#dismiss-route-coach")!.addEventListener("click", () => {
+  routeCoachDismissed = true;
+  try { sessionStorage.setItem("vector-approach:route-coach-dismissed", "1"); } catch { /* Memory fallback. */ }
+  hideRouteCoachmark();
+  elements.pauseButton.focus({ preventScroll: true });
+});
 
 function activeRecord() {
   return currentSave.mapRecords[activeMapId];
@@ -491,10 +500,11 @@ function beginRun(): void {
   elements.resumeLabel.textContent = "Resume";
   elements.score.textContent = "00";
   hideRouteCoachmark();
-  if (!routeCoachCompleted) {
+  if (!routeCoachCompleted && !routeCoachDismissed) {
     elements.routeCoachmarkCopy.textContent =
-      "Drag an aircraft to its matching color and letter. L: airliner · C: commuter · H: helicopter.";
+      "Drag an aircraft to its matching runway or helipad.";
     elements.routeCoachmark.hidden = false;
+    routeCoachTimer = window.setTimeout(hideRouteCoachmark, 6_000);
   }
 }
 
@@ -854,6 +864,7 @@ function openUtility(screen: string, pushHistory = true): void {
     utilityReturnPanel = [elements.pausePanel, elements.gameoverPanel, elements.startPanel]
       .find(panel => !panel.hidden) ?? elements.startPanel;
   }
+  hideRouteCoachmark();
   resetPractice();
   for (const name of utilityNames) {
     document.querySelector<HTMLElement>(`#${name}-content`)!.hidden = name !== screen;
@@ -936,7 +947,7 @@ document.addEventListener("keydown", (event) => {
   if (!panel || event.key !== "Tab") return;
   const controls = [
     ...panel.querySelectorAll<HTMLElement>(
-      "button:not(:disabled),input:not(:disabled),summary",
+      'button:not(:disabled),input:not(:disabled),summary,[tabindex="0"]',
     ),
   ].filter((node) => node.getClientRects().length > 0);
   const first = controls[0],

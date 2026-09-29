@@ -80,6 +80,7 @@
           <strong id="route-coachmark-copy"
             >Select an aircraft to plot its approach.</strong
           >
+          <button id="dismiss-route-coach" type="button" aria-label="Close hint"><span data-ui-icon="close" aria-hidden="true"></span></button>
         </aside>
 
         <header class="hud" aria-label="Game status">
@@ -227,25 +228,27 @@
           hidden
         >
           <div class="panel-content">
-            <h2 id="gameover-code">Collision</h2>
-            <p id="gameover-copy">Two aircraft collided.</p>
-            <dl class="result-grid" aria-label="Game result">
-              <div>
-                <dt>Score</dt>
-                <dd id="final-score">00</dd>
-              </div>
-              <div>
-                <dt id="result-best-label">Best</dt>
-                <dd id="final-best">00</dd>
-              </div>
-            </dl>
-            <p id="result-difficulty"></p>
-            <p id="achievement-result" class="achievement-result" hidden></p>
-            <p id="record-message" hidden>New personal best!</p>
-            <p id="career-result" class="career-result" aria-live="polite">
-              Recording shift…
-            </p>
-            <div class="panel-actions">
+            <div class="result-body" role="region" aria-label="Shift details" tabindex="0">
+              <h2 id="gameover-code">Collision</h2>
+              <p id="gameover-copy">Two aircraft collided.</p>
+              <dl class="result-grid" aria-label="Game result">
+                <div>
+                  <dt>Score</dt>
+                  <dd id="final-score">00</dd>
+                </div>
+                <div>
+                  <dt id="result-best-label">Best</dt>
+                  <dd id="final-best">00</dd>
+                </div>
+              </dl>
+              <p id="result-difficulty"></p>
+              <p id="achievement-result" class="achievement-result" hidden></p>
+              <p id="record-message" hidden>New personal best!</p>
+              <p id="career-result" class="career-result" aria-live="polite">
+                Recording shift…
+              </p>
+            </div>
+            <div class="panel-actions result-actions">
               <button
                 id="restart-button"
                 class="primary-button button-with-icon"

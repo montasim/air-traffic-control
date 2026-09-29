@@ -1,3 +1,4 @@
+import Cancel01Icon from '@hugeicons/core-free-icons/Cancel01Icon';
 import Target01Icon from '@hugeicons/core-free-icons/Target01Icon';
 import AirportTowerIcon from '@hugeicons/core-free-icons/AirportTowerIcon';
 import Medal01Icon from '@hugeicons/core-free-icons/Medal01Icon';
@@ -22,6 +23,7 @@ type IconAttributes = Readonly<Record<string, string | number>>;
 type HugeIconData = readonly (readonly [string, IconAttributes])[];
 
 export const APP_ICONS = {
+  close: Cancel01Icon,
   landing: AirplaneLanding01Icon,
   fleet: Airplane02Icon,
   safety: Shield01Icon,
