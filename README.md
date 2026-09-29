@@ -8,6 +8,8 @@ Air Traffic Control is a browser arcade game for short, increasingly busy air-tr
 
 ## Play
 
+[Play Air Traffic Control](https://airtrafficcontrol.netlify.app/) in your browser.
+
 Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Play**. The **How to play** page includes a practice flight.
 
 1. Press an aircraft with your mouse, finger, or pen and hold.
