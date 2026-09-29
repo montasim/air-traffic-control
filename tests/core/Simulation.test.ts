@@ -169,7 +169,7 @@ describe('Simulation', () => {
 
     advanceFrames(simulation, 60);
     expect(simulation.drainEvents()).toEqual([
-      { type: 'landed', aircraftId: aircraft.id, score: 1 }
+      { type: 'landed', aircraftId: aircraft.id, aircraftType: 'commuter', score: 1 }
     ]);
   });
 

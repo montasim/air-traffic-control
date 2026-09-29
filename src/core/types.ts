@@ -66,9 +66,9 @@ export type RouteAssignmentResult =
 export type SimulationEvent =
   | { type: 'spawned'; aircraftId: number }
   | { type: 'landing-started'; aircraftId: number; zoneId: string }
-  | { type: 'landed'; aircraftId: number; score: number }
+  | { type: 'landed'; aircraftId: number; aircraftType: AircraftType; score: number }
   | { type: 'warning'; aircraftIds: [number, number] }
-  | { type: 'gameover'; reason: GameOverReason; aircraftIds?: [number, number] };
+  | { type: 'gameover'; reason: GameOverReason; aircraftIds?: [number, number]; exitPosition?: Vector2 };
 
 export interface SimulationSnapshot {
   phase: GamePhase;

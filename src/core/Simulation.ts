@@ -1,3 +1,4 @@
+import { aircraftWarningDistance, airframesOverlap, DEFAULT_COLLISION_SCALES, type AircraftCollisionScales } from './aircraftCollision';
 import { distance, simplifyPoints, smoothPath } from './geometry';
 import {
   aircraftTypeAt,
@@ -26,8 +27,14 @@ import {
 } from './types';
 
 const FIXED_STEP = 1 / 60;
+
+// The shared heading drives both the visible airframe and its collision polygon.
+function turnToward(current: number, target: number, delta: number): number {
+  const difference = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  const limit = 4 * delta;
+  return current + Math.max(-limit, Math.min(limit, difference));
+}
 const MAX_FRAME_DELTA = 0.1;
-const WARNING_DISTANCE = 96;
 const MIN_SPAWN_SEPARATION = 180;
 const MIN_DESTINATION_DISTANCE = 480;
 const SAFE_SPAWN_HORIZON = 8;
@@ -80,7 +87,8 @@ export class Simulation {
   constructor(
     zones: readonly LandingZone[],
     bounds: SimulationBounds = { width: WORLD_WIDTH, height: WORLD_HEIGHT },
-    trafficProfile: ResolvedTrafficProfile = DEFAULT_TRAFFIC_PROFILE
+    trafficProfile: ResolvedTrafficProfile = DEFAULT_TRAFFIC_PROFILE,
+    private readonly collisionScales: AircraftCollisionScales = DEFAULT_COLLISION_SCALES
   ) {
     this.zones = zones;
     this.bounds = { ...bounds };
@@ -207,6 +215,7 @@ export class Simulation {
 
   private advanceAircraft(aircraft: Aircraft, delta: number): void {
     let remaining = aircraft.speed * delta;
+    let routeHeading = aircraft.heading;
 
     while (remaining > 0 && aircraft.route) {
       const target = aircraft.route.points[aircraft.route.segmentIndex];
@@ -224,7 +233,7 @@ export class Simulation {
         continue;
       }
 
-      aircraft.heading = Math.atan2(dy, dx);
+      routeHeading = Math.atan2(dy, dx);
       if (segmentDistance <= remaining) {
         aircraft.position.x = target.x;
         aircraft.position.y = target.y;
@@ -239,9 +248,11 @@ export class Simulation {
     }
 
     if (!aircraft.route && remaining > 0) {
-      aircraft.position.x += Math.cos(aircraft.heading) * remaining;
-      aircraft.position.y += Math.sin(aircraft.heading) * remaining;
+      aircraft.position.x += Math.cos(routeHeading) * remaining;
+      aircraft.position.y += Math.sin(routeHeading) * remaining;
     }
+
+    aircraft.heading = turnToward(aircraft.heading, routeHeading, delta);
 
     if (
       aircraft.position.x >= 0 &&
@@ -262,12 +273,12 @@ export class Simulation {
     const pull = Math.min(1, delta * 5);
     aircraft.position.x += (zone.position.x - aircraft.position.x) * pull;
     aircraft.position.y += (zone.position.y - aircraft.position.y) * pull;
-    aircraft.heading = zone.angle;
+    aircraft.heading = turnToward(aircraft.heading, zone.angle, delta);
 
     if (aircraft.landingProgress >= 1) {
       this.aircraft = this.aircraft.filter((item) => item.id !== aircraft.id);
       this.score += 1;
-      this.events.push({ type: 'landed', aircraftId: aircraft.id, score: this.score });
+      this.events.push({ type: 'landed', aircraftId: aircraft.id, aircraftType: aircraft.type, score: this.score });
     }
   }
 
@@ -294,7 +305,7 @@ export class Simulation {
       aircraft.position.y < -margin ||
       aircraft.position.y > this.bounds.height + margin
     ) {
-      this.endGame('airspace');
+      this.endGame('airspace', undefined, { ...aircraft.position });
     }
   }
 
@@ -310,13 +321,12 @@ export class Simulation {
         if (second.state === 'landing') continue;
 
         const separation = distance(first.position, second.position);
-        const collisionDistance = first.collisionRadius + second.collisionRadius;
-        if (separation <= collisionDistance) {
+        if (airframesOverlap(first, second, this.collisionScales)) {
           this.endGame('collision', [first.id, second.id]);
           return;
         }
 
-        if (separation < WARNING_DISTANCE) {
+        if (separation < aircraftWarningDistance(first, second, this.collisionScales)) {
           const pair = [first.id, second.id].sort((a, b) => a - b) as [number, number];
           const key = pair.join(':');
           nextWarnings.add(key);
@@ -487,9 +497,9 @@ export class Simulation {
     return true;
   }
 
-  private endGame(reason: GameOverReason, aircraftIds?: [number, number]): void {
+  private endGame(reason: GameOverReason, aircraftIds?: [number, number], exitPosition?: Vector2): void {
     if (this.phase !== 'running') return;
     this.phase = 'over';
-    this.events.push({ type: 'gameover', reason, aircraftIds });
+    this.events.push({ type: 'gameover', reason, aircraftIds, ...(exitPosition ? {exitPosition} : {}) });
   }
 }
