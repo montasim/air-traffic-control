@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isSameProfile,
+  requiresNewLayout,
+  worldSizeForViewport,
   profileForSize,
   profileForViewport,
   type ViewportProfile
@@ -63,6 +65,23 @@ afterEach(() => {
 });
 
 describe('viewport profiles', () => {
+  it('preserves a shift through height, width, and detail changes within its orientation', () => {
+    const active = profileForSize(390, 844);
+    for (const [w, h] of [[390, 780], [360, 640], [600, 900], [390, 844]]) {
+      expect(requiresNewLayout(active, profileForSize(w, h))).toBe(false);
+    }
+    expect(requiresNewLayout(active, profileForSize(844, 390))).toBe(true);
+  });
+
+  it('expands the initial world to fill the screen without stretching geometry', () => {
+    for (const [w, h] of [[390, 844], [844, 390], [1280, 800]]) {
+      const world = worldSizeForViewport(w, h);
+      expect(world.width / world.height).toBeCloseTo(w / h);
+      const profile = profileForSize(w, h);
+      expect(world.width).toBeGreaterThanOrEqual(profile.width);
+      expect(world.height).toBeGreaterThanOrEqual(profile.height);
+    }
+  });
   it.each(SIZES)(
     'maps $width×$height CSS pixels to $id/$detailLevel without changing the logical world',
     ({ width, height, id, detailLevel, logicalWidth, logicalHeight }) => {

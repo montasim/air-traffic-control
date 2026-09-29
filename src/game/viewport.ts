@@ -46,3 +46,14 @@ export function isSameProfile(
 ): boolean {
   return left.id === right.id && left.detailLevel === right.detailLevel;
 }
+
+/** Expand once at creation; FIT then keeps this world stable through display resizes. */
+export function worldSizeForViewport(width: number, height: number) {
+  const profile = profileForSize(width, height);
+  const scale = Math.min(width / profile.width, height / profile.height);
+  return { width: width / scale, height: height / scale };
+}
+
+export function requiresNewLayout(active: ViewportProfile, next: ViewportProfile): boolean {
+  return active.id !== next.id;
+}

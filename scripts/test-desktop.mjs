@@ -38,13 +38,26 @@ try {
   await expect(page.locator('#game canvas')).toBeVisible();
   await page.locator('#pause-button').click();
   await expect(page.locator('#pause-panel')).toBeVisible();
+  const worldBeforeResize = await page.locator('#game canvas').evaluate(canvas => [canvas.width, canvas.height]);
+  const scoreBeforeResize = await page.locator('#score').textContent();
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    const [width, height] = window.getSize();
+    window.setSize(width, height - 64);
+  });
+  await expect(page.locator('#resume-button')).toHaveText('Resume');
+  await page.locator('#resume-button').click();
+  await expect(page.locator('#pause-panel')).not.toBeVisible();
+  await expect(page.locator('#confirm-dialog')).not.toBeVisible();
+  assert.deepEqual(await page.locator('#game canvas').evaluate(canvas => [canvas.width, canvas.height]), worldBeforeResize);
+  assert.equal(await page.locator('#score').textContent(), scoreBeforeResize);
   await app.close();
   app = await electron.launch(options);
   page = await app.firstWindow();
   await expect(page.locator('#app')).not.toHaveAttribute('inert', '', { timeout: 30000 });
   await expect(page.locator('input[name="difficulty"][value="easy"]')).toBeChecked();
   assert.deepEqual(errors, []);
-  console.log('Desktop smoke passed: boot, assets, renderer isolation, gameplay, pause, and saved settings across restart.');
+  console.log('Desktop smoke passed: boot, assets, renderer isolation, gameplay, resize/resume with stable world and score, and saved settings across restart.');
 } finally {
   await app?.close();
   await rm(profile, { recursive: true, force: true });

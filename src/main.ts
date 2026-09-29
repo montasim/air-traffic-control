@@ -11,7 +11,8 @@ import { MAP_DEFINITIONS, mapDefinitionById } from "./game/maps/registry";
 import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
-  isSameProfile,
+  requiresNewLayout,
+  worldSizeForViewport,
   profileForViewport,
   type ViewportProfile,
 } from "./game/viewport";
@@ -164,12 +165,10 @@ const audio = new GameAudio(new WebAudioBackend(), currentSave.settings.audio);
 await audio.prepare();
 
 let activeProfile = profileForViewport();
-let activeViewport = { width: window.innerWidth, height: window.innerHeight };
+let createdViewport = { width: window.innerWidth, height: window.innerHeight };
 function layoutChanged(): boolean {
   return (
-    !isSameProfile(profileForViewport(), activeProfile) ||
-    activeViewport.width !== window.innerWidth ||
-    activeViewport.height !== window.innerHeight
+    requiresNewLayout(activeProfile, profileForViewport())
   );
 }
 let categoryFilter = 'all';
@@ -193,15 +192,14 @@ elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
 function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
-  activeViewport = { width: window.innerWidth, height: window.innerHeight };
+  createdViewport = { width: window.innerWidth, height: window.innerHeight };
   const nextGame = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
-    width: profile.width,
-    height: profile.height,
+    ...worldSizeForViewport(window.innerWidth, window.innerHeight),
     backgroundColor: "#263f3c",
     render: { antialias: true, roundPixels: false },
-    scale: { mode: Phaser.Scale.EXPAND, autoCenter: Phaser.Scale.CENTER_BOTH },
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
     scene: [new PlayScene(mapDefinitionById(mapId))],
   });
@@ -482,6 +480,10 @@ function renderShell(): void {
 }
 
 function beginRun(): void {
+  if (createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
+    rebuildForTarget(profileForViewport(), activeMapId, true);
+    return;
+  }
   const scene = playScene();
   if (!scene) return;
   window.clearTimeout(promotionAudioTimer);
@@ -562,7 +564,7 @@ async function resumeRun(): Promise<void> {
   if (layoutChanged()) {
     confirmAbandon(
       "Start a new shift?",
-      "The airfield layout changed. Restarting discards this unfinished shift. Rotate back to resume it.",
+      "The airfield layout changed. Restarting discards this unfinished shift. Return to the previous orientation to resume it.",
       () => rebuildForTarget(requestedProfile, activeMapId, true),
     );
     return;
@@ -737,6 +739,8 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("resize", () => {
+  // A partial stroke uses the old display transform. Keep its previous route.
+  if (elements.startPanel.hidden) playScene()?.cancelDrawing();
   window.clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => {
     const nextProfile = profileForViewport();
@@ -746,10 +750,11 @@ window.addEventListener("resize", () => {
         ? `Start in ${nextProfile.id}`
         : "Restart"
       : "Resume";
-    if (profileChanged) {
-      if (!elements.startPanel.hidden)
-        rebuildForTarget(nextProfile, activeMapId, false);
-      else pauseRun();
+    if (!elements.startPanel.hidden) {
+      rebuildForTarget(nextProfile, activeMapId, false);
+    } else if (profileChanged) {
+      // Only a change of logical orientation needs a pause and layout decision.
+      pauseRun();
     }
     updateResizeNotice();
   }, 160);
@@ -812,7 +817,7 @@ function updateResizeNotice(): void {
   notice.hidden = !layoutChanged();
   elements.restartFromPause.hidden = layoutChanged();
   notice.textContent =
-    "Screen size changed. Restore the previous size to resume, or restart this game.";
+    "Orientation changed. Return to the previous orientation to resume, or start a new shift.";
 }
 
 function confirmAbandon(title: string, copy: string, action: () => void): void {

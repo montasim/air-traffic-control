@@ -453,7 +453,7 @@ export class PlayScene extends Phaser.Scene {
     this.announce(message);
   }
 
-  private cancelDrawing(): void {
+  cancelDrawing(): void {
     const hadDrawing = this.drawingAircraftId !== undefined;
     if (hadDrawing) {
       this.aircraftViews.get(this.drawingAircraftId!)?.setSelected(false);
