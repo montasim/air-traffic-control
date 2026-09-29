@@ -101,7 +101,8 @@ describe('career ranks', () => {
     expect(unlockedMapIds('control-assistant')).toEqual([
       'saltmarsh-gateway',
       'river-bend',
-      'desert-parallel'
+      'desert-parallel',
+      'executive-point'
     ]);
     expect(isMapUnlocked('twin-banks', 'tower-controller')).toBe(true);
   });

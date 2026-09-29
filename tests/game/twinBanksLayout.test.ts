@@ -17,6 +17,7 @@ import {
 } from '../../src/game/maps/twin-banks/renderer';
 
 const VIEWPORTS = [
+  { width: 1370, height: 926, variant: 'square', detail: 'desktop' },
   { width: 1600, height: 900, variant: 'landscape', detail: 'desktop' },
   { width: 844, height: 390, variant: 'landscape', detail: 'mobile' },
   { width: 900, height: 1600, variant: 'portrait', detail: 'mobile' },
@@ -187,7 +188,7 @@ describe('Twin Banks layout', () => {
     expect(TWIN_BANKS_MAP).toMatchObject({
       id: 'twin-banks',
       trafficProfileId: 'twin-banks',
-      metadata: { difficulty: 'expert', unlockRankId: 'tower-controller' }
+      metadata: { category: 'regional', unlockRankId: 'tower-controller' }
     });
     const prepared = TWIN_BANKS_MAP.prepare({
       width: 1600,
@@ -198,11 +199,11 @@ describe('Twin Banks layout', () => {
     expect(prepared.layout.variant).toBe('landscape');
   });
 
-  it('composes all static artwork into one render texture and destroys its graphics', () => {
+  it('bakes terrain once and retains crisp airport vectors', () => {
     const graphics = Object.fromEntries([
       'fillStyle', 'fillRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath',
-      'lineStyle', 'strokePath', 'fillCircle', 'strokeCircle', 'lineBetween',
-      'fillRoundedRect'
+      'setDepth', 'clear', 'lineStyle', 'strokePath', 'fillCircle', 'strokeCircle', 'lineBetween',
+      'strokeRoundedRect', 'fillRoundedRect'
     ].map((method) => [method, vi.fn().mockReturnThis()])) as Record<string, ReturnType<typeof vi.fn>>;
     graphics.destroy = vi.fn();
     const texture = {
@@ -224,6 +225,6 @@ describe('Twin Banks layout', () => {
     expect(scene.add.renderTexture).toHaveBeenCalledTimes(1);
     expect(texture.draw).toHaveBeenCalledOnce();
     expect(texture.render).toHaveBeenCalledOnce();
-    expect(graphics.destroy).toHaveBeenCalledOnce();
+    expect(graphics.destroy).not.toHaveBeenCalled();
   });
 });

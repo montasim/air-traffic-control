@@ -1,3 +1,5 @@
+import { isDifficulty, type DifficultyId } from '../core/difficulty';
+import { evaluateAchievements, type AchievementId, type ShiftEvidence } from '../progression/achievements';
 import {
   DEFAULT_MAP_ID,
   type MapId
@@ -14,7 +16,7 @@ import {
   createDefaultGameSave,
   migrateGameSave,
   type AudioSettings,
-  type GameSaveV2
+  type GameSaveV3
 } from './gameSave';
 import {
   IndexedDbSavePersistence,
@@ -22,6 +24,9 @@ import {
 } from './persistence';
 
 export interface CompletedShift {
+  readonly runId?: string;
+  readonly difficulty?: DifficultyId;
+  readonly evidence?: ShiftEvidence;
   readonly mapId: MapId;
   readonly orientation: CareerOrientation;
   /** Shift score may diverge from landing count as bonuses are introduced. */
@@ -30,18 +35,21 @@ export interface CompletedShift {
 }
 
 export interface CompletedShiftResult {
-  readonly save: GameSaveV2;
+  readonly newAchievements: AchievementId[];
+  readonly persisted: boolean;
+  readonly save: GameSaveV3;
   readonly previousRankId: RankId;
   readonly earnedRankId: RankId;
   readonly promoted: boolean;
 }
 
 export interface GameStore {
-  load(): Promise<GameSaveV2>;
+  load(): Promise<GameSaveV3>;
   recordShift(shift: CompletedShift): Promise<CompletedShiftResult>;
-  selectMap(mapId: MapId): Promise<GameSaveV2>;
-  updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV2>;
-  acknowledgeEarnedRank(): Promise<GameSaveV2>;
+  selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3>;
+  selectMap(mapId: MapId): Promise<GameSaveV3>;
+  updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV3>;
+  acknowledgeEarnedRank(): Promise<GameSaveV3>;
 }
 
 export class MapLockedError extends Error {
@@ -67,13 +75,13 @@ function normalizedVolume(value: number): number {
 }
 
 class SerialGameStore implements GameStore {
-  private snapshot?: GameSaveV2;
-  private loading?: Promise<GameSaveV2>;
+  private snapshot?: GameSaveV3;
+  private loading?: Promise<GameSaveV3>;
   private updateQueue: Promise<void> = Promise.resolve();
 
   constructor(private readonly persistence: SavePersistence) {}
 
-  async load(): Promise<GameSaveV2> {
+  async load(): Promise<GameSaveV3> {
     await this.updateQueue;
     return cloneGameSave(await this.ensureLoaded());
   }
@@ -84,10 +92,19 @@ class SerialGameStore implements GameStore {
         throw new MapLockedError(shift.mapId);
       }
 
+      if (shift.runId && current.lastCommittedRunId === shift.runId) return {
+        save: current, result: { previousRankId: current.career.earnedRankId, earnedRankId: current.career.earnedRankId, promoted: false, newAchievements: [] as AchievementId[] }
+      };
+      const difficulty = shift.difficulty ?? 'medium';
+      if (!isDifficulty(difficulty)) throw new RangeError('Invalid difficulty');
       const score = nonNegativeInteger(shift.score, 'Shift score');
       const safeLandings = nonNegativeInteger(shift.safeLandings, 'Safe landings');
       const previousMapRecord = current.mapRecords[shift.mapId];
       const nextMapRecord = {
+        difficultyScores: {
+          ...previousMapRecord.difficultyScores,
+          [difficulty]: { ...previousMapRecord.difficultyScores[difficulty], [shift.orientation]: Math.max(previousMapRecord.difficultyScores[difficulty][shift.orientation], score) }
+        },
         bestScores: {
           ...previousMapRecord.bestScores,
           [shift.orientation]: Math.max(previousMapRecord.bestScores[shift.orientation], score)
@@ -107,8 +124,18 @@ class SerialGameStore implements GameStore {
       const earnedRankId = rankIndex(evaluatedRankId) >= rankIndex(current.career.earnedRankId)
         ? evaluatedRankId
         : current.career.earnedRankId;
-      const next: GameSaveV2 = {
+      const evidence = shift.evidence;
+      const types = evidence ? Object.values(evidence.landedTypes).map(v => nonNegativeInteger(v, 'Aircraft landings')) : [];
+      if (evidence && types.reduce((a, b) => a + b, 0) !== safeLandings) throw new RangeError('Aircraft evidence must match safe landings');
+      const initialSafe = evidence ? nonNegativeInteger(evidence.initialSafeLandings, 'Initial safe landings') : 0;
+      if (initialSafe > safeLandings) throw new RangeError('Invalid warning-free count');
+      const next: GameSaveV3 = {
         ...current,
+        lastCommittedRunId: shift.runId,
+        achievementEvidence: {
+          mixedFleetBest: Math.max(current.achievementEvidence.mixedFleetBest, types.filter(n => n > 0).length),
+          initialSafeBest: Math.max(current.achievementEvidence.initialSafeBest, initialSafe)
+        },
         career: {
           ...current.career,
           ...totals,
@@ -116,21 +143,29 @@ class SerialGameStore implements GameStore {
         },
         mapRecords
       };
+      const achievementResult = evaluateAchievements(next, Date.now());
       return {
-        save: next,
+        save: { ...next, achievements: achievementResult.awards },
         result: {
+          newAchievements: achievementResult.newIds,
           previousRankId: current.career.earnedRankId,
           earnedRankId,
           promoted: earnedRankId !== current.career.earnedRankId
         }
       };
-    }).then(({ save, result }) => ({
+    }).then(({ save, result, persisted }) => ({
       save,
+      persisted,
       ...result
     }));
   }
 
-  selectMap(mapId: MapId): Promise<GameSaveV2> {
+  selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3> {
+    if (!isDifficulty(difficulty)) return Promise.reject(new RangeError('Invalid difficulty'));
+    return this.enqueue(async current => ({ save: { ...current, selectedDifficulty: difficulty }, result: undefined })).then(({ save }) => save);
+  }
+
+  selectMap(mapId: MapId): Promise<GameSaveV3> {
     return this.enqueue(async (current) => {
       if (!isMapUnlocked(mapId, current.career.earnedRankId)) {
         throw new MapLockedError(mapId);
@@ -144,7 +179,7 @@ class SerialGameStore implements GameStore {
     }).then(({ save }) => save);
   }
 
-  updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV2> {
+  updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV3> {
     return this.enqueue(async (current) => {
       const audio: AudioSettings = {
         enabled: settings.enabled ?? current.settings.audio.enabled,
@@ -162,7 +197,7 @@ class SerialGameStore implements GameStore {
     }).then(({ save }) => save);
   }
 
-  acknowledgeEarnedRank(): Promise<GameSaveV2> {
+  acknowledgeEarnedRank(): Promise<GameSaveV3> {
     return this.enqueue(async (current) => ({
       save: current.career.acknowledgedRankId === current.career.earnedRankId
         ? current
@@ -177,7 +212,7 @@ class SerialGameStore implements GameStore {
     })).then(({ save }) => save);
   }
 
-  private async ensureLoaded(): Promise<GameSaveV2> {
+  private async ensureLoaded(): Promise<GameSaveV3> {
     if (this.snapshot) return this.snapshot;
     if (!this.loading) {
       this.loading = this.persistence.read()
@@ -192,23 +227,26 @@ class SerialGameStore implements GameStore {
   }
 
   private enqueue<Result>(
-    update: (current: GameSaveV2) => Promise<{
-      readonly save: GameSaveV2;
+    update: (current: GameSaveV3) => Promise<{
+      readonly save: GameSaveV3;
       readonly result: Result;
     }>
-  ): Promise<{ readonly save: GameSaveV2; readonly result: Result }> {
+  ): Promise<{ readonly save: GameSaveV3; readonly result: Result; readonly persisted: boolean }> {
     const operation = this.updateQueue.then(async () => {
       const current = await this.ensureLoaded();
       const { save, result } = await update(current);
       const next = cloneGameSave(save);
       this.snapshot = next;
+      let persisted = true;
       try {
         await this.persistence.write(next);
       } catch {
+        persisted = false;
         // The in-memory snapshot remains authoritative for this session.
       }
       return {
         save: cloneGameSave(next),
+        persisted,
         result
       };
     });
@@ -227,7 +265,7 @@ export function createGameStore(persistence: SavePersistence): GameStore {
 
 const defaultStore = createGameStore(new IndexedDbSavePersistence());
 
-export function loadCareerSave(): Promise<GameSaveV2> {
+export function loadCareerSave(): Promise<GameSaveV3> {
   return defaultStore.load();
 }
 
@@ -235,23 +273,23 @@ export function saveCompletedShift(shift: CompletedShift): Promise<CompletedShif
   return defaultStore.recordShift(shift);
 }
 
-export function setSelectedMap(mapId: MapId): Promise<GameSaveV2> {
+export function setSelectedMap(mapId: MapId): Promise<GameSaveV3> {
   return defaultStore.selectMap(mapId);
 }
 
-export function updateAudioSettings(settings: Partial<AudioSettings>): Promise<GameSaveV2> {
+export function updateAudioSettings(settings: Partial<AudioSettings>): Promise<GameSaveV3> {
   return defaultStore.updateAudio(settings);
 }
 
-export function acknowledgeEarnedRank(): Promise<GameSaveV2> {
+export function acknowledgeEarnedRank(): Promise<GameSaveV3> {
   return defaultStore.acknowledgeEarnedRank();
 }
 
 /**
  * Transitional view used by the current single-map main module. New integration
- * should consume GameSaveV2 through loadCareerSave and saveCompletedShift.
+ * should consume GameSaveV3 through loadCareerSave and saveCompletedShift.
  */
-export interface GameSave extends GameSaveV2 {
+export interface GameSave extends GameSaveV3 {
   readonly bestScore: number;
   readonly bestScores: Readonly<Record<CareerOrientation, number>>;
   readonly totalLandings: number;
@@ -259,12 +297,12 @@ export interface GameSave extends GameSaveV2 {
   readonly soundEnabled: boolean;
 }
 
-function compatibilityView(save: GameSaveV2): GameSave {
+function compatibilityView(save: GameSaveV3): GameSave {
   const currentRecord = save.mapRecords[save.selectedMapId];
   return {
     ...save,
-    bestScore: Math.max(currentRecord.bestScores.portrait, currentRecord.bestScores.landscape),
-    bestScores: { ...currentRecord.bestScores },
+    bestScore: Math.max(currentRecord.difficultyScores.medium.portrait, currentRecord.difficultyScores.medium.landscape),
+    bestScores: { ...currentRecord.difficultyScores.medium },
     totalLandings: save.career.totalSafeLandings,
     shiftsPlayed: save.career.shiftsPlayed,
     soundEnabled: save.settings.audio.enabled
@@ -291,7 +329,7 @@ export async function recordCompletedShift(
 export type {
   AudioSettings,
   CareerState,
-  GameSaveV2,
+  GameSaveV3,
   GameSettings,
   MapRecord,
   MapRecords

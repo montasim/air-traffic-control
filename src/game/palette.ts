@@ -112,3 +112,6 @@ export function resolveWorldDetailLevel(
 export function colorToCss(color: number): string {
   return `#${color.toString(16).padStart(6, '0')}`;
 }
+
+/** Opaque route casing maintains contrast on both light terrain and dark asphalt. */
+export const ROUTE_OUTLINE_COLOR = 0x0c1716;

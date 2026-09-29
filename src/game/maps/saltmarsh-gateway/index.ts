@@ -7,7 +7,8 @@ export const SALTMARSH_GATEWAY_DEFINITION = defineMap({
   metadata: {
     name: 'Saltmarsh Gateway',
     description: 'A connected regional airport above quiet tidal fields.',
-    difficulty: 'beginner',
+    category: 'regional',
+    layoutLabel: 'Parallel runways',
     unlockRankId: 'control-trainee'
   },
   trafficProfileId: 'saltmarsh-gateway',

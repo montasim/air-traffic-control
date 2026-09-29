@@ -1,3 +1,5 @@
+import { DIFFICULTIES, isDifficulty, type DifficultyId } from '../core/difficulty';
+import { ACHIEVEMENTS, evaluateAchievements, type AchievementAwards } from '../progression/achievements';
 import {
   DEFAULT_MAP_ID,
   MAP_IDS,
@@ -13,7 +15,7 @@ import {
   type RankId
 } from '../progression/ranks';
 
-export const SAVE_SCHEMA_VERSION = 2 as const;
+export const SAVE_SCHEMA_VERSION = 3 as const;
 export const DEFAULT_AUDIO_VOLUME = 0.8;
 
 export interface AudioSettings {
@@ -33,6 +35,7 @@ export interface CareerState {
 }
 
 export interface MapRecord {
+  readonly difficultyScores: Record<DifficultyId, Record<CareerOrientation, number>>;
   readonly bestScores: Readonly<Record<CareerOrientation, number>>;
   readonly safeLandings: number;
   readonly shiftsPlayed: number;
@@ -40,7 +43,11 @@ export interface MapRecord {
 
 export type MapRecords = Readonly<Record<MapId, MapRecord>>;
 
-export interface GameSaveV2 {
+export interface GameSaveV3 {
+  readonly selectedDifficulty: DifficultyId;
+  readonly achievements: AchievementAwards;
+  readonly achievementEvidence: { mixedFleetBest: number; initialSafeBest: number };
+  readonly lastCommittedRunId?: string;
   readonly schemaVersion: typeof SAVE_SCHEMA_VERSION;
   readonly selectedMapId: MapId;
   readonly settings: GameSettings;
@@ -79,6 +86,7 @@ function audioVolume(value: unknown): number {
 
 function emptyMapRecord(): MapRecord {
   return {
+    difficultyScores: { easy: { portrait: 0, landscape: 0 }, medium: { portrait: 0, landscape: 0 }, hard: { portrait: 0, landscape: 0 } },
     bestScores: { portrait: 0, landscape: 0 },
     safeLandings: 0,
     shiftsPlayed: 0
@@ -89,9 +97,12 @@ export function createEmptyMapRecords(): Record<MapId, MapRecord> {
   return Object.fromEntries(MAP_IDS.map((mapId) => [mapId, emptyMapRecord()])) as Record<MapId, MapRecord>;
 }
 
-export function createDefaultGameSave(): GameSaveV2 {
+export function createDefaultGameSave(): GameSaveV3 {
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
+    selectedDifficulty: 'medium',
+    achievements: {},
+    achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
       audio: {
@@ -109,32 +120,47 @@ export function createDefaultGameSave(): GameSaveV2 {
   };
 }
 
-function normalizeMapRecord(value: unknown): MapRecord {
+function normalizeMapRecord(value: unknown, legacy = false): MapRecord {
   const record = isObject(value) ? value : {};
   const scores = isObject(record.bestScores) ? record.bestScores : {};
+  const difficultyScores = emptyMapRecord().difficultyScores;
+  const source = isObject(record.difficultyScores) ? record.difficultyScores : {};
+  for (const difficulty of DIFFICULTIES) {
+    const stored = legacy && difficulty === 'medium' ? scores : isObject(source[difficulty]) ? source[difficulty] : {};
+    difficultyScores[difficulty] = { portrait: nonNegativeInteger(stored.portrait), landscape: nonNegativeInteger(stored.landscape) };
+  }
   return {
+    difficultyScores,
     bestScores: {
-      portrait: nonNegativeInteger(scores.portrait),
-      landscape: nonNegativeInteger(scores.landscape)
+      portrait: Math.max(...DIFFICULTIES.map(d => difficultyScores[d].portrait)),
+      landscape: Math.max(...DIFFICULTIES.map(d => difficultyScores[d].landscape))
     },
     safeLandings: nonNegativeInteger(record.safeLandings),
     shiftsPlayed: nonNegativeInteger(record.shiftsPlayed)
   };
 }
 
-function normalizeMapRecords(value: unknown): Record<MapId, MapRecord> {
+function normalizeMapRecords(value: unknown, legacy = false): Record<MapId, MapRecord> {
   const source = isObject(value) ? value : {};
   const records = createEmptyMapRecords();
-  for (const mapId of MAP_IDS) records[mapId] = normalizeMapRecord(source[mapId]);
+  for (const mapId of MAP_IDS) records[mapId] = normalizeMapRecord(source[mapId], legacy);
   return records;
 }
 
-function normalizeV2(value: Record<string, unknown>): GameSaveV2 {
+function normalizeV2(value: Record<string, unknown>): GameSaveV3 {
   const defaults = createDefaultGameSave();
-  const records = normalizeMapRecords(value.mapRecords);
+  const records = normalizeMapRecords(value.mapRecords, value.schemaVersion !== 3);
   const settings = isObject(value.settings) ? value.settings : {};
   const storedAudio = isObject(settings.audio) ? settings.audio : {};
   const career = isObject(value.career) ? value.career : {};
+  const storedAwards = isObject(value.achievements) ? value.achievements : {};
+  const achievements: AchievementAwards = {};
+  for (const { id } of ACHIEVEMENTS) {
+    const award = storedAwards[id];
+    if (isObject(award)) achievements[id] = { earnedAt: typeof award.earnedAt === 'number' && Number.isFinite(award.earnedAt) && award.earnedAt >= 0 ? award.earnedAt : null };
+  }
+  const evidence = isObject(value.achievementEvidence) ? value.achievementEvidence : {};
+
 
   const recordSafeLandings = MAP_IDS.reduce(
     (total, mapId) => total + records[mapId].safeLandings,
@@ -164,6 +190,10 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV2 {
 
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
+    selectedDifficulty: isDifficulty(value.selectedDifficulty) ? value.selectedDifficulty : 'medium',
+    achievements,
+    achievementEvidence: { mixedFleetBest: Math.min(3, nonNegativeInteger(evidence.mixedFleetBest)), initialSafeBest: nonNegativeInteger(evidence.initialSafeBest) },
+    lastCommittedRunId: typeof value.lastCommittedRunId === 'string' ? value.lastCommittedRunId : undefined,
     selectedMapId: isMapId(value.selectedMapId) ? value.selectedMapId : DEFAULT_MAP_ID,
     settings: {
       audio: {
@@ -180,7 +210,7 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV2 {
   };
 }
 
-function migrateV1(value: LegacyGameSaveV1): GameSaveV2 {
+function migrateV1(value: LegacyGameSaveV1): GameSaveV3 {
   const scores = isObject(value.bestScores) ? value.bestScores : {};
   const legacyBest = nonNegativeInteger(value.bestScore);
   const portraitBest = typeof scores.portrait === 'number' && Number.isFinite(scores.portrait)
@@ -188,6 +218,7 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV2 {
     : legacyBest;
   const records = createEmptyMapRecords();
   records[DEFAULT_MAP_ID] = {
+    difficultyScores: { easy: { portrait: 0, landscape: 0 }, medium: { portrait: portraitBest, landscape: nonNegativeInteger(scores.landscape) }, hard: { portrait: 0, landscape: 0 } },
     bestScores: {
       portrait: portraitBest,
       landscape: nonNegativeInteger(scores.landscape)
@@ -203,6 +234,9 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV2 {
 
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
+    selectedDifficulty: 'medium',
+    achievements: {},
+    achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
       audio: {
@@ -220,23 +254,28 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV2 {
   };
 }
 
-export function migrateGameSave(value: unknown): GameSaveV2 {
+export function migrateGameSave(value: unknown): GameSaveV3 {
   if (!isObject(value)) return createDefaultGameSave();
-  if (value.schemaVersion === SAVE_SCHEMA_VERSION) return normalizeV2(value);
-  if (value.schemaVersion === 1) return migrateV1(value as unknown as LegacyGameSaveV1);
+  if (value.schemaVersion === SAVE_SCHEMA_VERSION || value.schemaVersion === 2 || value.schemaVersion === 1) {
+    const save = value.schemaVersion === 1 ? migrateV1(value as unknown as LegacyGameSaveV1) : normalizeV2(value);
+    return { ...save, achievements: evaluateAchievements(save, null).awards };
+  }
   return createDefaultGameSave();
 }
 
-export function cloneGameSave(save: GameSaveV2): GameSaveV2 {
+export function cloneGameSave(save: GameSaveV3): GameSaveV3 {
   const records = createEmptyMapRecords();
   for (const mapId of MAP_IDS) {
     records[mapId] = {
       ...save.mapRecords[mapId],
+      difficultyScores: { easy: { ...save.mapRecords[mapId].difficultyScores.easy }, medium: { ...save.mapRecords[mapId].difficultyScores.medium }, hard: { ...save.mapRecords[mapId].difficultyScores.hard } },
       bestScores: { ...save.mapRecords[mapId].bestScores }
     };
   }
   return {
     ...save,
+    achievements: Object.fromEntries(Object.entries(save.achievements).map(([id, award]) => [id, { ...award }])),
+    achievementEvidence: { ...save.achievementEvidence },
     settings: { audio: { ...save.settings.audio } },
     career: { ...save.career },
     mapRecords: records

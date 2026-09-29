@@ -59,12 +59,12 @@ export const DESERT_DETAIL_BUDGETS: Record<WorldDetailLevel, DesertDetailBudget>
 };
 
 export const DESERT_PARALLEL_PALETTE = {
-  mineralDeep: 0x5a5142,
-  mineralGround: 0x8a7658,
-  mineralHigh: 0xa18b68,
-  dryWash: 0x6d6251,
-  coastDeep: 0x314f53,
-  coastShallow: 0x4d6965,
+  mineralDeep: 0xa68e6d,
+  mineralGround: 0xcbb48a,
+  mineralHigh: 0xe0c89c,
+  dryWash: 0xaf9978,
+  coastDeep: 0x719fa4,
+  coastShallow: 0xa5bfc0,
   apron: 0x3f413b,
   runway: 0x242a28,
   runwayShoulder: 0x4b4b42,
@@ -100,8 +100,8 @@ interface DesertProfile {
 const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
   landscape: {
     liner: { center: { x: 0.72, y: 0.25 }, length: 0.84, width: 0.052, angle: 0.07, landingAlong: -0.36 },
-    commuter: { center: { x: 0.66, y: 0.47 }, length: 0.68, width: 0.044, angle: -0.07, landingAlong: -0.34 },
-    helipad: { x: 0.77, y: 0.46 },
+    commuter: { center: { x: 0.66, y: 0.47 }, length: 0.68, width: 0.044, angle: 0.07, landingAlong: -0.34 },
+    helipad: { x: 0.79, y: 0.37 },
     apron: [
       { x: 0.61, y: 0.31 },
       { x: 0.79, y: 0.33 },
@@ -118,7 +118,7 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
   },
   portrait: {
     liner: { center: { x: 0.51, y: 0.2 }, length: 0.82, width: 0.054, angle: 0.04, landingAlong: -0.36 },
-    commuter: { center: { x: 0.57, y: 0.36 }, length: 0.66, width: 0.045, angle: -0.08, landingAlong: -0.34 },
+    commuter: { center: { x: 0.57, y: 0.36 }, length: 0.66, width: 0.045, angle: 0.04, landingAlong: -0.34 },
     helipad: { x: 0.74, y: 0.43 },
     apron: [
       { x: 0.43, y: 0.25 },
@@ -136,8 +136,8 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
   },
   square: {
     liner: { center: { x: 0.59, y: 0.24 }, length: 0.8, width: 0.052, angle: 0.06, landingAlong: -0.36 },
-    commuter: { center: { x: 0.61, y: 0.44 }, length: 0.65, width: 0.044, angle: -0.08, landingAlong: -0.34 },
-    helipad: { x: 0.77, y: 0.48 },
+    commuter: { center: { x: 0.61, y: 0.44 }, length: 0.65, width: 0.044, angle: 0.06, landingAlong: -0.34 },
+    helipad: { x: 0.80, y: 0.35 },
     apron: [
       { x: 0.49, y: 0.3 },
       { x: 0.75, y: 0.31 },
@@ -173,7 +173,7 @@ export interface DesertParallelLayout extends
 
 const variantFor = (width: number, height: number): MapLayoutVariant => {
   const aspect = width / height;
-  if (aspect >= 1.18) return 'landscape';
+  if (aspect >= 1.6) return 'landscape';
   if (aspect <= 0.85) return 'portrait';
   return 'square';
 };

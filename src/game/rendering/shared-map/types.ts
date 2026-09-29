@@ -47,6 +47,7 @@ export type StaticMapPaintPlan<Layout> =
   | StaticMapLayers<Layout>;
 
 export interface StaticMapComposeOptions {
+  readonly materialTextureKey?: string;
   readonly depth?: number;
   /** Optional approved terrain-only plate drawn beneath operational geometry. */
   readonly sceneryTextureKey?: string;

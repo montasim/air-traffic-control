@@ -1,3 +1,4 @@
+import type { AirportCategory } from './categories';
 import type Phaser from 'phaser';
 import type { LandingZone } from '../../core/types';
 import type { RankId } from '../../progression/ranks';
@@ -6,7 +7,6 @@ import type { MapId } from './mapIds';
 import type { GuidanceSurface } from './shared/guidance';
 
 export type MapLayoutVariant = 'portrait' | 'landscape' | 'square';
-export type MapDifficulty = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 
 export interface HudExclusionZone {
   readonly id: string;
@@ -19,7 +19,8 @@ export interface HudExclusionZone {
 export interface MapMetadata {
   readonly name: string;
   readonly description: string;
-  readonly difficulty: MapDifficulty;
+  readonly category: AirportCategory;
+  readonly layoutLabel: string;
   readonly unlockRankId: RankId;
 }
 

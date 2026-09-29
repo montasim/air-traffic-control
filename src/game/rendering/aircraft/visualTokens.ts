@@ -8,14 +8,13 @@ export interface AircraftSilhouetteSpec {
 }
 
 /**
- * Aircraft deliberately use a different material language from the scenery:
- * warm neutral paint, a cool keyline and small semantic color accents.
+ * Cream paint and teal outlines echo the controls; broad livery matches landing targets.
  */
 export const AIRCRAFT_VISUAL_TOKENS = {
   body: 0xf3ead5,
   bodyHighlight: 0xfff8e8,
   bodyShade: 0xd9cfb7,
-  keyline: 0x102a3a,
+  keyline: 0x173e38,
   canopy: 0x76a7b2,
   canopyHighlight: 0xc6edf0,
   shadow: 0x091820,
@@ -50,15 +49,15 @@ export const AIRCRAFT_SILHOUETTES: Readonly<Record<AircraftType, AircraftSilhoue
 };
 
 export const AIRCRAFT_TARGET_CSS_MAJOR_AXIS: Readonly<Record<AircraftType, number>> = {
-  liner: 74,
-  commuter: 62,
-  rotor: 68
+  liner: 76,
+  commuter: 68,
+  rotor: 70
 };
 
 /**
  * Keeps aircraft readable after the fixed logical world is scaled onto a
- * small screen. The visual footprint is intentionally independent from the
- * simulation collision radius.
+ * small screen. This exact scale is shared by sprites and airframe collision outlines.
+ * The generous pointer-selection radius remains separate.
  */
 export function aircraftPresentationScale(
   type: AircraftType,
@@ -72,7 +71,7 @@ export function aircraftPresentationScale(
   const unscaledCssMajorAxis = AIRCRAFT_SILHOUETTES[type].majorAxis * displayScale;
   if (!Number.isFinite(unscaledCssMajorAxis) || unscaledCssMajorAxis <= 0) return 1;
   const requested = AIRCRAFT_TARGET_CSS_MAJOR_AXIS[type] / unscaledCssMajorAxis;
-  return Math.max(1, Math.min(2.6, requested));
+  return Math.max(1, Math.min(3, requested));
 }
 
 function linearChannel(channel: number): number {

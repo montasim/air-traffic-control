@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   MapLockedError,
   createGameStore,
-  type GameSaveV2,
+  type GameSaveV3,
   type SavePersistence
 } from '../../src/storage/gameStore';
 import { MemorySavePersistence } from '../../src/storage/persistence';
 
 class ObservedPersistence implements SavePersistence {
-  readonly writes: GameSaveV2[] = [];
+  readonly writes: GameSaveV3[] = [];
   activeWrites = 0;
   maximumActiveWrites = 0;
 
@@ -16,7 +16,7 @@ class ObservedPersistence implements SavePersistence {
     return undefined;
   }
 
-  async write(save: GameSaveV2): Promise<void> {
+  async write(save: GameSaveV3): Promise<void> {
     this.activeWrites += 1;
     this.maximumActiveWrites = Math.max(this.maximumActiveWrites, this.activeWrites);
     await Promise.resolve();

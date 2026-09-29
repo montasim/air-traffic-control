@@ -1,3 +1,8 @@
+import { FALCON_AIR_BASE_DEFINITION } from './falcon-air-base';
+import { EXECUTIVE_POINT_DEFINITION } from './executive-point';
+import { METRO_INTERNATIONAL_DEFINITION } from './metro-international';
+import { FREIGHT_JUNCTION_DEFINITION } from './freight-junction';
+import { ISLAND_RESCUE_DEFINITION } from './island-rescue';
 import { DEFAULT_MAP_ID, MAP_IDS, type MapId } from './mapIds';
 import type { MapDefinition } from './types';
 import { SALTMARSH_GATEWAY_DEFINITION } from './saltmarsh-gateway';
@@ -9,7 +14,12 @@ export const MAP_DEFINITIONS: readonly MapDefinition[] = [
   SALTMARSH_GATEWAY_DEFINITION,
   RIVER_BEND_DEFINITION,
   DESERT_PARALLEL_DEFINITION,
-  TWIN_BANKS_DEFINITION
+  TWIN_BANKS_DEFINITION,
+  FALCON_AIR_BASE_DEFINITION,
+  EXECUTIVE_POINT_DEFINITION,
+  METRO_INTERNATIONAL_DEFINITION,
+  FREIGHT_JUNCTION_DEFINITION,
+  ISLAND_RESCUE_DEFINITION
 ];
 
 const DEFINITIONS_BY_ID = new Map<MapId, MapDefinition>(

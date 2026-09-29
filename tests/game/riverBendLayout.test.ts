@@ -1,3 +1,4 @@
+import { ROUTE_OUTLINE_COLOR } from '../../src/game/palette';
 import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import type { Vector2 } from '../../src/core/types';
@@ -206,15 +207,16 @@ describe('River Bend definition', () => {
       trafficProfileId: 'river-bend',
       metadata: {
         name: 'River Bend',
-        difficulty: 'intermediate',
+        category: 'regional',
         unlockRankId: 'control-trainee'
       }
     });
   });
 
-  it('keeps every reserved route color strongly legible over the dominant terrain', () => {
+  it('keeps the route casing legible against terrain and every signal legible against its casing', () => {
     for (const color of Object.values(AIRCRAFT_COLORS)) {
-      expect(contrast(color, RIVER_BEND_PALETTE.terrain)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(color, ROUTE_OUTLINE_COLOR)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(ROUTE_OUTLINE_COLOR, RIVER_BEND_PALETTE.terrain)).toBeGreaterThanOrEqual(4.5);
     }
   });
 
@@ -326,7 +328,7 @@ describe('River Bend definition', () => {
     expect(createRiverBendLayout(width, height)).toEqual(createRiverBendLayout(width, height));
   });
 
-  it('renders the river and airport into exactly one static texture', () => {
+  it('bakes the terrain once and retains the airport vectors', () => {
     const prepared = RIVER_BEND_DEFINITION.prepare({
       width: 900,
       height: 1600,
@@ -339,7 +341,7 @@ describe('River Bend definition', () => {
     expect(harness.scene.add.renderTexture).toHaveBeenCalledWith(0, 0, 900, 1600);
     expect(harness.texture.draw).toHaveBeenCalledOnce();
     expect(harness.texture.render).toHaveBeenCalledOnce();
-    expect(harness.destroy).toHaveBeenCalledOnce();
+    expect(harness.destroy).not.toHaveBeenCalled();
   });
 
   it('applies progressively richer mobile, tablet, and desktop detail budgets', () => {

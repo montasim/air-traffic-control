@@ -8,7 +8,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 */
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
-import { riverBendTerrainTextureKey } from '../../assets/presentationAssets';
 import {
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
@@ -27,24 +26,24 @@ import {
 import type { RiverBendLayout } from './layout';
 
 export const RIVER_BEND_PALETTE: CivilMapPalette = {
-  terrain: 0x37392f,
-  terrainLight: 0x47493b,
-  terrainDark: 0x292d28,
-  fieldLine: 0x7f806e,
-  water: 0x3b5152,
-  waterEdge: 0x657069,
-  waterShallow: 0x78847b,
-  airportGround: 0x50534b,
-  asphalt: 0x242a29,
-  asphaltEdge: 0x666a62,
-  apron: 0x3b403d,
-  marking: 0xe4deca,
-  taxiwayMarking: 0x958661,
-  building: 0x434943,
-  buildingRoof: 0xaaa58f,
-  shadow: 0x181d1b,
-  vegetation: 0x343c31,
-  vegetationLight: 0x555b48
+  terrain: 0x819667,
+  terrainLight: 0xa3b680,
+  terrainDark: 0x6b835c,
+  fieldLine: 0xbec5a1,
+  water: 0x719fa4,
+  waterEdge: 0xc0c6a2,
+  waterShallow: 0xa5bfc0,
+  airportGround: 0xa1ac8b,
+  asphalt: 0x505e60,
+  asphaltEdge: 0xb0baa6,
+  apron: 0x89938a,
+  marking: 0xf4efda,
+  taxiwayMarking: 0xd4c29b,
+  building: 0xb8b9a3,
+  buildingRoof: 0xeee4c9,
+  shadow: 0x3b5049,
+  vegetation: 0x637e55,
+  vegetationLight: 0x9db27a
 };
 
 function paintScenery(
@@ -91,37 +90,7 @@ function paintOperational(
   }
   paintHelipad(graphics, layout.helipad, palette);
 
-  graphics.lineStyle(
-    Math.max(1.2, Math.min(layout.width, layout.height) * 0.002),
-    palette.marking,
-    0.42
-  );
-  for (const stand of layout.parkingStands) {
-    const dx = Math.cos(stand.angle) * stand.length * 0.5;
-    const dy = Math.sin(stand.angle) * stand.length * 0.5;
-    graphics.lineBetween(
-      stand.position.x - dx,
-      stand.position.y - dy,
-      stand.position.x + dx,
-      stand.position.y + dy
-    );
-  }
 
-  graphics.lineStyle(
-    Math.max(1.5, Math.min(layout.width, layout.height) * 0.0022),
-    palette.marking,
-    0.68
-  );
-  for (const marker of layout.holdShortMarkers) {
-    const dx = Math.cos(marker.angle) * marker.width * 0.5;
-    const dy = Math.sin(marker.angle) * marker.width * 0.5;
-    graphics.lineBetween(
-      marker.position.x - dx,
-      marker.position.y - dy,
-      marker.position.x + dx,
-      marker.position.y + dy
-    );
-  }
 }
 
 function paintDetail(
@@ -143,19 +112,8 @@ function paintDetail(
     0.2
   );
   strokePolyline(graphics, layout.accessRoad);
-  graphics.lineStyle(
-    Math.max(1, Math.min(layout.width, layout.height) * 0.0015),
-    palette.fieldLine,
-    0.12
-  );
-  for (let line = 0; line < budget.fieldLines; line += 1) {
-    const progress = (line + 1) / (budget.fieldLines + 1);
-    const x = layout.width * (0.34 + (line % 5) * 0.13);
-    const y = layout.height * (0.58 + progress * 0.37);
-    graphics.lineBetween(x, y, Math.min(layout.width, x + layout.width * 0.18), y - layout.height * 0.012);
-  }
 
-  for (const building of layout.buildings) paintBuilding(graphics, building, palette);
+  for (const building of layout.buildings) paintBuilding(graphics, building, palette, layout.runways);
 
   const windsock = layout.propAnchors.find(({ kind }) => kind === 'windsock');
   if (windsock) {
@@ -215,6 +173,6 @@ export function renderRiverBend(
       paintDetail(graphics, prepared, detail);
     }
   }, {
-    sceneryTextureKey: riverBendTerrainTextureKey(layout.variant)
+    materialTextureKey: 'terrain:arcade:meadow'
   });
 }

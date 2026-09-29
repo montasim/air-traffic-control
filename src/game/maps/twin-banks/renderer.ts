@@ -28,15 +28,15 @@ const CIVIL_PALETTE: CivilMapPalette = {
   water: TWIN_BANKS_PALETTE.riverDeep,
   waterEdge: TWIN_BANKS_PALETTE.riverShelf,
   waterShallow: TWIN_BANKS_PALETTE.riverMid,
-  airportGround: TWIN_BANKS_PALETTE.runwayShoulder,
-  asphalt: TWIN_BANKS_PALETTE.runway,
-  asphaltEdge: TWIN_BANKS_PALETTE.runwayShoulder,
-  apron: TWIN_BANKS_PALETTE.apron,
-  marking: TWIN_BANKS_PALETTE.runwayMarking,
-  taxiwayMarking: TWIN_BANKS_PALETTE.taxiwayMarking,
-  building: TWIN_BANKS_PALETTE.buildingWall,
-  buildingRoof: TWIN_BANKS_PALETTE.buildingRoof,
-  shadow: TWIN_BANKS_PALETTE.riverDeep,
+  airportGround: 0xa1ac8b,
+  asphalt: 0x505e60,
+  asphaltEdge: 0xb0baa6,
+  apron: 0x89938a,
+  marking: 0xf4efda,
+  taxiwayMarking: 0xd4c29b,
+  building: 0xb8b9a3,
+  buildingRoof: 0xeee4c9,
+  shadow: 0x3b5049,
   vegetation: TWIN_BANKS_PALETTE.tree,
   vegetationLight: TWIN_BANKS_PALETTE.eastHigh
 };
@@ -194,7 +194,7 @@ function paintFacilities(
       height: prop.size * (prop.kind === 'hangar' ? 0.52 : 0.68),
       angle: prop.angle,
       kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
-    }, CIVIL_PALETTE);
+    }, CIVIL_PALETTE, layout.runways);
   }
 
   graphics.lineStyle(Math.max(1.1, unit * 0.0018), TWIN_BANKS_PALETTE.runwayMarking, 0.34);
@@ -209,7 +209,18 @@ function paintFacilities(
     );
   }
 
-  for (const sign of visibleTwinBanksLabels(layout)) paintVectorLabel(graphics, sign, unit);
+  for (const sign of visibleTwinBanksLabels(layout)) {
+    const margin = Math.max(1.4, unit * 0.0024) * (sign.label.length * 2 + 2);
+    const overlapsRunway = layout.runways.some((runway) => {
+      const dx = sign.position.x - runway.center.x;
+      const dy = sign.position.y - runway.center.y;
+      const along = dx * Math.cos(runway.angle) + dy * Math.sin(runway.angle);
+      const across = -dx * Math.sin(runway.angle) + dy * Math.cos(runway.angle);
+      return Math.abs(along) < runway.length / 2 + margin &&
+        Math.abs(across) < runway.width / 2 + margin;
+    });
+    if (!overlapsRunway) paintVectorLabel(graphics, sign, unit);
+  }
 }
 
 export function renderTwinBanksMap(
@@ -217,8 +228,9 @@ export function renderTwinBanksMap(
   layout: TwinBanksLayout,
   detailLevel: WorldDetailLevel
 ): void {
-  composeStaticMap(scene, layout, detailLevel, ({ graphics, unit }) => {
-    paintTerrain(graphics, layout, unit);
+  composeStaticMap(scene, layout, detailLevel, {
+    scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit),
+    operational: ({graphics, unit}) => {
     paintScenicRunways(graphics, layout);
     paintApron(graphics, layout.apron, CIVIL_PALETTE);
     paintApron(graphics, layout.westApron, CIVIL_PALETTE);
@@ -228,5 +240,7 @@ export function renderTwinBanksMap(
     }
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
     paintFacilities(graphics, layout, unit);
-  });
+    },
+    detail: () => {}
+  }, {materialTextureKey: 'terrain:arcade:meadow'});
 }

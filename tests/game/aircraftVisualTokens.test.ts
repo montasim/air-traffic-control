@@ -38,12 +38,12 @@ describe('aircraft visual system', () => {
     }
   });
 
-  it('does not enlarge an aircraft when the logical world renders at full size', () => {
+  it('maintains the minimum readable footprint even on a full-size world', () => {
     expect(aircraftPresentationScale(
       'liner',
       { width: 1600, height: 900 },
       { width: 1600, height: 900 }
-    )).toBeCloseTo(74 / AIRCRAFT_SILHOUETTES.liner.majorAxis, 5);
+    )).toBeCloseTo(76 / 68, 5);
   });
 
   it('keeps class color subordinate to the neutral aircraft body', () => {

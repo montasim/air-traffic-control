@@ -1,24 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import {
-  presentationAssetFor,
-  riverBendTerrainTextureKey
-} from '../../src/game/assets/presentationAssets';
+import { describe, expect, it } from "vitest";
+import { presentationAssetFor } from "../../src/game/assets/presentationAssets";
+import { MAP_IDS } from "../../src/game/maps/mapIds";
 
-describe('presentation assets', () => {
-  it('selects one stable River Bend terrain key per layout variant', () => {
-    for (const variant of ['landscape', 'portrait', 'square'] as const) {
-      const asset = presentationAssetFor({ mapId: 'river-bend', variant });
-      expect(asset).toEqual({
-        key: riverBendTerrainTextureKey(variant),
-        url: `/assets/visual-v2/river-bend/terrain-${variant}.webp`
-      });
+describe("offline terrain materials", () => {
+  it("ships a local material for every map and shares it across orientations", () => {
+    for (const mapId of MAP_IDS) {
+      const assets = ["portrait", "landscape", "square"].map((variant) =>
+        presentationAssetFor({
+          mapId,
+          variant: variant as "portrait" | "landscape" | "square",
+        }),
+      );
+      expect(new Set(assets.map((asset) => asset.key)).size).toBe(1);
+      for (const asset of assets)
+        expect(asset.url).toMatch(/^\/assets\/arcade\/(meadow|mineral)\.webp$/);
     }
   });
-
-  it('does not queue a terrain plate for maps that still use code-native scenery', () => {
-    expect(presentationAssetFor({
-      mapId: 'saltmarsh-gateway',
-      variant: 'landscape'
-    })).toBeUndefined();
+  it("uses a distinct mineral surface for the desert", () => {
+    expect(
+      presentationAssetFor({ mapId: "desert-parallel", variant: "landscape" })
+        .key,
+    ).not.toBe(
+      presentationAssetFor({ mapId: "river-bend", variant: "landscape" }).key,
+    );
   });
 });

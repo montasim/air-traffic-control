@@ -7,7 +7,8 @@ export const RIVER_BEND_DEFINITION = defineMap({
   metadata: {
     name: 'River Bend',
     description: 'A compact airfield beside a quiet curved river landmark.',
-    difficulty: 'intermediate',
+    category: 'regional',
+    layoutLabel: 'Riverside airfield',
     unlockRankId: 'control-trainee'
   },
   trafficProfileId: 'river-bend',

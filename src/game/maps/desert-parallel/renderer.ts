@@ -26,15 +26,15 @@ const CIVIL_PALETTE: CivilMapPalette = {
   water: DESERT_PARALLEL_PALETTE.coastDeep,
   waterEdge: DESERT_PARALLEL_PALETTE.coastShallow,
   waterShallow: DESERT_PARALLEL_PALETTE.coastShallow,
-  airportGround: DESERT_PARALLEL_PALETTE.runwayShoulder,
-  asphalt: DESERT_PARALLEL_PALETTE.runway,
-  asphaltEdge: DESERT_PARALLEL_PALETTE.runwayShoulder,
-  apron: DESERT_PARALLEL_PALETTE.apron,
-  marking: DESERT_PARALLEL_PALETTE.runwayMarking,
-  taxiwayMarking: DESERT_PARALLEL_PALETTE.taxiwayMarking,
-  building: DESERT_PARALLEL_PALETTE.buildingWall,
-  buildingRoof: DESERT_PARALLEL_PALETTE.buildingRoof,
-  shadow: DESERT_PARALLEL_PALETTE.mineralDeep,
+  airportGround: 0xa1ac8b,
+  asphalt: 0x505e60,
+  asphaltEdge: 0xb0baa6,
+  apron: 0x89938a,
+  marking: 0xf4efda,
+  taxiwayMarking: 0xd4c29b,
+  building: 0xb8b9a3,
+  buildingRoof: 0xeee4c9,
+  shadow: 0x3b5049,
   vegetation: DESERT_PARALLEL_PALETTE.scrub,
   vegetationLight: DESERT_PARALLEL_PALETTE.stone
 };
@@ -137,7 +137,7 @@ function paintFacilities(
     height: landmark.height,
     angle: landmark.angle,
     kind: 'operations'
-  }, CIVIL_PALETTE);
+  }, CIVIL_PALETTE, layout.runways);
 
   for (const [index, prop] of layout.propAnchors.entries()) {
     if (prop.id === 'desert-ops') continue;
@@ -161,7 +161,7 @@ function paintFacilities(
       height: prop.size * (prop.kind === 'hangar' ? 0.5 : 0.7),
       angle: prop.angle,
       kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
-    }, CIVIL_PALETTE);
+    }, CIVIL_PALETTE, layout.runways);
     if (index % 2 === 0) {
       graphics.lineStyle(Math.max(1, unit * 0.0015), DESERT_PARALLEL_PALETTE.runwayMarking, 0.24);
       const roof = rotatedRectangle(prop.position, prop.size * 0.72, prop.size * 0.18, prop.angle);
@@ -189,8 +189,9 @@ export function renderDesertParallelMap(
   layout: DesertParallelLayout,
   detailLevel: WorldDetailLevel
 ): void {
-  composeStaticMap(scene, layout, detailLevel, ({ graphics, unit }) => {
-    paintTerrain(graphics, layout, unit);
+  composeStaticMap(scene, layout, detailLevel, {
+    scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit),
+    operational: ({graphics, unit}) => {
     paintApron(graphics, layout.apron, CIVIL_PALETTE);
     for (const taxiway of layout.taxiways) paintTaxiway(graphics, taxiway, CIVIL_PALETTE);
     for (const runway of layout.runways) {
@@ -198,5 +199,7 @@ export function renderDesertParallelMap(
     }
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
     paintFacilities(graphics, layout, unit);
-  });
+    },
+    detail: () => {}
+  }, {materialTextureKey: 'terrain:arcade:mineral'});
 }

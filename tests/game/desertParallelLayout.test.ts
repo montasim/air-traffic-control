@@ -17,6 +17,7 @@ import {
 } from '../../src/game/maps/desert-parallel/renderer';
 
 const VIEWPORTS = [
+  { width: 1370, height: 926, variant: 'square', detail: 'desktop' },
   { width: 1600, height: 900, variant: 'landscape', detail: 'desktop' },
   { width: 844, height: 390, variant: 'landscape', detail: 'mobile' },
   { width: 900, height: 1600, variant: 'portrait', detail: 'mobile' },
@@ -186,7 +187,7 @@ describe('Desert Parallel layout', () => {
     expect(DESERT_PARALLEL_MAP).toMatchObject({
       id: 'desert-parallel',
       trafficProfileId: 'desert-parallel',
-      metadata: { difficulty: 'advanced', unlockRankId: 'control-assistant' }
+      metadata: { category: 'regional', unlockRankId: 'control-assistant' }
     });
     const prepared = DESERT_PARALLEL_MAP.prepare({
       width: 900,
@@ -197,11 +198,11 @@ describe('Desert Parallel layout', () => {
     expect(prepared.layout.variant).toBe('portrait');
   });
 
-  it('composes all static artwork into one render texture and destroys its graphics', () => {
+  it('bakes terrain once and retains crisp airport vectors', () => {
     const graphics = Object.fromEntries([
       'fillStyle', 'fillRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath',
-      'lineStyle', 'strokePath', 'fillCircle', 'fillEllipse', 'lineBetween',
-      'fillRoundedRect', 'strokeCircle'
+      'setDepth', 'clear', 'lineStyle', 'strokePath', 'fillCircle', 'fillEllipse', 'lineBetween',
+      'strokeRoundedRect', 'fillRoundedRect', 'strokeCircle'
     ].map((method) => [method, vi.fn().mockReturnThis()])) as Record<string, ReturnType<typeof vi.fn>>;
     graphics.destroy = vi.fn();
     const texture = {
@@ -227,6 +228,6 @@ describe('Desert Parallel layout', () => {
     expect(scene.add.renderTexture).toHaveBeenCalledTimes(1);
     expect(texture.draw).toHaveBeenCalledOnce();
     expect(texture.render).toHaveBeenCalledOnce();
-    expect(graphics.destroy).toHaveBeenCalledOnce();
+    expect(graphics.destroy).not.toHaveBeenCalled();
   });
 });

@@ -75,7 +75,7 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 3,
       minimumDistinctMaps: 1
     },
-    unlocks: ['desert-parallel']
+    unlocks: ['desert-parallel', 'executive-point']
   },
   {
     id: 'tower-controller',
@@ -86,7 +86,7 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 5,
       minimumDistinctMaps: 2
     },
-    unlocks: ['twin-banks']
+    unlocks: ['twin-banks', 'metro-international']
   },
   {
     id: 'approach-controller',
@@ -97,7 +97,7 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 7,
       minimumDistinctMaps: 3
     },
-    unlocks: []
+    unlocks: ['falcon-air-base']
   },
   {
     id: 'area-controller',
@@ -108,7 +108,7 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 10,
       minimumDistinctMaps: 4
     },
-    unlocks: []
+    unlocks: ['freight-junction']
   },
   {
     id: 'senior-controller',
@@ -119,7 +119,7 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 13,
       minimumDistinctMaps: 4
     },
-    unlocks: []
+    unlocks: ['island-rescue']
   },
   {
     id: 'chief-controller',

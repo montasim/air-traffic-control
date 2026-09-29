@@ -67,15 +67,15 @@ export const TWIN_BANKS_DETAIL_BUDGETS: Record<WorldDetailLevel, TwinBanksDetail
 };
 
 export const TWIN_BANKS_PALETTE = {
-  westGround: 0x76694b,
+  westGround: 0xb2a477,
   westHigh: 0x8b7954,
-  eastGround: 0x435b48,
-  eastHigh: 0x58705a,
+  eastGround: 0x829b6e,
+  eastHigh: 0xa6b883,
   fieldLine: 0x9a8d67,
-  tree: 0x344b3b,
-  riverDeep: 0x244d54,
-  riverMid: 0x35636a,
-  riverShelf: 0x5d7770,
+  tree: 0x688357,
+  riverDeep: 0x6c949c,
+  riverMid: 0x8eb4b7,
+  riverShelf: 0xc2c5a2,
   bridge: 0x77776b,
   apron: 0x3c4742,
   runway: 0x26302e,
@@ -113,7 +113,7 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
   landscape: {
     east: { center: { x: 0.735, y: 0.25 }, length: 0.76, width: 0.05, angle: 0.09, landingAlong: -0.36 },
     west: { center: { x: 0.25, y: 0.39 }, length: 0.58, width: 0.043, angle: -0.13, landingAlong: -0.34 },
-    scenic: { center: { x: 0.25, y: 0.25 }, length: 0.44, width: 0.032, angle: 0.18 },
+    scenic: { center: { x: 0.25, y: 0.25 }, length: 0.44, width: 0.032, angle: -0.13 },
     helipad: { x: 0.81, y: 0.48 },
     eastApron: [{ x: 0.65, y: 0.31 }, { x: 0.83, y: 0.32 }, { x: 0.88, y: 0.51 }, { x: 0.7, y: 0.56 }, { x: 0.63, y: 0.43 }],
     westApron: [{ x: 0.12, y: 0.31 }, { x: 0.33, y: 0.29 }, { x: 0.39, y: 0.48 }, { x: 0.18, y: 0.54 }, { x: 0.1, y: 0.44 }],
@@ -123,8 +123,8 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
   portrait: {
     east: { center: { x: 0.68, y: 0.25 }, length: 0.75, width: 0.052, angle: 1.5, landingAlong: -0.36 },
     west: { center: { x: 0.25, y: 0.34 }, length: 0.58, width: 0.044, angle: 1.62, landingAlong: -0.34 },
-    scenic: { center: { x: 0.22, y: 0.24 }, length: 0.41, width: 0.032, angle: 1.46 },
-    helipad: { x: 0.78, y: 0.48 },
+    scenic: { center: { x: 0.1, y: 0.34 }, length: 0.41, width: 0.032, angle: 1.62 },
+    helipad: { x: 0.83, y: 0.48 },
     eastApron: [{ x: 0.64, y: 0.25 }, { x: 0.89, y: 0.24 }, { x: 0.91, y: 0.48 }, { x: 0.7, y: 0.53 }, { x: 0.61, y: 0.4 }],
     westApron: [{ x: 0.05, y: 0.28 }, { x: 0.37, y: 0.25 }, { x: 0.42, y: 0.45 }, { x: 0.15, y: 0.51 }, { x: 0.04, y: 0.42 }],
     river: [{ x: 0.49, y: -0.05 }, { x: 0.52, y: 0.18 }, { x: 0.47, y: 0.4 }, { x: 0.53, y: 0.65 }, { x: 0.5, y: 1.05 }],
@@ -133,8 +133,8 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
   square: {
     east: { center: { x: 0.72, y: 0.3 }, length: 0.56, width: 0.05, angle: 1.4, landingAlong: -0.36 },
     west: { center: { x: 0.28, y: 0.38 }, length: 0.52, width: 0.043, angle: 1.7, landingAlong: -0.34 },
-    scenic: { center: { x: 0.32, y: 0.23 }, length: 0.36, width: 0.032, angle: 1.48 },
-    helipad: { x: 0.81, y: 0.48 },
+    scenic: { center: { x: 0.12, y: 0.38 }, length: 0.36, width: 0.032, angle: 1.7 },
+    helipad: { x: 0.89, y: 0.50 },
     eastApron: [{ x: 0.63, y: 0.31 }, { x: 0.84, y: 0.31 }, { x: 0.9, y: 0.5 }, { x: 0.7, y: 0.56 }, { x: 0.61, y: 0.43 }],
     westApron: [{ x: 0.1, y: 0.32 }, { x: 0.35, y: 0.29 }, { x: 0.41, y: 0.49 }, { x: 0.17, y: 0.55 }, { x: 0.08, y: 0.45 }],
     river: [{ x: 0.48, y: -0.05 }, { x: 0.51, y: 0.18 }, { x: 0.46, y: 0.4 }, { x: 0.52, y: 0.65 }, { x: 0.49, y: 1.05 }],
@@ -162,7 +162,7 @@ export interface TwinBanksLayout extends PlayableMapLayout {
 
 const variantFor = (width: number, height: number): MapLayoutVariant => {
   const aspect = width / height;
-  if (aspect >= 1.18) return 'landscape';
+  if (aspect >= 1.6) return 'landscape';
   if (aspect <= 0.85) return 'portrait';
   return 'square';
 };

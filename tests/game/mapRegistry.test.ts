@@ -10,6 +10,6 @@ describe('map registry', () => {
 
   it('resolves every selectable definition', () => {
     for (const mapId of MAP_IDS) expect(mapDefinitionById(mapId).id).toBe(mapId);
-    expect(mapDefinitionById(DEFAULT_MAP_ID).metadata.difficulty).toBe('beginner');
+    expect(mapDefinitionById(DEFAULT_MAP_ID).metadata.category).toBe('regional');
   });
 });

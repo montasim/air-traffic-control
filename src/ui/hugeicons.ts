@@ -1,7 +1,20 @@
-import PauseCircleIcon from '@hugeicons/core-free-icons/PauseCircleIcon';
+import Target01Icon from '@hugeicons/core-free-icons/Target01Icon';
+import AirportTowerIcon from '@hugeicons/core-free-icons/AirportTowerIcon';
+import Medal01Icon from '@hugeicons/core-free-icons/Medal01Icon';
+import Globe02Icon from '@hugeicons/core-free-icons/Globe02Icon';
+import Shield01Icon from '@hugeicons/core-free-icons/Shield01Icon';
+import Airplane02Icon from '@hugeicons/core-free-icons/Airplane02Icon';
+import AirplaneLanding01Icon from '@hugeicons/core-free-icons/AirplaneLanding01Icon';
+import LockKeyIcon from '@hugeicons/core-free-icons/LockKeyIcon';
+import PauseIcon from '@hugeicons/core-free-icons/PauseIcon';
 import PlayIcon from '@hugeicons/core-free-icons/PlayIcon';
 import ReloadIcon from '@hugeicons/core-free-icons/ReloadIcon';
-import MapsSquare01Icon from '@hugeicons/core-free-icons/MapsSquare01Icon';
+import Home01Icon from '@hugeicons/core-free-icons/Home01Icon';
+import Settings01Icon from '@hugeicons/core-free-icons/Settings01Icon';
+import HelpCircleIcon from '@hugeicons/core-free-icons/HelpCircleIcon';
+import Award01Icon from '@hugeicons/core-free-icons/Award01Icon';
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon';
+import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import VolumeHighIcon from '@hugeicons/core-free-icons/VolumeHighIcon';
 import VolumeMute02Icon from '@hugeicons/core-free-icons/VolumeMute02Icon';
 
@@ -9,10 +22,24 @@ type IconAttributes = Readonly<Record<string, string | number>>;
 type HugeIconData = readonly (readonly [string, IconAttributes])[];
 
 export const APP_ICONS = {
-  pause: PauseCircleIcon,
+  landing: AirplaneLanding01Icon,
+  fleet: Airplane02Icon,
+  safety: Shield01Icon,
+  explore: Globe02Icon,
+  veteran: Medal01Icon,
+  pressure: AirportTowerIcon,
+  target: Target01Icon,
+
+  pause: PauseIcon,
   play: PlayIcon,
   restart: ReloadIcon,
-  map: MapsSquare01Icon,
+  home: Home01Icon,
+  lock: LockKeyIcon,
+  settings: Settings01Icon,
+  help: HelpCircleIcon,
+  career: Award01Icon,
+  back: ArrowLeft01Icon,
+  expand: ArrowDown01Icon,
   volume: VolumeHighIcon,
   mute: VolumeMute02Icon
 } satisfies Record<string, HugeIconData>;

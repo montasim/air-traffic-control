@@ -1,4 +1,4 @@
-import { cloneGameSave, type GameSaveV2 } from './gameSave';
+import { cloneGameSave, type GameSaveV3 } from './gameSave';
 
 const DATABASE_NAME = 'vector-approach';
 const STORE_NAME = 'state';
@@ -7,7 +7,7 @@ const DATABASE_VERSION = 1;
 
 export interface SavePersistence {
   read(): Promise<unknown>;
-  write(save: GameSaveV2): Promise<void>;
+  write(save: GameSaveV3): Promise<void>;
 }
 
 export class MemorySavePersistence implements SavePersistence {
@@ -21,7 +21,7 @@ export class MemorySavePersistence implements SavePersistence {
     return this.value;
   }
 
-  async write(save: GameSaveV2): Promise<void> {
+  async write(save: GameSaveV3): Promise<void> {
     this.value = cloneGameSave(save);
   }
 }
@@ -62,7 +62,7 @@ export class IndexedDbSavePersistence implements SavePersistence {
     }
   }
 
-  async write(save: GameSaveV2): Promise<void> {
+  async write(save: GameSaveV3): Promise<void> {
     const database = await openDatabase();
     try {
       await new Promise<void>((resolve, reject) => {

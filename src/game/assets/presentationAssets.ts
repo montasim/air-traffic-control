@@ -1,50 +1,39 @@
-import type Phaser from 'phaser';
-import type { MapId } from '../maps/mapIds';
-import type { MapLayoutVariant } from '../maps/types';
+import type Phaser from "phaser";
+import type { MapId } from "../maps/mapIds";
+import type { MapLayoutVariant } from "../maps/types";
 
 export interface PresentationAssetRequest {
   readonly mapId: MapId;
   readonly variant: MapLayoutVariant;
 }
 
-interface PresentationAsset {
-  readonly key: string;
-  readonly url: string;
+/** Shared tileable materials keep all orientations consistent and bound decoded memory. */
+export function presentationAssetFor({ mapId }: PresentationAssetRequest): {
+  key: string;
+  url: string;
+} {
+  const materials: Record<MapId, 'mineral' | 'meadow'> = {
+    'saltmarsh-gateway': 'meadow', 'river-bend': 'meadow', 'desert-parallel': 'mineral', 'twin-banks': 'meadow',
+    'falcon-air-base': 'meadow', 'executive-point': 'meadow', 'metro-international': 'meadow', 'freight-junction': 'mineral', 'island-rescue': 'meadow'
+  };
+  const material = materials[mapId];
+  return {
+    key: `terrain:arcade:${material}`,
+    url: `/assets/arcade/${material}.webp`,
+  };
 }
 
-const RIVER_BEND_TERRAIN: Readonly<Record<MapLayoutVariant, PresentationAsset>> = {
-  landscape: {
-    key: 'terrain:river-bend:landscape:v1',
-    url: '/assets/visual-v2/river-bend/terrain-landscape.webp'
-  },
-  portrait: {
-    key: 'terrain:river-bend:portrait:v1',
-    url: '/assets/visual-v2/river-bend/terrain-portrait.webp'
-  },
-  square: {
-    key: 'terrain:river-bend:square:v1',
-    url: '/assets/visual-v2/river-bend/terrain-square.webp'
-  }
-};
+const queued = new WeakMap<Phaser.Scene, Set<string>>();
 
-/** Returns the one terrain plate required by the active map and viewport. */
-export function presentationAssetFor(
-  request: PresentationAssetRequest
-): PresentationAsset | undefined {
-  if (request.mapId !== 'river-bend') return undefined;
-  return RIVER_BEND_TERRAIN[request.variant];
-}
-
-/** Queues only the active presentation asset, avoiding unused decoded maps. */
 export function queuePresentationAssets(
   scene: Phaser.Scene,
-  request: PresentationAssetRequest
+  request: PresentationAssetRequest,
 ): void {
   const asset = presentationAssetFor(request);
-  if (!asset || scene.textures.exists(asset.key)) return;
-  scene.load.image(asset.key, asset.url);
-}
-
-export function riverBendTerrainTextureKey(variant: MapLayoutVariant): string {
-  return RIVER_BEND_TERRAIN[variant].key;
+  const keys = queued.get(scene) ?? new Set<string>();
+  if (!scene.textures.exists(asset.key) && !keys.has(asset.key)) {
+    keys.add(asset.key);
+    queued.set(scene, keys);
+    scene.load.image(asset.key, asset.url);
+  }
 }

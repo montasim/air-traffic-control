@@ -25,8 +25,8 @@ describe('game save migration', () => {
       soundEnabled: false
     });
 
-    expect(save.schemaVersion).toBe(2);
-    expect(save.mapRecords['saltmarsh-gateway']).toEqual({
+    expect(save.schemaVersion).toBe(3);
+    expect(save.mapRecords['saltmarsh-gateway']).toMatchObject({
       bestScores: { portrait: 7, landscape: 6 },
       safeLandings: 30,
       shiftsPlayed: 5
@@ -93,12 +93,12 @@ describe('game save migration', () => {
     expect(save.career.totalSafeLandings).toBe(20);
     expect(save.career.shiftsPlayed).toBe(4);
     expect(save.career.acknowledgedRankId).toBe('control-assistant');
-    expect(save.mapRecords['river-bend']).toEqual({
+    expect(save.mapRecords['river-bend']).toMatchObject({
       bestScores: { portrait: 8, landscape: 0 },
       safeLandings: 7,
       shiftsPlayed: 2
     });
-    expect(save.mapRecords['twin-banks']).toEqual({
+    expect(save.mapRecords['twin-banks']).toMatchObject({
       bestScores: { portrait: 0, landscape: 0 },
       safeLandings: 0,
       shiftsPlayed: 0

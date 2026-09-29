@@ -81,10 +81,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.78, y: 0.37 },
+      center: { x: 0.78, y: 0.53 },
       length: 0.44,
       width: 0.038,
-      angle: -0.7,
+      angle: 0.32,
       landingAlong: -0.32
     },
     apron: [
@@ -115,10 +115,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.7, y: 0.29 },
+      center: { x: 0.7, y: 0.46 },
       length: 0.53,
       width: 0.045,
-      angle: -0.76,
+      angle: 0.32,
       landingAlong: -0.32
     },
     apron: [
@@ -150,10 +150,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.73, y: 0.37 },
+      center: { x: 0.73, y: 0.57 },
       length: 0.49,
       width: 0.041,
-      angle: -0.74,
+      angle: 0.32,
       landingAlong: -0.32
     },
     apron: [
@@ -164,7 +164,7 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
       { x: 0.52, y: 0.49 },
       { x: 0.45, y: 0.38 }
     ],
-    helipad: { x: 0.48, y: 0.46 },
+    helipad: { x: 0.48, y: 0.40 },
     riverPath: [
       { x: -0.06, y: 0.38 },
       { x: 0.16, y: 0.49 },

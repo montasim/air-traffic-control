@@ -9,7 +9,8 @@ export const TWIN_BANKS_DEFINITION = defineMap({
   metadata: {
     name: 'Twin Banks',
     description: 'Two asymmetric fields share a river corridor and demand cross-bank planning.',
-    difficulty: 'expert',
+    category: 'regional',
+    layoutLabel: 'Split airfield',
     unlockRankId: 'tower-controller'
   },
   trafficProfileId: 'twin-banks',

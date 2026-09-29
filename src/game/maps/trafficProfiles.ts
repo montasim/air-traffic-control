@@ -27,7 +27,23 @@ function profile(overrides: Partial<TrafficProfile>): ResolvedTrafficProfile {
   });
 }
 
+
+function specialistProfile(weights: [number, number, number], opening: ['liner' | 'commuter' | 'rotor', 'liner' | 'commuter' | 'rotor', 'liner' | 'commuter' | 'rotor'], interval: number, late: number, cap: number): ResolvedTrafficProfile {
+  return profile({
+    openingSpawns: opening.map((type, i) => ({ type, at: i * (interval === 11 ? 16 : 14) })),
+    aircraftTypeWeights: [{type:'liner',weight:weights[0]},{type:'commuter',weight:weights[1]},{type:'rotor',weight:weights[2]}],
+    spawnIntervalStages: [{at:0,interval,transition:'linear'},{at:120,interval:interval*.8,transition:'linear'},{at:240,interval:interval*.6,transition:'linear'},{at:360,interval:late}],
+    trafficLimitStages: [{at:0,limit:3},{at:60,limit:4},{at:120,limit:5},{at:180,limit:6},{at:240,limit:7},{at:360,limit:cap}],
+    spawnCorridors: [{edge:'left',from:.15,to:.85,weight:1.5},{edge:'bottom',from:.12,to:.78,weight:1},{edge:'right',from:.65,to:.9,weight:.5}]
+  });
+}
+
 export const MAP_TRAFFIC_PROFILES: Readonly<Record<string, ResolvedTrafficProfile>> = {
+  'falcon-air-base': specialistProfile([35,40,25], ['commuter','rotor','liner'], 10,4.2,9),
+  'executive-point': specialistProfile([20,60,20], ['commuter','liner','rotor'], 11,4.8,8),
+  'metro-international': specialistProfile([60,25,15], ['liner','commuter','rotor'], 10,4.2,9),
+  'freight-junction': specialistProfile([50,35,15], ['liner','commuter','rotor'], 10,4.4,9),
+  'island-rescue': specialistProfile([15,25,60], ['rotor','commuter','liner'], 11,4.8,8),
   'saltmarsh-gateway': DEFAULT_TRAFFIC_PROFILE,
   'river-bend': profile({
     openingSpawns: [
@@ -116,5 +132,7 @@ export const MAP_TRAFFIC_PROFILES: Readonly<Record<string, ResolvedTrafficProfil
 };
 
 export function trafficProfileById(id: string): ResolvedTrafficProfile {
-  return MAP_TRAFFIC_PROFILES[id] ?? DEFAULT_TRAFFIC_PROFILE;
+  const found = MAP_TRAFFIC_PROFILES[id];
+  if (!found) throw new Error(`Unknown traffic profile: ${id}`);
+  return found;
 }

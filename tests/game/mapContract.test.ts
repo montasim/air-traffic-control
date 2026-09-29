@@ -46,7 +46,7 @@ function testDefinition(id: MapId, render = vi.fn()) {
     metadata: {
       name: id,
       description: `${id} test map`,
-      difficulty: 'beginner',
+      category: 'regional', layoutLabel: 'Test layout',
       unlockRankId: 'control-trainee'
     },
     trafficProfileId: 'legacy',
@@ -126,7 +126,7 @@ describe('map contract', () => {
       metadata: {
         name: 'Twin Banks',
         description: 'Test map',
-        difficulty: 'expert',
+        category: 'regional', layoutLabel: 'Test layout',
         unlockRankId: 'tower-controller'
       },
       trafficProfileId: 'expert',

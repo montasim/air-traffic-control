@@ -1,3 +1,4 @@
+import { ROUTE_OUTLINE_COLOR } from '../../src/game/palette';
 import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import type { Vector2 } from '../../src/core/types';
@@ -26,24 +27,6 @@ function runwayCorners(runway: MapRunway, lengthPadding = 0, widthPadding = 0): 
     y: runway.center.y + forward.y * (runway.length * 0.5 + lengthPadding) * along
       + right.y * (runway.width * 0.5 + widthPadding) * across
   }));
-}
-
-function runwayIntersection(first: MapRunway, second: MapRunway): {
-  firstAlong: number;
-  secondAlong: number;
-} {
-  const firstDirection = { x: Math.cos(first.angle), y: Math.sin(first.angle) };
-  const secondDirection = { x: Math.cos(second.angle), y: Math.sin(second.angle) };
-  const delta = {
-    x: second.center.x - first.center.x,
-    y: second.center.y - first.center.y
-  };
-  const denominator = firstDirection.x * secondDirection.y
-    - firstDirection.y * secondDirection.x;
-  return {
-    firstAlong: (delta.x * secondDirection.y - delta.y * secondDirection.x) / denominator,
-    secondAlong: (delta.x * firstDirection.y - delta.y * firstDirection.x) / denominator
-  };
 }
 
 function pointInRect(point: Vector2, rect: { x: number; y: number; width: number; height: number }): boolean {
@@ -201,15 +184,16 @@ describe('Saltmarsh Gateway definition', () => {
       trafficProfileId: 'saltmarsh-gateway',
       metadata: {
         name: 'Saltmarsh Gateway',
-        difficulty: 'beginner',
+        category: 'regional',
         unlockRankId: 'control-trainee'
       }
     });
   });
 
-  it('keeps every reserved route color strongly legible over the dominant terrain', () => {
+  it('keeps the route casing legible against terrain and every signal legible against its casing', () => {
     for (const color of Object.values(AIRCRAFT_COLORS)) {
-      expect(contrast(color, SALTMARSH_GATEWAY_PALETTE.terrain)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(color, ROUTE_OUTLINE_COLOR)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(ROUTE_OUTLINE_COLOR, SALTMARSH_GATEWAY_PALETTE.terrain)).toBeGreaterThanOrEqual(4.5);
     }
   });
 
@@ -236,9 +220,12 @@ describe('Saltmarsh Gateway definition', () => {
       expect(pointInRect(point, layout.openAirspace)).toBe(false);
     }
 
-    const intersection = runwayIntersection(main, commuter);
-    expect(Math.abs(intersection.firstAlong)).toBeLessThan(main.length / 2);
-    expect(Math.abs(intersection.secondAlong)).toBeLessThan(commuter.length / 2);
+    expect(commuter.angle).toBe(main.angle);
+    const separation = Math.abs(
+      -(commuter.center.x - main.center.x) * Math.sin(main.angle) +
+      (commuter.center.y - main.center.y) * Math.cos(main.angle)
+    );
+    expect(separation).toBeGreaterThan((main.width + commuter.width) / 2 + 24);
     expect(layout.taxiways.map(({ connects }) => connects)).toEqual([
       ['gateway-main', 'gateway-apron'],
       ['gateway-commuter', 'gateway-apron'],
@@ -329,7 +316,7 @@ describe('Saltmarsh Gateway definition', () => {
     expect(harness.scene.add.renderTexture).toHaveBeenCalledWith(0, 0, 1600, 900);
     expect(harness.texture.draw).toHaveBeenCalledOnce();
     expect(harness.texture.render).toHaveBeenCalledOnce();
-    expect(harness.destroy).toHaveBeenCalledOnce();
+    expect(harness.destroy).not.toHaveBeenCalled();
   });
 
   it('applies progressively richer mobile, tablet, and desktop detail budgets', () => {

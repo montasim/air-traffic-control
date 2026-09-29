@@ -88,10 +88,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.755, y: 0.425 },
+      center: { x: 0.755, y: 0.61 },
       length: 0.55,
       width: 0.046,
-      angle: -0.72,
+      angle: 0.035,
       landingAlong: -0.32
     },
     apron: [
@@ -116,10 +116,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.68, y: 0.32 },
+      center: { x: 0.68, y: 0.46 },
       length: 0.57,
       width: 0.047,
-      angle: -0.78,
+      angle: 0.025,
       landingAlong: -0.32
     },
     apron: [
@@ -144,10 +144,10 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.34
     },
     commuter: {
-      center: { x: 0.7, y: 0.42 },
+      center: { x: 0.7, y: 0.61 },
       length: 0.56,
       width: 0.046,
-      angle: -0.78,
+      angle: 0.035,
       landingAlong: -0.32
     },
     apron: [

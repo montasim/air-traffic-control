@@ -9,7 +9,8 @@ export const DESERT_PARALLEL_DEFINITION = defineMap({
   metadata: {
     name: 'Desert Parallel',
     description: 'Offset approaches cross a quiet mineral basin beside a remote field station.',
-    difficulty: 'advanced',
+    category: 'regional',
+    layoutLabel: 'Desert airfield',
     unlockRankId: 'control-assistant'
   },
   trafficProfileId: 'desert-parallel',
