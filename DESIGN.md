@@ -1,391 +1,243 @@
 ---
 name: Vector Approach
-description: "A local-first regional-airport atlas descended from the raised saltmarsh airfield."
+description: "An illustrated aviation arcade game with cream controls and miniature civil airfields."
 colors:
-  interface-ink: "#111315"
-  panel-glass: "rgba(25, 28, 31, 0.97)"
-  panel-solid: "#191c1f"
-  control-glass: "rgba(23, 26, 29, 0.94)"
-  bone: "#f4f0e7"
-  muted: "#c7c1b7"
-  interface-accent: "#82b8c4"
-  interface-accent-hover: "#9ac8d1"
-  scrollbar: "#5f848c"
-  roster-river-muted: "#48575b"
-  roster-desert-muted: "#655d50"
-  roster-twin-muted: "#59594f"
-  roster-locked: "#252c2f"
-  range-track: "#4a5054"
-  modal-scrim: "rgba(0, 0, 0, 0.48)"
+  paper: "#fff5df"
+  ink: "#203d39"
+  muted: "#566656"
+  accent: "#ebaa44"
+  accent-hover: "#f3bd5a"
+  line: "#d4cfb8"
+  secondary: "#e8e6d4"
+  focus: "#147c88"
+  meadow: "#819667"
+  meadow-light: "#a3b680"
+  meadow-dark: "#6b835c"
+  sand: "#cbb48a"
+  west-bank: "#b2a477"
+  east-bank: "#829b6e"
+  water: "#719fa4"
+  asphalt: "#505e60"
+  marking: "#f4efda"
+  taxiway: "#d4c29b"
   aircraft-body: "#f3ead5"
   aircraft-keyline: "#102a3a"
-  marsh-deep: "#263e38"
-  marsh: "#3c5a4f"
-  marsh-high: "#526b5d"
-  water-deep: "#21464d"
-  water-shallow: "#416866"
-  polder-shadow: "#132b28"
-  raised-turf: "#4b5951"
-  asphalt: "#273431"
-  marking-bone: "#e4e0cc"
-  taxiway-amber: "#b79b55"
   aircraft-cyan: "#8bdeda"
   aircraft-amber: "#f0bd66"
   aircraft-coral: "#f0836f"
-  guidance-invalid: "#f3a08d"
-  gateway-ground: "#293c34"
-  gateway-water: "#315359"
-  river-ground: "#323a31"
-  river-water: "#38565a"
-  desert-ground: "#8a7658"
-  desert-water: "#314f53"
-  twin-west-ground: "#76694b"
-  twin-east-ground: "#435b48"
-  twin-river: "#244d54"
-  roster-river: "#315b5b"
-  roster-desert: "#8a7048"
-  roster-twin-west: "#81683f"
-  roster-twin-river: "#356167"
-  roster-twin-east: "#466445"
+  route-outline: "#0c1716"
 typography:
   display:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "clamp(2.125rem, 7.5vmin, 3.5rem)"
+    fontFamily: '"Barlow Condensed", sans-serif'
+    fontSize: "clamp(4rem, 7.6vw, 6.5rem)"
     fontWeight: 700
-    lineHeight: 0.98
-    letterSpacing: "-0.015em"
+    lineHeight: 0.82
+    letterSpacing: "-0.035em"
   headline:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "clamp(2rem, 6.5vmin, 2.75rem)"
+    fontFamily: '"Barlow Condensed", sans-serif'
+    fontSize: "2.5rem"
     fontWeight: 700
-    lineHeight: 0.98
-    letterSpacing: "-0.015em"
+    lineHeight: 1.05
   body:
-    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
+    fontFamily: '"Atkinson Hyperlegible", sans-serif'
     fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 1.45
-  small:
-    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
-    fontSize: "0.75rem"
-    fontWeight: 400
-    lineHeight: 1.28
-  compact:
-    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
-    fontSize: "0.8125rem"
-    fontWeight: 400
-    lineHeight: 1.3
-  coach:
-    fontFamily: '"Atkinson Hyperlegible", "Segoe UI", "Noto Sans", sans-serif'
-    fontSize: "0.875rem"
-    fontWeight: 400
-    lineHeight: 1.35
-  rank:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
+    lineHeight: 1.5
+  control:
+    fontFamily: '"Barlow Condensed", sans-serif'
     fontSize: "1.25rem"
     fontWeight: 700
-    lineHeight: 1
-  short-headline:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "clamp(1.75rem, 5vmin, 2.25rem)"
-    fontWeight: 700
-    lineHeight: 0.98
-  control-icon:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "19px"
-    fontWeight: 700
-    lineHeight: 1
-  control:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "1.0625rem"
-    fontWeight: 600
-    lineHeight: 1
-    letterSpacing: "0.015em"
-  hud-label:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "0.6875rem"
-    fontWeight: 600
-    lineHeight: 1
-    letterSpacing: "0.06em"
   hud-value:
-    fontFamily: '"Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif'
-    fontSize: "clamp(1.5rem, 4vmin, 2rem)"
+    fontFamily: '"Barlow Condensed", sans-serif'
+    fontSize: "2rem"
     fontWeight: 700
     lineHeight: 1
-    fontFeature: '"lnum" 1, "tnum" 1'
+  label:
+    fontFamily: '"Barlow Condensed", sans-serif'
+    fontSize: "0.75rem"
 rounded:
-  micro: "2px"
-  scrollbar: "6px"
-  compact: "12px"
-  standard: "12px"
+  utility: "8px"
+  control: "10px"
+  card: "12px"
+  board: "14px"
+  dialog: "16px"
 spacing:
-  label-gap: "4px"
+  small: "8px"
   action-gap: "10px"
-  edge: "12px"
-  frame: "16px"
-  control-inline: "20px"
-  panel: "clamp(22px, 5vw, 34px)"
+  grid-gap: "12px"
+  edge: "16px"
+  board: "24px"
+  dialog: "30px"
 components:
   button-primary:
-    backgroundColor: "{colors.interface-accent}"
-    textColor: "{colors.interface-ink}"
+    backgroundColor: "{colors.accent}"
+    textColor: "#293d32"
     typography: "{typography.control}"
-    rounded: "{rounded.standard}"
-    padding: "0 20px"
-    height: "52px"
-  button-primary-hover:
-    backgroundColor: "{colors.interface-accent-hover}"
-    textColor: "{colors.interface-ink}"
-    rounded: "{rounded.standard}"
+    rounded: "{rounded.control}"
+    padding: "12px 22px"
   button-secondary:
-    backgroundColor: "transparent"
-    textColor: "{colors.bone}"
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.ink}"
     typography: "{typography.control}"
-    rounded: "{rounded.standard}"
-    padding: "0 20px"
-    height: "52px"
-  atlas-panel:
-    backgroundColor: "{colors.panel-glass}"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.standard}"
-    padding: "{spacing.panel}"
-    width: "min(100%, 880px)"
-  modal-panel:
-    backgroundColor: "{colors.panel-glass}"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.standard}"
-    padding: "{spacing.panel}"
-    width: "min(100%, 410px)"
-  career-summary:
-    backgroundColor: "transparent"
-    textColor: "{colors.bone}"
-    padding: "12px 0"
-    width: "100%"
-  map-roster-card:
-    backgroundColor: "rgba(242, 240, 232, 0.045)"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.standard}"
-    padding: "49px 12px 12px"
-    height: "136px"
-  audio-toggle:
-    backgroundColor: "transparent"
-    textColor: "{colors.bone}"
-    typography: "{typography.body}"
-    rounded: "{rounded.standard}"
-    padding: "0 13px"
-    height: "44px"
+    rounded: "{rounded.control}"
+    padding: "12px 22px"
+  utility-navigation:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.utility}"
+    padding: "8px 14px"
+  departure-board:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.board}"
+    padding: "{spacing.board}"
+    width: "390px"
+  utility-dialog:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.dialog}"
+    padding: "{spacing.dialog}"
+    width: "min(560px, calc(100% - 32px))"
   hud-stat:
-    backgroundColor: "{colors.control-glass}"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.standard}"
-    padding: "7px 10px 8px"
+    backgroundColor: "#fff5dfee"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "8px 15px"
   pause-control:
-    backgroundColor: "{colors.control-glass}"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.standard}"
-    size: "48px"
-  route-coachmark:
-    backgroundColor: "rgba(13, 30, 28, 0.94)"
-    textColor: "{colors.bone}"
-    rounded: "{rounded.compact}"
-    padding: "11px 14px 12px"
-    width: "min(calc(100% - 112px), 380px)"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "50%"
+    size: "50px"
 ---
 
 # Design System: Vector Approach
 
 ## Overview
 
-**Creative North Star: "The Raised Saltmarsh Airfield Atlas"**
+**Creative North Star: "The Illustrated Aviation Arcade"**
 
-Vector Approach expands one proven visual world into a regional atlas. The original raised saltmarsh airfield remains the parent language: muted mineral geography, operationally credible civil infrastructure, bone paint, amber taxiway detail, and deliberately open routing space. Saltmarsh Gateway, River Bend, Desert Parallel, and Twin Banks change the terrain story and airfield arrangement without changing the product's visual grammar.
+Vector Approach is a colorful miniature civil-airfield world with clear aircraft, readable routes, and tactile cream-and-amber controls. Meadow and sand materials, softly shaded geography, crisp airport construction, and recognizable aircraft belong to the same illustrated family. The selected airfield leads the opening screen; controls occupy small, purposeful areas around it.
 
-The interface is a quiet clearance desk laid over the selected map. One wide opening panel presents career state, a four-field roster, sound controls, and the play decision; active play removes that shell and leaves only score, orientation-aware best, route coaching, and pause. Everything visible or audible is bundled, synthesized, or drawn from deterministic code so the atlas keeps its identity offline.
+The user-approved `docs/game-ui-redesign-plan.md` replaces the earlier graphite-panel and muted saltmarsh presentation. This document records the implementation in the map renderers, aircraft renderers, `src/styles.css`, `index.html`, and `src/main.ts`; no separate approved visual comp exists. The bundled fonts, original map identities, civil aviation theme, aircraft class signals, and offline operation remain durable commitments.
 
 **Key Characteristics:**
 
-- Four distinct geographic fields held together by one civil-airfield construction language.
-- Opaque graphite controls, warm-white type, condensed operational labels, and restrained clearance-blue selection.
-- Muted biome colors beneath warm-neutral aircraft bodies with limited cyan, amber, and coral class signals.
-- A responsive map roster that stays readable instead of collapsing into miniature cards.
-- Layered static worlds composited once from optional terrain plates plus code-native airport geometry, with semantic audio synthesized locally.
+- Illustrated meadow and mineral terrain beneath code-native operational geometry.
+- Cream surfaces, forest ink, amber primary actions, and compact condensed headings.
+- Cyan, amber, and coral aircraft identities reinforced by silhouettes and L/C/H destination signs.
+- A visible selected airfield with actual rendered map thumbnails and one dominant Play action.
+- Small gameplay HUD, Resume-first pause, native utility dialogs, and explicit career counters.
 
 ## Colors
 
-The atlas grows outward from tidal green into olive river fields, a mineral desert basin, and a two-bank ochre/green split; interface and aircraft colors remain stable across every field.
+Warm paper and amber controls sit against green meadow, sandy mineral ground, and soft blue water; dark route casing keeps gameplay readable across them.
 
 ### Primary
 
-- **Saltmarsh Family** (`marsh-deep`, `marsh`, `marsh-high`, `raised-turf`, `gateway-ground`): the incumbent coastal ground language and Saltmarsh Gateway's engineered field.
-- **River Field** (`river-ground`): the olive-neutral ground that distinguishes River Bend without leaving the muted regional family.
-- **Mineral Basin** (`desert-ground`): Desert Parallel's dry ochre field and the warm band in its roster preview.
-- **Twin Bank Grounds** (`twin-west-ground`, `twin-east-ground`): the asymmetric ochre and green halves that make Twin Banks readable at a glance.
+- **Flight Amber** (`accent`, `accent-hover`): Play, Resume, retry, and their hover feedback. Selection borders use a related warm amber rather than the former interface cyan.
+- **Cream Paper** (`paper`): departure board, utility dialogs, coachmark, and pause control. Cream makes interactive surfaces distinct from the illustrated map without covering it with a dark shell.
 
 ### Secondary
 
-- **Atlas Water** (`water-deep`, `water-shallow`, `gateway-water`, `river-water`, `desert-water`, `twin-river`): pools, river bends, coast fragments, and the dividing river; every water is quieter than an active route.
-- **Runway Asphalt** (`asphalt`): the dark structural ground shared by runways and taxiways.
-- **Bone Marking** (`marking-bone`): thresholds, centerlines, designators, helipads, labels, and field detail.
-- **Taxiway Amber** (`taxiway-amber`): low-saturation civil ground markings, visually distinct from the brighter commuter signal.
-- **Roster Geography** (`marsh`, `roster-river`, `roster-desert`, `roster-twin-west`, `roster-twin-river`, `roster-twin-east`): compact top bands that preview each map's dominant geographic split.
+- **Meadow Family** (`meadow`, `meadow-light`, `meadow-dark`): Saltmarsh Gateway and River Bend geography, with the shared meadow material also used by Twin Banks.
+- **Mineral Sand** (`sand`): Desert Parallel ground beneath the shared mineral material.
+- **Twin Grounds** (`west-bank`, `east-bank`): the warmer west bank and greener east bank remain recognizably different.
+- **Water and Civil Infrastructure** (`water`, `asphalt`, `marking`, `taxiway`): cool waterways, asphalt runways, cream markings, and restrained taxiway paint. Individual maps retain related local palette variants.
 
 ### Tertiary
 
-- **Aircraft Cyan** (`aircraft-cyan`): liner silhouettes, compatible runway beacons, and matching route guidance.
-- **Aircraft Amber** (`aircraft-amber`): commuter silhouettes and their contextual destination cues.
-- **Aircraft Coral** (`aircraft-coral`): rotorcraft silhouettes and helipad cues; `guidance-invalid` appears only for missed acquisition.
-- **Clearance Blue** (`interface-accent`, `interface-accent-hover`): the selected roster card, range input, primary action, promotion emphasis, and focus-worthy confirmation; it is quieter and less saturated than aircraft cyan.
+- **Aircraft Cyan, Amber, and Coral** (`aircraft-cyan`, `aircraft-amber`, `aircraft-coral`): liner, commuter, and helicopter livery and matching guidance. Help chips repeat the mapping with category letters.
+- **Focus Teal** (`focus`): visible keyboard focus on cream UI surfaces.
 
 ### Neutral
 
-- **Interface Ink** (`interface-ink`): the browser background and darkest UI ground.
-- **Bone** (`bone`): primary UI text, focus outlines, and high-contrast controls.
-- **Muted Sage** (`muted`): descriptions, career progress, card detail, and HUD labels.
-- **Panel and Control Graphite** (`panel-glass`, `control-glass`): near-opaque neutral operational overlays; `panel-solid` is the fully opaque reduced-transparency fallback.
-- **Aircraft Body and Keyline** (`aircraft-body`, `aircraft-keyline`): warm neutral paint and a cool charcoal perimeter keep every class visible over grass, water, pavement, and mineral terrain without depending on saturation.
-- **Polder Shadow** (`polder-shadow`): the dark construction edge inherited from the raised-airfield world.
+- **Forest Ink** (`ink`): primary interface text. **Muted Green** (`muted`) and related local green values support explanatory text.
+- **Paper Divider and Secondary Surface** (`line`, `secondary`): restrained separators and lower-priority actions.
+- **Aircraft Paint and Keyline** (`aircraft-body`, `aircraft-keyline`): cream aircraft bodies and cool dark perimeters over every biome.
+- **Route Casing** (`route-outline`): a dark contrast underlay beneath semantic route strokes.
 
-### Named Rules
-
-**The Signal Reservation Rule.** Cyan, amber, and coral belong to aircraft, selected destination beacons, transient guidance, and narrowly scoped interface confirmation; scenery never borrows their saturation.
-
-**The Atlas Family Rule.** A map earns identity through terrain hue, water geometry, and field arrangement; runway asphalt, bone paint, restrained taxiway detail, graphite interface surfaces, and aircraft signals do not change by biome.
+**The Signal Reservation Rule.** Keep saturated class colors for aircraft and compatible destination feedback; the brighter scenery remains quieter than routes and warnings.
 
 ## Typography
 
-**Display Font:** Barlow Condensed (with Arial Narrow, Roboto Condensed, and sans-serif fallbacks)  
-**Body Font:** Atkinson Hyperlegible (with Segoe UI, Noto Sans, and sans-serif fallbacks)
+**Display Font:** Barlow Condensed, sans-serif fallback.
+**Body Font:** Atkinson Hyperlegible, sans-serif fallback.
 
-**Character:** Barlow Condensed makes map names, ranks, scores, runway identifiers, headings, signs, and controls feel compact and operational. Atkinson Hyperlegible keeps descriptions, career progress, instructions, and route coaching calm and readable at small sizes. Both families are bundled locally.
+Both families are bundled locally. The display face gives the title, actions, map names, and numbers an approachable aviation character; the body face carries instructions and detailed progress. No remote font service is required.
 
-### Hierarchy
+The title is tightly stacked, with cream “Vector” and amber “Approach.” Display sizing adapts substantially on small screens; the frontmatter records the desktop base. Modal headlines use the headline role, primary actions the control role, and tabular score numerals the HUD role. Supporting descriptions generally sit around 0.8–0.95rem; small map state labels are secondary to map names and thumbnails.
 
-- **Display** (700, responsive 2.125–3.5rem, 0.98): the product title in the atlas panel.
-- **Headline** (700, responsive 2–2.75rem, 0.98): pause and game-over state names.
-- **Body** (400, 1rem, 1.45): modal explanation, held to a readable 34ch.
-- **Control** (600, 1.0625rem, 1): primary and secondary action labels, map names, and rank names.
-- **HUD Label** (600, 0.6875rem, 0.06em tracking): uppercase score, best, clearance, roster legend, difficulty, and effects labels.
-- **HUD Value** (700, responsive 1.5–2rem, 1): lining, tabular score numerals.
-
-### Named Rules
-
-**The Two-Voice Rule.** Barlow Condensed names the field, clearance, state, and action; Atkinson Hyperlegible explains what the player should understand.
+**The Two-Voice Rule.** Barlow Condensed names the field, state, and action; Atkinson Hyperlegible explains what the player should understand.
 
 ## Layout
 
-The game frame is fixed to the safe-area-aware dynamic viewport (`100dvw × 100dvh`) with no gameplay scrolling. Score and current-orientation best anchor to the upper safe-area corners; pause anchors to the lower-right; the coachmark sits low and centered without entering that target. Opening, pause, and game-over layers may scroll vertically when their content cannot fit.
+The fixed full-viewport game canvas supplies the main scene. The launch layer is transparent except for a gentle directional gradient and its local controls. Desktop places the title and utility navigation upper-left, the departure board lower-left, and the horizontally arranged map selector along the remaining lower edge. The board contains the selected name, difficulty, description, overall map best or lock requirements, and full-width Play.
 
-The atlas panel is the wide modal variant, capped at 880px. Its normal desktop sequence is title and instruction, a full-width career summary, a four-column map roster with 10px gutters, sound controls, then one full-width play action. Compact pause and game-over panels remain capped at 410px. The career summary pairs a small uppercase label with the earned rank and a progress sentence; the result panel reuses that progress line or replaces it with the promotion.
+At widths up to 1000px, the board narrows and spacing contracts. Portrait up to 650px uses a compact title, utility buttons, a bottom departure board, and a horizontal snap-scrolling selector with 158px cards. The home canvas is shifted down 48px in that portrait range; active gameplay is not shifted. The selected card is scrolled into view. Short landscape up to 600px high and above 650px wide splits the title and board across the top and places the selector below; the board may scroll internally. Short/narrow screens hide secondary description and career summary rather than displacing Play.
 
-At 720px wide or below, the map roster becomes one horizontal row with 220px-to-78vw cards, inline overscroll containment, center snap points, and a visible accent scrollbar. The card width preserves name, state, and description rather than forcing four compressed columns. Career content stacks into one column and sound controls stack into two readable rows.
+Active score and orientation-specific best occupy opposite upper safe-area corners; the circular pause control sits lower-right. The centered lower coachmark reserves space beside pause. Compact overlays are centered, capped at 430px normally, and scroll within the viewport. Native utility dialogs cap at 560px. Short-landscape overlays use a wider 540px layout with wrapping action rows. Preserve safe-area positioning and avoid adding permanent UI over approach paths.
 
-At 480px landscape height or below, the atlas panel widens to 820px, moves to the top of the scrollable scrim, reduces padding, shortens cards from 136px to 88px, hides card descriptions, keeps all four cards in one row, places career progress beside the rank, keeps sound controls inline, and uses two columns for paired modal actions. The route coachmark moves to the lower-right routing-safe area. Coarse pointers retain at least 48 × 48px controls, and every overlay edge respects safe-area insets.
-
-Logical worlds are 1600 × 900 in landscape and 900 × 1600 in portrait; near-square viewports use a third authored map variant where supplied. Geometry, not camera cropping, preserves each field's spatial story. Detail is a separate responsive axis: a shortest viewport dimension below 520px uses mobile detail; a longest dimension of at least 1200px together with a shortest dimension of at least 700px uses desktop detail; everything else uses tablet detail. Map-specific budgets reduce field bands, trees or scrub, water marks, wear, coast fragments, service props, and labels without removing playable infrastructure.
-
-### Four Map Invariants
-
-- **Saltmarsh Gateway:** keep the connected intersecting runways, shared apron and helipad in the high/right region; quiet tidal pools, field seams, and access geometry surround at least 35% clear routing airspace below or away from the airport.
-- **River Bend:** keep the compact civil airport high/right and the broad, scenery-only river bending along the left and lower edge; the river is an orientation landmark, never a permanent guidance overlay or collision rule.
-- **Desert Parallel:** keep two long offset runway approaches, a compact shared apron and helipad, the remote operations landmark, dry washes, scrub, stones, and only small coast fragments; mineral ground dominates the view.
-- **Twin Banks:** keep asymmetric west and east fields separated by a continuous river corridor, with bridge, secondary scenic strip, dual aprons, and the helipad on the east side; the two ground colors and central water split must remain visible in every orientation.
-
-### Named Rules
-
-**The Open Airspace Rule.** Preserve each map's authored airfield footprint and reserved routing area in every orientation; never enlarge geography or infrastructure until it consumes active approach space.
-
-**The Readable Roster Rule.** Show one complete card per map in registry order; on narrow screens scroll the roster horizontally instead of shrinking or wrapping cards into an unreadable grid.
+Authored portrait, landscape, and near-square map geometry remains authoritative. Saltmarsh keeps its connected intersecting airfield and tidal drainage; River Bend keeps its broad river landmark; Desert Parallel keeps its offset approaches and dry geography; Twin Banks keeps the continuous river split and asymmetric fields. Scenery never changes landing or collision geometry.
 
 ## Elevation & Depth
 
-Depth is a hybrid of tonal construction and restrained overlay lift. Map geography uses nested tonal bands, pavement shoulders, surface wear, roof highlights, water shelves, and small south-east structural offsets rather than photorealistic texture. DOM HUD controls use a quiet 0 4px 18px shadow, roster selection adds a bounded 0 7px 24px lift and inner cyan line, and modal content uses a deeper 0 22px 60px shadow. Translucent blur switches to the solid panel token when reduced transparency is requested.
+Depth combines soft illustrated material texture, tonal geography, crisp airport edges, and consistent south-east object shadows from north-west light. Two bundled repeating meadow/mineral WebP materials give the atlas a shared texture vocabulary. Static scenery and civil infrastructure are composited into a cached map texture; live aircraft, routes, guidance, and warning effects remain separate.
 
-Every selected map composes its terrain, water, pavements, runway surfaces, wear, markings, facilities, and bounded labels into one native-size static render texture at depth -20. An approved orientation-specific terrain plate may replace only the scenery phase; airport and interaction geometry remain code-native. Temporary source images and vector graphics are destroyed after composition; live aircraft, selection, routes, warnings, and guidance remain separate and visually dominant.
+Cream UI uses modest structural shadows: primary actions lift by a small warm shadow, the departure board and map cards sit above the scene, and dialogs carry the strongest separation. The game remains visible beneath overlay scrims. Reduced transparency makes the HUD opaque and removes the launch gradient.
 
-### Shadow Vocabulary
-
-- **HUD Low** (`0 4px 18px rgba(7, 16, 15, 0.2)`): quiet lift beneath score and best.
-- **Control Low** (`0 4px 18px rgba(7, 16, 15, 0.24)`): lift beneath the lower-right pause control.
-- **Roster Selected** (`0 7px 24px rgba(4, 12, 11, 0.24)`): selection acknowledgment paired with an inset cyan line.
-- **Modal Structural** (`0 22px 60px rgba(4, 12, 11, 0.34)`): separates modal content from the paused map.
-
-### Named Rules
-
-**The One-Texture World Rule.** Build each map's static world once from one local terrain-only plate plus deterministic code-native operational layers, or entirely from code-native layers when no plate is approved. Never add decorative per-frame scenery work, remote textures, or airport geometry baked into imagery.
+**The Static World Rule.** Compose scenery once, preserve code-native operational geometry, and keep decorative texture work out of the frame loop.
 
 ## Shapes
 
-The atlas pairs softly painterly organic geography with straight engineered infrastructure. Saltmarsh pools and field polygons, the River Bend curve, Desert Parallel's washes and coast fragments, and Twin Banks' dividing river use broad restrained value masses. Runways, shoulders, taxiways, thresholds, hold lines, stands, aprons, signs, and facilities stay crisp and civil. Aircraft use sharp class-specific silhouettes, warm-neutral bodies, limited class accents, cool charcoal keylines, and restrained runtime shadows.
+Use soft organic geography alongside straight runways, aprons, thresholds, taxiways, and miniature buildings. Cream rounded rectangles identify controls and supporting information: utility controls use the smallest corners, cards and departure boards slightly larger ones, and dialogs the broadest corners. Pause is a functional circular control, not a card.
 
-Interface surfaces use gently rounded operational rectangles: 14px for panels, roster cards, career/result regions, buttons, audio controls, HUD tiles, and pause; 12px for the smaller coachmark. Map cards reserve a 36px rectangular geographic band at the top rather than using image thumbnails. Avoid pills and ornamental containers. Canvas circles remain functional capture areas, selection rings, helipad geometry, lights, or guidance anchors.
+Aircraft use a bundled original transparent sprite atlas: cream-and-cyan swept jet, amber turboprop, coral helicopter, and a separate animated rotor. Fine material shading and restrained runtime shadows replace the former thick sticker outlines. Display scale is shared with conservative heading-aware airframe collision outlines; selection targets and proximity warnings remain separate. Runways carry numbered thresholds, touchdown blocks, edge lights, narrow shoulders, and subdued tire wear.
 
 ## Components
 
-### Atlas Start Panel
+### Launch and Map Selection
 
-The opening panel is the system's widest container: near-opaque graphite, 12px corners, responsive 22–34px padding, and one 220ms rise/fade. It shows the selected map behind a darkened scrim and presents the title, career, roster, sound controls, and play action as one decision flow. Reduced transparency uses the solid panel token with no blur.
+A selected airfield fills the scene behind a compact departure board. Four cards use actual thumbnails rendered from each landscape map, with names and selection/lock states. Selected cards have an amber border; hover lifts slightly; locked thumbnails reduce saturation while their text remains legible. Locked fields can be inspected, but Play stays disabled until the existing rank rule permits access. Fallback ground colors cover loading only; they are not the final thumbnail treatment.
 
-### Career Summary
+### Buttons and Navigation
 
-The summary is a full-width, border-block strip between the introduction and roster. Desktop aligns “Current clearance” with the rank and places progress beneath the rank; mobile stacks all three lines; short landscape places label, rank, and progress on one compact row. The result panel uses the same restrained supporting copy and changes to interface cyan only for “Promoted — [rank].”
+Primary amber and secondary pale-green buttons have condensed bold labels, rounded corners, and a normal minimum height of 50px. Hover changes the surface; press moves down 2px. Focus uses a 3px teal outline with a 4px offset. Utility navigation uses small cream buttons for How to play, Your career, and Settings; portrait and short-landscape overrides provide 44px minimum heights. Disabled primary actions use subdued opaque colors and no shadow.
 
-### Map Roster Cards
+### HUD and Route Feedback
 
-Four radio-style buttons follow registry order. Each card has a 36px geographic band, map name, uppercase difficulty plus best score, and one-line-to-short-paragraph description. Locked cards keep their map identity at 58% opacity and replace best score with the unlock rank; clicking one announces the requirement without selecting it. The selected unlocked card uses a cyan border, an inset cyan line, and restrained lift. Hover strengthens the neutral surface and border; press scales to 0.985.
+Cream score tiles contain compact uppercase labels and tabular values. Landing triggers a bounded score pulse; the canvas supplies landing feedback and readable routes. The coachmark and visible flight message explain routing state without intercepting pointer input, while a polite live region provides the same semantic support. Cyan/amber/coral destination signals include L/C/H signage; stronger acquisition emphasis remains contextual.
 
-Saltmarsh Gateway uses a marsh band, River Bend a blue-green band, Desert Parallel a mineral ochre band, and Twin Banks a three-part west-ground/river/east-ground diagonal. These bands are abstract atlas keys, not screenshots or decorative gradients elsewhere.
+### Pause, Results, and Confirmation
 
-### Audio Controls
+Pause leads with Resume, followed by Choose airfield, Restart, and How to play; sound controls remain available below. Orientation interruption copy explains the need for a new shift. Abandoning a shift uses a native confirmation dialog with Keep playing first. Results pair score and best in two cream-green regions, then record/career feedback and retry/map actions. Existing save and scoring semantics remain authoritative.
 
-The sound toggle is a 44px-high transparent bordered control with a 19px Hugeicons volume or mute glyph and explicit “Sound on/off” copy. Effects volume pairs an uppercase 0.6875rem label with a full-width range control using interface cyan. Start and pause copies stay synchronized; settings persist locally. Visible state must remain sufficient without sound.
+### Native Utility Dialogs
 
-Synthesized cues carry semantics: a brief connection chirp, a two-tone landing rise, an interrupting low collision alarm, a three-step promotion ascent, and a quiet interface confirmation. Collision has priority over lower cues, and all cues obey the saved sound toggle and volume.
+Settings, Your career, and How to play share a native dialog with a clear Back to game action. Native focus containment and Escape behavior support the utility layer. Sound uses a toggle and labeled range input with a numeric percentage. Help uses separate category chips and a short ordered pointer tutorial; do not imply full keyboard route drawing.
 
-### Buttons
+### Career Counters
 
-- **Primary:** a full-width 52px action in interface cyan with dark ink text, 14px corners, and 20px horizontal padding; hover lightens cyan, active scales to 0.98, and focus uses a 3px bone outline with 3px offset.
-- **Secondary:** the same geometry and typography on transparent glass with a bone border; hover adds a faint bone wash and active scales to 0.98.
-- **Icons:** play, restart, map, pause, volume, and mute are Hugeicons-compatible inline SVG mounted into fixed 18–22px slots; labeled decisions retain text.
+Each next-rank prerequisite has its own label, current/required count, and native progress element: safe landings, completed shifts, and airfields meeting the qualifying best. Values are capped visually at the target while text retains the actual count. Orientation-specific map records and lock rank names follow. Highest rank has explicit completion copy. These are prerequisite counters, not a single invented XP scale.
 
-### HUD Stats
+### Motion
 
-Score and best are compact translucent tiles with a minimum 68px width, 7px 10px 8px padding, a quiet bone border, an 8px blur, and tabular Barlow Condensed numerals. Best is the selected map's record for the active portrait or landscape profile, not the cross-orientation roster best. A successful landing uses one bounded 520ms pulse.
-
-### Modal Panels
-
-Pause and game-over use panels no wider than 410px with the same glass, border, 14px corners, shadow, and 220ms entrance as the atlas panel. Pause includes synchronized sound controls. Game-over shows score, the current-orientation map best, career progress or promotion, and Play again / Choose map decisions.
-
-### Pause Control
-
-The pause control is a 48px square glass button fixed to the lower-right safe area. It swaps the Hugeicons pause/play glyph with run state, reveals only when playable, and retains hover, press, focus, coarse-pointer, and reduced-transparency behavior.
-
-### Route Coachmark and Guidance
-
-The coachmark is a single-session, non-interactive strip up to 380px wide with a cyan category label and Atkinson body copy. It advances through selected, acquired, and route-set messages, then dismisses after the route is learned. In-world guidance is contextual: nothing is drawn at neutral; compatible targets show a faint capture ring and approach geometry; locked targets strengthen the rails or pad ticks; invalid acquisition uses four separated coral corners; confirmation lasts 360ms and landing feedback 820ms before returning to neutral. Reduced motion keeps the state change while removing travel.
-
-### Named Rules
-
-**The Contextual Guidance Rule.** Show target graphics only in response to selection, acquisition, confirmation, or landing; never leave permanent target art over a physical runway or helipad.
-
-**The Redundant Audio Rule.** Every synthesized cue confirms a state already expressed visually or textually; muting sound never removes required information.
+UI button transitions last 160ms. The score pulse lasts 450ms with ease-out and reaches a restrained 1.15 scale. Map-card hover lifts 3px. Reduced motion disables CSS animation, transitions, and smooth scrolling; additional gameplay presentation motion must honor the existing preference path without changing simulation speed.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- Do preserve the raised saltmarsh system as the atlas parent: credible civil infrastructure, mineral terrain, bone paint, restrained taxiway detail, neutral graphite interface surfaces, and open airspace.
-- Do make all four maps recognizable through the documented geographic invariant while keeping aircraft and guidance behavior visually consistent.
-- Do keep roster names, difficulty or unlock state, record state, and descriptions bound to the map registry and local career.
-- Do show the higher cross-orientation best in the roster and the current-orientation best in active HUD and result surfaces.
-- Do use the horizontal snap roster at 720px and below and the shipped short-landscape compaction at 480px height and below.
-- Do adapt scenery density through mobile, tablet, and desktop budgets while preserving playable geometry.
-- Do use bundled fonts, inline Hugeicons, synthesized Web Audio, local terrain plates, and code-native operational geometry so the complete system works offline.
+- **Do** let the selected airfield occupy the main composition and keep Play unmistakable.
+- **Do** use actual map renderings for selection thumbnails.
+- **Do** reinforce aircraft color with silhouette and category lettering.
+- **Do** keep all fonts, materials, sounds, and maps usable offline.
+- **Do** preserve authored geometry, selection semantics, score scope, and local career rules.
+- **Do** show separate, truthful career prerequisite counters.
 
 ### Don't:
 
-- Don't flatten the atlas into four recolored copies of Saltmarsh Gateway or abandon the incumbent civil-airfield family for unrelated visual worlds.
-- Don't spend cyan, amber, or coral on decorative terrain, facilities, water, or roster preview bands.
-- Don't treat rivers, pools, coast fragments, bridges, or desert strata as permanent target graphics or undisclosed gameplay hazards.
-- Don't squeeze the mobile roster into four columns, wrap it into miniature cards, or hide map lock and record state.
-- Don't enlarge a map landmark until it crowds routes, aircraft, HUD exclusions, or touch targets.
-- Don't introduce remote terrain, font, icon, texture, or audio dependencies, or recurring per-frame work for static scenery.
+- **Don't** restore the opaque graphite launch panel or the former muted saltmarsh identity as the global design direction.
+- **Don't** bake runways, capture zones, or aircraft into terrain materials.
+- **Don't** let bright scenery compete with aircraft, route casing, or urgent warnings.
+- **Don't** enlarge collision geometry to match decorative aircraft scale.
+- **Don't** present locked previews as playable or imply full keyboard gameplay.
