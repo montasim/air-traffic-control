@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => ({
   plugins: mode === 'desktop' ? [] : [
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'favicon.ico', 'favicon-airplane-32.png', 'apple-touch-icon-airplane.png'],
       manifest: {
         name: 'Air Traffic Control',
         short_name: 'Air Traffic',
@@ -16,12 +16,9 @@ export default defineConfig(({ mode }) => ({
         orientation: 'any',
         start_url: '/',
         icons: [
-          {
-            src: '/icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          }
+          { src: '/app-icon-airplane-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/app-icon-airplane-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/app-icon-airplane-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {
