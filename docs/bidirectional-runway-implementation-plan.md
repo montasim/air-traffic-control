@@ -1,3 +1,13 @@
+# Current behavior correction — normal landing at both ends
+
+Implemented: runway capture now uses proximity (including swept movement) regardless of heading or side of entry. Reaching the selected matching target is sufficient. The aircraft must reach the target; drawing a line there does not land it immediately. Shared runway reservations and busy warnings remain; nearby aircraft can reserve a runway from any angle. Alignment warnings and angle requirements in practice, help, and onboarding were removed.
+
+Regression coverage compares sideways and aligned arrivals at all four Saltmarsh targets. The historical plan below is retained as context; its angle and outside-entry requirements are superseded by this correction.
+
+Verification: all 375 unit tests and the production build passed. On localhost:5173 at 1909×929, direct pointer-drawn routes completed touchdown and scoring at commuter ends 13/31 and liner ends 08/26 (Easy, no resize). No alignment waypoint was added to these routes.
+
+---
+
 # Land from either end of a runway
 
 Date: 2026-09-30

@@ -45,7 +45,8 @@ try {
     const approach={x:zone.position.x-Math.cos(zone.angle)*zone.captureRadius*4,y:zone.position.y-Math.sin(zone.angle)*zone.captureRadius*4};
     const turn=screen(approach), target=screen(zone.position);
     await page.mouse.move(from.x,from.y);await page.mouse.down();
-    await page.mouse.move(turn.x,turn.y,{steps:25});await page.mouse.move(target.x,target.y,{steps:16});
+    if (process.env.APPROACH_MODE !== 'direct') await page.mouse.move(turn.x,turn.y,{steps:25});
+    await page.mouse.move(target.x,target.y,{steps:16});
     await page.screenshot({path:`test-results/runway-ends/${type}-${end}.png`});
     await page.mouse.up();
     s=await snapshot();assert.equal(s.simulation.aircraft.find(a=>a.id===p.id)?.approachZoneId,zone.id);
