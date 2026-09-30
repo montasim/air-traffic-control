@@ -18,6 +18,7 @@
     "test:desktop": "node scripts/test-desktop.mjs",
     "test:resize": "node scripts/test-resize.mjs",
     "test:resize:maps": "node scripts/test-resize-maps.mjs",
+    "test:runway-mode": "node scripts/test-runway-mode.mjs",
     "test:runway-ends": "node scripts/test-runway-ends.mjs"
   },
   "dependencies": {

@@ -14,6 +14,9 @@ try {
     await page.goto(process.env.RESIZE_TEST_URL || 'http://localhost:4287/');
     await expect(page.locator('#start-button')).toBeEnabled();
     await page.locator(`input[name="difficulty"][value="${process.env.TEST_DIFFICULTY || 'easy'}"]`).check();
+    const bothEnds = process.env.TWO_END_LANDING !== '0';
+    await page.locator('#two-end-landing').setChecked(bothEnds);
+    await expect(page.locator('#start-button')).toBeEnabled();
     await page.clock.setFixedTime(new Date(11));
     await page.locator('#start-button').click();
     const snapshot=()=>page.evaluate(async url=>(await import(url)).inspectShift(),mainUrl);
@@ -37,23 +40,37 @@ try {
       if(p) break;
     }
     assert.ok(p,`An entering ${type} must become available`);
-    const zone=s.landingZones.find(z=>z.accepts===type && z.approach?.end===end);
+    const zone = s.landingZones.find(z=>z.accepts===type && z.approach?.end===end) ?? await page.evaluate(async ({world,type,end}) => {
+      const { MAP_DEFINITIONS } = await import('/src/game/maps/registry.ts');
+      return MAP_DEFINITIONS.find(m=>m.id==='saltmarsh-gateway').prepare({...world,detailLevel:'desktop',twoEndLanding:true}).layout.landingZones.find(z=>z.accepts===type && z.approach?.end===end);
+    }, {world:s.world,type,end});
+    const disabledEnd = !bothEnds && end === 1;
     const box=await page.locator('#game canvas').boundingBox();
     const screen=p=>({x:box.x+p.x/s.world.width*box.width,y:box.y+p.y/s.world.height*box.height});
     const from=screen(p.position);
     // Long straight final segment gives the airframe time to align naturally.
-    const approach={x:zone.position.x-Math.cos(zone.angle)*zone.captureRadius*4,y:zone.position.y-Math.sin(zone.angle)*zone.captureRadius*4};
+    const approach=disabledEnd
+      ? {x:zone.position.x,y:zone.position.y+(p.position.y<zone.position.y?-1:1)*zone.captureRadius*4}
+      : {x:zone.position.x-Math.cos(zone.angle)*zone.captureRadius*4,y:zone.position.y-Math.sin(zone.angle)*zone.captureRadius*4};
     const turn=screen(approach), target=screen(zone.position);
     await page.mouse.move(from.x,from.y);await page.mouse.down();
-    if (process.env.APPROACH_MODE !== 'direct') await page.mouse.move(turn.x,turn.y,{steps:25});
+    if (disabledEnd || process.env.APPROACH_MODE !== 'direct') await page.mouse.move(turn.x,turn.y,{steps:25});
     await page.mouse.move(target.x,target.y,{steps:16});
     await page.screenshot({path:`test-results/runway-ends/${type}-${end}.png`});
     await page.mouse.up();
-    s=await snapshot();assert.equal(s.simulation.aircraft.find(a=>a.id===p.id)?.approachZoneId,zone.id);
-    let landed=false, resized=false, touchdown=false;
+    s=await snapshot();
+    if (disabledEnd) assert.notEqual(s.simulation.aircraft.find(a=>a.id===p.id)?.approachZoneId,zone.id);
+    else assert.equal(s.simulation.aircraft.find(a=>a.id===p.id)?.approachZoneId,zone.id);
+    let landed=false, resized=false, touchdown=false, passedDisabledEnd=false;
     for(let i=0;i<280;i++) {
       await page.clock.runFor(250);s=await snapshot();
       const tracked=s.simulation.aircraft.find(a=>a.id===p.id);
+      if (disabledEnd && tracked && Math.hypot(tracked.position.x-zone.position.x,tracked.position.y-zone.position.y) <= zone.captureRadius) {
+        assert.notEqual(tracked.state,'landing');
+        assert.equal(s.landingZones.some(z=>z.id===zone.id),false);
+        passedDisabledEnd=true;
+        break;
+      }
       if (!touchdown && tracked?.state==='landing') {
         touchdown=true;
         assert.equal(tracked.approachZoneId,zone.id);
@@ -72,6 +89,13 @@ try {
       }
       if(!s.simulation.aircraft.some(a=>a.id===p.id) && s.simulation.score>0){landed=true;break;}
       if(s.simulation.phase==='over') break;
+    }
+    if (disabledEnd) {
+      assert.ok(passedDisabledEnd,'Aircraft must pass through the disabled capture area without landing');
+      assert.deepEqual(errors,[]);
+      console.log(`${type} passed disabled runway ${zone.label} without landing`);
+      await page.close();
+      continue;
     }
     if(!landed) { console.log(JSON.stringify({phase:s.simulation.phase,aircraft:s.simulation.aircraft.map(a=>({id:a.id,type:a.type,position:a.position,state:a.state,destination:a.approachZoneId}))})); console.log(await page.locator('#gameover-code').textContent().catch(()=>'')); await page.screenshot({path:`test-results/runway-ends/failure-${type}-${end}.png`}); }
     assert.ok(landed,`${type} must land at end ${end}, phase=${s.simulation.phase}`);

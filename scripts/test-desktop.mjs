@@ -33,6 +33,9 @@ try {
   });
   assert.deepEqual(assets, [200, 200]);
   await page.locator('input[name="difficulty"][value="easy"]').check();
+  await expect(page.locator('#two-end-landing')).not.toBeChecked();
+  await page.locator('#two-end-landing').check();
+  await expect(page.locator('#start-button')).toBeEnabled();
   await page.locator('#start-button').click();
   await expect(page.locator('#pause-button')).toBeEnabled();
   await expect(page.locator('#game canvas')).toBeVisible();
@@ -64,6 +67,7 @@ try {
   page = await app.firstWindow();
   await expect(page.locator('#app')).not.toHaveAttribute('inert', '', { timeout: 30000 });
   await expect(page.locator('input[name="difficulty"][value="easy"]')).toBeChecked();
+  await expect(page.locator('#two-end-landing')).toBeChecked();
   assert.deepEqual(errors, []);
   console.log('Desktop smoke passed: boot, assets, renderer isolation, gameplay, resize/resume with stable world and score, and saved settings across restart.');
 } finally {
