@@ -228,6 +228,11 @@ export class PlayScene extends Phaser.Scene {
     this.game.events.emit("run-state", "running");
   }
 
+  /** Detached diagnostics for development browser regression checks. */
+  getShiftSnapshot() {
+    return structuredClone({ runId: this.runId, simulation: this.simulation.snapshot(), landingZones: this.layout.landingZones, evidence: this.shiftTracker.evidence });
+  }
+
   getPhase(): SimulationSnapshot["phase"] {
     return this.simulation.snapshot().phase;
   }

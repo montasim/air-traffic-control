@@ -51,6 +51,14 @@ try {
   await expect(page.locator('#confirm-dialog')).not.toBeVisible();
   assert.deepEqual(await page.locator('#game canvas').evaluate(canvas => [canvas.width, canvas.height]), worldBeforeResize);
   assert.equal(await page.locator('#score').textContent(), scoreBeforeResize);
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(700, 1000));
+  await expect(page.locator('#pause-panel')).toBeVisible();
+  await expect(page.locator('#resume-button')).toBeEnabled();
+  assert.deepEqual(await page.locator('#game canvas').evaluate(canvas => [canvas.width, canvas.height]), worldBeforeResize);
+  assert.equal(await page.locator('#score').textContent(), scoreBeforeResize);
+  await page.locator('#resume-button').click();
+  await expect(page.locator('#pause-panel')).not.toBeVisible();
+  await expect(page.locator('#confirm-dialog')).not.toBeVisible();
   await app.close();
   app = await electron.launch(options);
   page = await app.firstWindow();

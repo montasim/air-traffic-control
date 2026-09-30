@@ -272,3 +272,23 @@ describe('Simulation', () => {
     expect(simulation.snapshot().aircraft.map((aircraft) => aircraft.type)).toEqual(['rotor']);
   });
 });
+
+it('preserves routed aircraft and scheduling across a long resize pause', () => {
+  const control = new Simulation(LANDING_ZONES);
+  const resized = new Simulation(LANDING_ZONES);
+  for (const simulation of [control, resized]) {
+    simulation.start(11);
+    const plane = simulation.snapshot().aircraft[0];
+    expect(simulation.assignRoute(plane.id, [{ ...plane.position }, { x: 450, y: 500 }, { x: 284, y: 1180 }]).accepted).toBe(true);
+    advanceFrames(simulation, 30);
+  }
+  resized.pause();
+  const paused = structuredClone(resized.snapshot());
+  advanceFrames(resized, 3600);
+  expect(resized.snapshot()).toEqual(paused);
+  resized.resume();
+  advanceFrames(control, 600);
+  advanceFrames(resized, 600);
+  expect(resized.snapshot()).toEqual(control.snapshot());
+  expect(resized.drainEvents()).toEqual(control.drainEvents());
+});

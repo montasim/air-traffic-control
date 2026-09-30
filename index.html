@@ -186,6 +186,7 @@
 
         <section
           id="pause-panel"
+          tabindex="-1"
           class="panel compact-panel"
           role="dialog"
           aria-modal="true"
@@ -195,7 +196,7 @@
           <div class="panel-content">
             <h2 id="pause-title">Game paused</h2>
             <p id="pause-context"></p>
-            <p id="resize-notice" hidden></p>
+            <p id="resize-notice" role="status" aria-live="polite" hidden></p>
             <div class="panel-actions">
               <button
                 id="resume-button"

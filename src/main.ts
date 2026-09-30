@@ -11,8 +11,10 @@ import { MAP_DEFINITIONS, mapDefinitionById } from "./game/maps/registry";
 import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
-  requiresNewLayout,
+  needsNewShiftLayout,
   worldSizeForViewport,
+  isFieldPlayable,
+  shouldPauseForResize,
   profileForViewport,
   type ViewportProfile,
 } from "./game/viewport";
@@ -168,7 +170,7 @@ let activeProfile = profileForViewport();
 let createdViewport = { width: window.innerWidth, height: window.innerHeight };
 function layoutChanged(): boolean {
   return (
-    requiresNewLayout(activeProfile, profileForViewport())
+    needsNewShiftLayout(activeProfile, profileForViewport())
   );
 }
 let categoryFilter = 'all';
@@ -179,6 +181,21 @@ let finishingRunId = '';
 let sceneReady = false;
 let startAfterRebuild = false;
 let resizeTimer = 0;
+let resizeSettling = false;
+let resizedWhilePaused = false;
+function availableViewport() {
+  return { width: elements.gameCanvas.clientWidth, height: elements.gameCanvas.clientHeight };
+}
+let acceptedViewport = availableViewport();
+function resetResizeState(): void {
+  window.clearTimeout(resizeTimer);
+  resizeSettling = false;
+  resizedWhilePaused = false;
+  acceptedViewport = availableViewport();
+}
+function fieldPlayable(): boolean {
+  return isFieldPlayable(game.scale.gameSize, availableViewport());
+}
 let volumeSaveTimer = 0;
 let promotionAudioTimer = 0;
 let focusBeforePanel: HTMLElement | null = null;
@@ -299,7 +316,7 @@ function showOnly(panel?: HTMLElement): void {
     if (!utilityScreen.hidden) return;
     if (panel) {
       (panel === elements.pausePanel
-        ? elements.resumeButton
+        ? elements.resumeButton.disabled ? elements.pausePanel : elements.resumeButton
         : panel === elements.startPanel
           ? elements.startButton.disabled
             ? elements.mapOptions.querySelector<HTMLButtonElement>(
@@ -488,6 +505,7 @@ function beginRun(): void {
   if (!scene) return;
   window.clearTimeout(promotionAudioTimer);
   activeDifficulty = currentSave.selectedDifficulty;
+  resetResizeState();
   activeRunId = crypto.randomUUID();
   finishingRunId = '';
   scene.startRun(activeDifficulty, activeRunId);
@@ -500,6 +518,7 @@ function beginRun(): void {
   mountHugeIcon(elements.pauseIcon, "pause", 22);
   elements.resumeLabel.textContent = "Resume";
   elements.score.textContent = "00";
+  if (!fieldPlayable()) pauseRun();
   hideRouteCoachmark();
   if (!routeCoachCompleted && !routeCoachDismissed) {
     elements.routeCoachmarkCopy.textContent =
@@ -514,6 +533,7 @@ function rebuildForTarget(
   mapId: MapId,
   beginWhenReady: boolean,
 ): void {
+  resetResizeState();
   sceneReady = false;
   startAfterRebuild = beginWhenReady;
   activeProfile = profile;
@@ -552,7 +572,7 @@ function pauseRun(): void {
   scene.pauseRun();
   showOnly(elements.pausePanel);
   document.querySelector("#pause-context")!.textContent =
-    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed`;
+    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id}`;
   updateResizeNotice();
   elements.pauseButton.setAttribute("aria-label", "Resume game");
   mountHugeIcon(elements.pauseIcon, "play", 22);
@@ -560,17 +580,11 @@ function pauseRun(): void {
 
 async function resumeRun(): Promise<void> {
   await audio.unlock();
-  const requestedProfile = profileForViewport();
-  if (layoutChanged()) {
-    confirmAbandon(
-      "Start a new shift?",
-      "The airfield layout changed. Restarting discards this unfinished shift. Return to the previous orientation to resume it.",
-      () => rebuildForTarget(requestedProfile, activeMapId, true),
-    );
-    return;
-  }
   const scene = playScene();
-  if (!scene || scene.getPhase() !== "paused") return;
+  if (!scene || scene.getPhase() !== "paused" || document.hidden
+    || !utilityScreen.hidden || document.querySelector("dialog[open]")
+    || resizeSettling || !fieldPlayable()) return;
+  resetResizeState();
   scene.resumeRun();
   audio.handle({ type: "ui-confirm", action: "resume" });
   showOnly();
@@ -607,7 +621,7 @@ async function handleGameOver({
   const isRecord = score > activeRecord().difficultyScores[activeDifficulty][activeProfile.id];
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
   document.querySelector("#result-best-label")!.textContent =
-    `${DIFFICULTY_LABELS[activeDifficulty]} · ${activeProfile.id} best`;
+    `${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · Best`;
   document.querySelector('#result-difficulty')!.textContent = `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
@@ -739,22 +753,22 @@ document.addEventListener("visibilitychange", () => {
 });
 
 window.addEventListener("resize", () => {
-  // A partial stroke uses the old display transform. Keep its previous route.
-  if (elements.startPanel.hidden) playScene()?.cancelDrawing();
+  const scene = playScene();
+  if (scene?.getPhase() === "running" || scene?.getPhase() === "paused") {
+    scene.cancelDrawing();
+    const significant = shouldPauseForResize(acceptedViewport, availableViewport(), game.scale.gameSize);
+    if (significant || scene.getPhase() === "paused") {
+      resizedWhilePaused = true;
+      resizeSettling = true;
+      pauseRun();
+      updateResizeNotice();
+    }
+  }
   window.clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => {
-    const nextProfile = profileForViewport();
-    const profileChanged = layoutChanged();
-    elements.resumeLabel.textContent = profileChanged
-      ? nextProfile.id !== activeProfile.id
-        ? `Start in ${nextProfile.id}`
-        : "Restart"
-      : "Resume";
-    if (!elements.startPanel.hidden) {
-      rebuildForTarget(nextProfile, activeMapId, false);
-    } else if (profileChanged) {
-      // Only a change of logical orientation needs a pause and layout decision.
-      pauseRun();
+    resizeSettling = false;
+    if (!elements.startPanel.hidden && utilityScreen.hidden) {
+      rebuildForTarget(profileForViewport(), activeMapId, false);
     }
     updateResizeNotice();
   }, 160);
@@ -814,10 +828,19 @@ function renderFieldDetail(): void {
 
 function updateResizeNotice(): void {
   const notice = document.querySelector<HTMLElement>("#resize-notice")!;
-  notice.hidden = !layoutChanged();
-  elements.restartFromPause.hidden = layoutChanged();
-  notice.textContent =
-    "Orientation changed. Return to the previous orientation to resume, or start a new shift.";
+  const playable = fieldPlayable();
+  const message = !playable
+    ? "The airfield is too small to play comfortably. Enlarge the window or rotate your device to continue this shift."
+    : resizeSettling
+      ? "Adjusting to the screen size. Your shift is paused."
+      : resizedWhilePaused
+        ? "Screen size changed. Your shift is paused and ready to continue."
+        : "";
+  notice.hidden = !message;
+  if (notice.textContent !== message) notice.textContent = message;
+  elements.resumeButton.disabled = resizeSettling || !playable;
+  elements.resumeLabel.textContent = "Resume";
+  elements.restartFromPause.hidden = false;
 }
 
 function confirmAbandon(title: string, copy: string, action: () => void): void {
@@ -982,3 +1005,10 @@ elements.mapOptions.addEventListener("keydown", (event) => {
           choices.length;
   choices[next]?.focus();
 });
+
+/** Read-only development seam; never exposes the live game or simulation. */
+export function inspectShift() {
+  if (!import.meta.env.DEV) throw new Error("Shift inspection is development-only");
+  return { ...playScene()?.getShiftSnapshot(), orientation: activeProfile.id,
+    world: { width: game.scale.gameSize.width, height: game.scale.gameSize.height } };
+}

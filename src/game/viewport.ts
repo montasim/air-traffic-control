@@ -54,6 +54,25 @@ export function worldSizeForViewport(width: number, height: number) {
   return { width: width / scale, height: height / scale };
 }
 
-export function requiresNewLayout(active: ViewportProfile, next: ViewportProfile): boolean {
+export function needsNewShiftLayout(active: ViewportProfile, next: ViewportProfile): boolean {
   return active.id !== next.id;
+}
+
+export interface ViewportSize { readonly width: number; readonly height: number }
+
+export function fittedFieldSize(world: ViewportSize, available: ViewportSize): ViewportSize {
+  const scale = Math.max(0, Math.min(available.width / world.width, available.height / world.height));
+  return { width: world.width * scale, height: world.height * scale };
+}
+
+export function isFieldPlayable(world: ViewportSize, available: ViewportSize): boolean {
+  const fitted = fittedFieldSize(world, available);
+  return Math.min(fitted.width, fitted.height) >= 240 && available.width >= 320 && available.height >= 240;
+}
+
+export function shouldPauseForResize(baseline: ViewportSize, next: ViewportSize, world: ViewportSize): boolean {
+  return !isFieldPlayable(world, next)
+    || (baseline.width >= baseline.height) !== (next.width >= next.height)
+    || Math.abs(next.width - baseline.width) >= baseline.width * 0.2
+    || Math.abs(next.height - baseline.height) >= baseline.height * 0.2;
 }

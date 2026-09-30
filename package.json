@@ -15,7 +15,9 @@
     "package:linux": "npm run build:desktop && electron-builder --linux AppImage --x64 --publish never",
     "package:snap": "npm run build:desktop && node scripts/package-snap.mjs",
     "package:dir": "npm run build:desktop && electron-builder --linux --x64 --dir --publish never",
-    "test:desktop": "node scripts/test-desktop.mjs"
+    "test:desktop": "node scripts/test-desktop.mjs",
+    "test:resize": "node scripts/test-resize.mjs",
+    "test:resize:maps": "node scripts/test-resize-maps.mjs"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "4.3.0",

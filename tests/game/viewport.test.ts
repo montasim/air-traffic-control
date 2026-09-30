@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   isSameProfile,
-  requiresNewLayout,
+  fittedFieldSize,
+  isFieldPlayable,
+  shouldPauseForResize,
+  needsNewShiftLayout,
   worldSizeForViewport,
   profileForSize,
   profileForViewport,
@@ -65,12 +68,12 @@ afterEach(() => {
 });
 
 describe('viewport profiles', () => {
-  it('preserves a shift through height, width, and detail changes within its orientation', () => {
+  it('selects a different layout for a new shift only when orientation changes', () => {
     const active = profileForSize(390, 844);
     for (const [w, h] of [[390, 780], [360, 640], [600, 900], [390, 844]]) {
-      expect(requiresNewLayout(active, profileForSize(w, h))).toBe(false);
+      expect(needsNewShiftLayout(active, profileForSize(w, h))).toBe(false);
     }
-    expect(requiresNewLayout(active, profileForSize(844, 390))).toBe(true);
+    expect(needsNewShiftLayout(active, profileForSize(844, 390))).toBe(true);
   });
 
   it('expands the initial world to fill the screen without stretching geometry', () => {
@@ -125,5 +128,27 @@ describe('viewport profiles', () => {
     expect(portrait.detailLevel).toBe(landscape.detailLevel);
     expect(portrait.id).not.toBe(landscape.id);
     expect(isSameProfile(portrait, landscape)).toBe(false);
+  });
+});
+
+describe('active shift resize policy', () => {
+  const world = { width: 1600, height: 900 };
+  const baseline = { width: 1280, height: 800 };
+  it('fits the entire world uniformly with margins', () => {
+    expect(fittedFieldSize(world, { width: 800, height: 1000 })).toEqual({ width: 800, height: 450 });
+    expect(fittedFieldSize(world, { width: 0, height: 1000 })).toEqual({ width: 0, height: 0 });
+  });
+  it('pauses at cumulative changes and orientation crossings, not small chrome changes', () => {
+    expect(shouldPauseForResize(baseline, { width: 1280, height: 760 }, world)).toBe(false);
+    expect(shouldPauseForResize(baseline, { width: 1100, height: 800 }, world)).toBe(false);
+    expect(shouldPauseForResize(baseline, { width: 1024, height: 800 }, world)).toBe(true);
+    expect(shouldPauseForResize({ width: 810, height: 800 }, { width: 790, height: 800 }, world)).toBe(true);
+  });
+  it('checks the fitted field rather than viewport alone at the inclusive limit', () => {
+    const portrait = { width: 900, height: 1600 };
+    expect(isFieldPlayable(portrait, { width: 844, height: 390 })).toBe(false);
+    expect(isFieldPlayable(portrait, { width: 844, height: 240 * 1600 / 900 })).toBe(true);
+    expect(isFieldPlayable(world, { width: 1280, height: 240 })).toBe(true);
+    expect(isFieldPlayable(world, { width: 1280, height: 239 })).toBe(false);
   });
 });

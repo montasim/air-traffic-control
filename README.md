@@ -22,7 +22,7 @@ Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Play**. 
 | Amber commuter | Runway marked **C** |
 | Coral helicopter | Helipad marked **H** |
 
-Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Changing screen orientation or size may require restarting the shift; the pause screen explains when the previous layout can be restored.
+Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Resizing preserves the shift and pauses when needed; select **Resume** once the field is large enough to play.
 
 ## Airfields and progression
 
