@@ -57,6 +57,15 @@ export function resolveLandingTarget({
     ? zones.find((zone) => zone.id === retainedZoneId && zone.accepts === aircraftType)
     : undefined;
 
+  // An endpoint deliberately placed on another end wins over retention or a crossed segment.
+  const direct = zones.filter(zone => zone.accepts === aircraftType)
+    .filter(zone => pointDistance(endpoint, zone.position) <= zone.captureRadius)
+    .sort((a,b) => pointDistance(endpoint,a.position)-pointDistance(endpoint,b.position))[0];
+  if (direct && direct.id !== retainedZone?.id) {
+    const radius = landingTargetRadius(direct, aircraftCollisionRadius, pointerPrecision);
+    return lockedResult(direct, radius, radius * RETENTION_FACTOR);
+  }
+
   if (retainedZone) {
     const acquisitionRadius = landingTargetRadius(
       retainedZone,

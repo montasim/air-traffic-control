@@ -1,3 +1,4 @@
+import { aligned } from '../core/runwayApproach';
 import { AIRCRAFT_OUTLINES } from '../core/aircraftCollision';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -23,7 +24,16 @@ export function mountPractice(): () => void {
   const route = document.querySelector<SVGPolylineElement>('#practice-route')!;
   const status = document.querySelector<HTMLElement>('#practice-status')!;
   const target = document.querySelector<SVGCircleElement>('#practice-target')!;
-  const start = { x: 82, y: 230 }, end = { x: 460, y: 110 };
+  const start = { x: 82, y: 230 };
+  const ends = [{ x: 370, y: 110 }, { x: 520, y: 110 }];
+  const reverseTarget = document.querySelector<SVGCircleElement>('#practice-target-reverse')!;
+  function selectedEnd(p: Point): number { return ends.findIndex(end => Math.hypot(p.x-end.x,p.y-end.y) <= 32); }
+  function validEnd(index: number): boolean {
+    const last = points.at(-1), before = points.at(-3) ?? points[0];
+    if (index < 0 || !last || !before) return false;
+    const end = ends[index], angle = index ? Math.PI : 0;
+    return aligned(Math.atan2(last.y-before.y,last.x-before.x), { id:'practice',label:'C',accepts:'commuter',position:end,angle,captureRadius:32,color:0 }) && (index ? before.x >= end.x : before.x <= end.x);
+  }
   let points: Point[] = [], pointer: number | undefined, frame = 0, flying = false;
   paintPlane(plane);
   const position = (p: Point, angle = -18) => plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${angle})`);
@@ -39,7 +49,8 @@ export function mountPractice(): () => void {
     position(start);
     plane.style.opacity = '1';
     target.setAttribute('stroke', '#f0bd66');
-    status.textContent = 'Drag the amber aircraft to the amber runway.';
+    reverseTarget.setAttribute('stroke', '#f0bd66');
+    status.textContent = 'Choose either runway end. Finish along its inward arrow.';
   }
   function fly(): void {
     flying = true;
@@ -79,22 +90,25 @@ export function mountPractice(): () => void {
     if (pointer !== event.pointerId) return;
     const p = point(event);
     if (distance(p, points.at(-1)!) > 4) { points.push(p); draw(); }
-    const acquired = distance(p, end) <= 42;
-    target.setAttribute('stroke', acquired ? '#fff5df' : '#f0bd66');
-    status.textContent = acquired ? 'Runway matched. Release to land.' : 'Keep drawing toward the amber runway.';
+    const index = selectedEnd(p);
+    const acquired = validEnd(index);
+    target.setAttribute('stroke', acquired && index === 0 ? '#fff5df' : '#f0bd66');
+    reverseTarget.setAttribute('stroke', acquired && index === 1 ? '#fff5df' : '#f0bd66');
+    status.textContent = acquired ? 'Runway matched. Release to land.' : 'Approach either end along its inward arrow.';
   });
   field.addEventListener('pointerup', event => {
     if (pointer !== event.pointerId) return;
     const p = point(event);
     field.releasePointerCapture(pointer);
     pointer = undefined;
-    if (distance(p, end) <= 42) { points.push(end); draw(); fly(); }
-    else { reset(); status.textContent = 'Finish your line inside the amber landing circle. Try again.'; }
+    const index = selectedEnd(p);
+    if (validEnd(index)) { points.push(ends[index]); draw(); fly(); }
+    else { reset(); status.textContent = 'Enter a landing circle from outside, aligned with its arrow. Try again.'; }
   });
   field.addEventListener('pointercancel', reset);
   document.querySelector('#practice-reset')!.addEventListener('click', reset);
   document.querySelector('#practice-demo')!.addEventListener('click', () => {
-    reset(); points = [start, { x: 200, y: 215 }, { x: 320, y: 155 }, end]; draw(); fly();
+    reset(); points = [start, { x: 200, y: 215 }, { x: 280, y: 110 }, ends[0]]; draw(); fly();
   });
   reset();
   return reset;

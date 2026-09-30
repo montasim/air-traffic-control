@@ -194,7 +194,7 @@ describe('Desert Parallel layout', () => {
       height: 1600,
       detailLevel: 'mobile'
     });
-    expect(prepared.layout.landingZones).toHaveLength(3);
+    expect(prepared.layout.landingZones).toHaveLength(5);
     expect(prepared.layout.variant).toBe('portrait');
   });
 

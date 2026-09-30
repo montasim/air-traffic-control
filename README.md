@@ -13,7 +13,7 @@ Air Traffic Control is a browser arcade game for short, increasingly busy air-tr
 Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Play**. The **How to play** page includes a practice flight.
 
 1. Press an aircraft with your mouse, finger, or pen and hold.
-2. Draw a route to the destination with its matching color and letter. Release when the landing area lights up.
+2. Draw a route to the destination with its matching color and letter. Either runway end can accept a landing; follow its inward arrow and line up with the runway before reaching the threshold.
 3. Keep aircraft apart. Red warning rings indicate nearby traffic; draw a new route to reroute an aircraft.
 
 | Aircraft | Destination |
@@ -21,6 +21,8 @@ Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Play**. 
 | Cyan airliner | Runway marked **L** |
 | Amber commuter | Runway marked **C** |
 | Coral helicopter | Helipad marked **H** |
+
+A runway is reserved by one aircraft on final approach until its landing completes. If it is busy, reroute approaching aircraft; they do not hold or go around automatically. Helipads keep their usual landing behavior.
 
 Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Resizing preserves the shift and pauses when needed; select **Resume** once the field is large enough to play.
 

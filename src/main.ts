@@ -245,6 +245,7 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
   nextGame.events.on("hud-update", (snapshot: SimulationSnapshot) => {
     elements.score.textContent = formatScore(snapshot.score);
   });
+  nextGame.events.on("flight-message", (message: string) => showFlightMessage(message));
   nextGame.events.on("feedback", (event: FeedbackEvent) => audio.handle(event));
   nextGame.events.on("landing", (score: number) => {
     elements.score.textContent = formatScore(score);
@@ -522,7 +523,7 @@ function beginRun(): void {
   hideRouteCoachmark();
   if (!routeCoachCompleted && !routeCoachDismissed) {
     elements.routeCoachmarkCopy.textContent =
-      "Drag an aircraft to its matching runway or helipad.";
+      "Draw to either runway end, following its arrow, or to the matching helipad.";
     elements.routeCoachmark.hidden = false;
     routeCoachTimer = window.setTimeout(hideRouteCoachmark, 6_000);
   }

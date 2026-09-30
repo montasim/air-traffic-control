@@ -1,3 +1,4 @@
+import { RunwayTraffic, crossesCapture } from './runwayApproach';
 import { aircraftWarningDistance, airframesOverlap, DEFAULT_COLLISION_SCALES, type AircraftCollisionScales } from './aircraftCollision';
 import { distance, simplifyPoints, smoothPath } from './geometry';
 import {
@@ -77,6 +78,8 @@ export class Simulation {
   private openingSpawnIndex = 0;
   private nextAircraftId = 1;
   private events: SimulationEvent[] = [];
+  private runwayTraffic = new RunwayTraffic();
+  private approachWarningKeys = new Set<string>();
   private activeWarnings = new Set<string>();
 
   private phase: SimulationSnapshot['phase'] = 'idle';
@@ -103,6 +106,8 @@ export class Simulation {
     this.nextAircraftId = 1;
     this.events = [];
     this.activeWarnings.clear();
+    this.runwayTraffic.clear();
+    this.approachWarningKeys.clear();
     this.phase = 'running';
     this.elapsed = 0;
     this.score = 0;
@@ -170,6 +175,8 @@ export class Simulation {
       return { accepted: false, aircraftId, reason: 'route-too-short', destinationZoneId };
     }
 
+    if ((target.approachZoneId ?? target.route?.destinationZoneId) !== destinationZoneId) this.runwayTraffic.release(target.id);
+    target.approachZoneId = destinationZoneId;
     target.route = {
       points: smoothPath(points, 2),
       segmentIndex: 1,
@@ -183,6 +190,8 @@ export class Simulation {
       phase: this.phase,
       elapsed: this.elapsed,
       score: this.score,
+      runwayReservations: [...this.runwayTraffic.reservations.values()],
+      approachWarnings: this.runwayTraffic.warnings,
       aircraft: this.aircraft
     };
   }
@@ -198,16 +207,25 @@ export class Simulation {
 
     if (this.elapsed + 1e-9 >= this.nextSpawnAt) this.processScheduledSpawn();
 
+    const previous = new Map(this.aircraft.map(p => [p.id, { ...p.position }]));
+    const destinations = new Map(this.aircraft.map(p => [p.id, p.approachZoneId ?? p.route?.destinationZoneId]));
     for (const aircraft of [...this.aircraft]) {
-      if (aircraft.state === 'landing') {
-        this.advanceLanding(aircraft, delta);
-      } else {
-        this.advanceAircraft(aircraft, delta);
-        this.detectLanding(aircraft);
-        if (this.phase !== 'running') return;
-        this.detectAirspaceExit(aircraft);
-        if (this.phase !== 'running') return;
-      }
+      if (aircraft.state === 'landing') this.advanceLanding(aircraft, delta);
+      else this.advanceAircraft(aircraft, delta);
+    }
+    this.runwayTraffic.update(this.aircraft, this.zones, previous);
+    const warningKeys = new Set<string>();
+    for (const warning of this.runwayTraffic.warnings) {
+      const key = `${warning.aircraftId}:${warning.zoneId}:${warning.reason}`;
+      warningKeys.add(key);
+      if (!this.approachWarningKeys.has(key)) this.events.push({ type: 'approach-warning', ...warning });
+    }
+    this.approachWarningKeys = warningKeys;
+    for (const aircraft of this.aircraft) {
+      if (aircraft.state === 'landing') continue;
+      this.detectLanding(aircraft, previous.get(aircraft.id) ?? aircraft.position, destinations.get(aircraft.id));
+      this.detectAirspaceExit(aircraft);
+      if (this.phase !== 'running') return;
     }
 
     this.detectSeparation();
@@ -277,15 +295,21 @@ export class Simulation {
 
     if (aircraft.landingProgress >= 1) {
       this.aircraft = this.aircraft.filter((item) => item.id !== aircraft.id);
+      this.runwayTraffic.release(aircraft.id);
       this.score += 1;
       this.events.push({ type: 'landed', aircraftId: aircraft.id, aircraftType: aircraft.type, score: this.score });
     }
   }
 
-  private detectLanding(aircraft: Aircraft): void {
+  private detectLanding(aircraft: Aircraft, previous: Vector2, destinationId?: string): void {
     for (const zone of this.zones) {
       if (zone.accepts !== aircraft.type) continue;
-      if (distance(aircraft.position, zone.position) > zone.captureRadius) continue;
+      if (destinationId && zone.id !== destinationId) continue;
+      if (zone.approach) {
+        if (!crossesCapture(previous, aircraft, zone)) continue;
+        const owner = this.runwayTraffic.reservations.get(zone.approach.runwayId);
+        if (owner?.aircraftId !== aircraft.id || owner.zoneId !== zone.id) continue;
+      } else if (distance(aircraft.position, zone.position) > zone.captureRadius) continue;
 
       aircraft.state = 'landing';
       aircraft.route = undefined;
@@ -450,8 +474,7 @@ export class Simulation {
     speed: number,
     collisionRadius: number
   ): boolean {
-    const destination = this.zones.find((zone) => zone.accepts === type);
-    if (destination && distance(position, destination.position) < MIN_DESTINATION_DISTANCE) return false;
+    if (this.zones.some(zone => zone.accepts === type && distance(position, zone.position) < MIN_DESTINATION_DISTANCE)) return false;
 
     const velocity = { x: Math.cos(heading) * speed, y: Math.sin(heading) * speed };
     for (const existing of this.aircraft) {
@@ -500,6 +523,7 @@ export class Simulation {
   private endGame(reason: GameOverReason, aircraftIds?: [number, number], exitPosition?: Vector2): void {
     if (this.phase !== 'running') return;
     this.phase = 'over';
+    this.runwayTraffic.clear();
     this.events.push({ type: 'gameover', reason, aircraftIds, ...(exitPosition ? {exitPosition} : {}) });
   }
 }

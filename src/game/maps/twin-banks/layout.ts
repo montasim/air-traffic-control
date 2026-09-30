@@ -131,7 +131,7 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
     routingArea: { x: 0, y: 0.6, width: 1, height: 0.4 }
   },
   square: {
-    east: { center: { x: 0.72, y: 0.3 }, length: 0.56, width: 0.05, angle: 1.4, landingAlong: -0.36 },
+    east: { center: { x: 0.70, y: 0.31 }, length: 0.56, width: 0.05, angle: 1.4, landingAlong: -0.36 },
     west: { center: { x: 0.28, y: 0.38 }, length: 0.52, width: 0.043, angle: 1.7, landingAlong: -0.34 },
     scenic: { center: { x: 0.12, y: 0.38 }, length: 0.36, width: 0.032, angle: 1.7 },
     helipad: { x: 0.89, y: 0.50 },

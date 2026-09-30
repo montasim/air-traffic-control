@@ -56,6 +56,7 @@ export class PlayScene extends Phaser.Scene {
   private failureMarker?: Phaser.GameObjects.Graphics;
   private routeGraphics!: Phaser.GameObjects.Graphics;
   private warningGraphics!: Phaser.GameObjects.Graphics;
+  private approachWarningLabels = new Map<number, Phaser.GameObjects.Text>();
   private previewGraphics!: Phaser.GameObjects.Graphics;
   private routeGuidance!: RouteGuidanceRenderer;
   private aircraftViews = new Map<number, AircraftView>();
@@ -131,6 +132,11 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setBackgroundColor("#263e38");
     this.mapDefinition.render(this, this.preparedMap);
+    this.approachLabels = this.layout.landingZones.map(zone => this.add.text(
+      zone.position.x, zone.position.y + zone.captureRadius + 8,
+      zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}` : zone.label,
+      { fontFamily: 'Atkinson Hyperlegible', fontSize: '20px', color: '#fff5df', backgroundColor: '#203d39', padding: { x: 4, y: 2 } }
+    ).setOrigin(.5,0).setDepth(7).setVisible(false));
 
     this.routeGraphics = this.add.graphics().setDepth(4);
     this.warningGraphics = this.add.graphics().setDepth(6);
@@ -199,6 +205,7 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private approachLabels: Phaser.GameObjects.Text[] = [];
   private shiftTracker = new ShiftTracker();
   private runId = '';
   startRun(difficulty: DifficultyId = 'medium', runId = ''): void {
@@ -511,6 +518,23 @@ export class PlayScene extends Phaser.Scene {
 
   private drawRoutes(snapshot: SimulationSnapshot): void {
     this.routeGraphics.clear();
+    const drawing = this.drawingAircraft();
+    this.layout.landingZones.forEach((zone, index) => {
+      const visible = !!drawing && drawing.type === zone.accepts;
+      this.approachLabels[index]?.setVisible(visible);
+      const occupied = zone.approach && snapshot.runwayReservations?.some(r => r.runwayId === zone.approach!.runwayId && r.aircraftId !== drawing?.id);
+      this.approachLabels[index]?.setText(zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}${occupied ? ' · BUSY' : ''}` : zone.label);
+      if (!visible) return;
+      const {x,y} = zone.position;
+      this.routeGraphics.lineStyle(2,zone.color,.65);
+      this.routeGraphics.strokeCircle(x,y,zone.captureRadius);
+      if (zone.approach) {
+        const dx=Math.cos(zone.angle), dy=Math.sin(zone.angle), r=zone.captureRadius;
+        this.routeGraphics.lineBetween(x-dx*r*2,y-dy*r*2,x,y);
+        this.routeGraphics.lineBetween(x,y,x-dx*12-dy*8,y-dy*12+dx*8);
+        this.routeGraphics.lineBetween(x,y,x-dx*12+dy*8,y-dy*12-dx*8);
+      }
+    });
 
     for (const aircraft of snapshot.aircraft) {
       if (!aircraft.route || aircraft.state === "landing") continue;
@@ -580,6 +604,34 @@ export class PlayScene extends Phaser.Scene {
 
   private drawWarnings(snapshot: SimulationSnapshot): void {
     this.warningGraphics.clear();
+    const warnedAircraft = new Set<number>();
+    for (const warning of snapshot.approachWarnings ?? []) {
+      const plane = snapshot.aircraft.find(p => p.id === warning.aircraftId);
+      if (!plane || plane.state === 'landing') continue;
+      warnedAircraft.add(plane.id);
+      let label = this.approachWarningLabels.get(plane.id);
+      if (!label) {
+        label = this.add.text(0, 0, '', {
+          fontFamily: 'Atkinson Hyperlegible',
+          fontSize: '18px',
+          color: '#36270f',
+          backgroundColor: '#f3bd55',
+          padding: { x: 7, y: 4 },
+        }).setOrigin(0.5, 1).setDepth(9);
+        this.approachWarningLabels.set(plane.id, label);
+      }
+      label.setText(warning.reason === 'busy' ? '! Runway busy' : '! Align approach');
+      const halfWidth = label.width / 2;
+      label.setPosition(
+        Phaser.Math.Clamp(plane.position.x, halfWidth + 4, this.layout.width - halfWidth - 4),
+        Phaser.Math.Clamp(plane.position.y - 44, label.height + 4, this.layout.height - 4),
+      );
+    }
+    for (const [id, label] of this.approachWarningLabels) {
+      if (warnedAircraft.has(id)) continue;
+      label.destroy();
+      this.approachWarningLabels.delete(id);
+    }
     for (
       let firstIndex = 0;
       firstIndex < snapshot.aircraft.length;
@@ -629,7 +681,12 @@ export class PlayScene extends Phaser.Scene {
   private processEvents(): void {
     for (const event of this.simulation.drainEvents()) {
       this.shiftTracker.accept(event);
-      if (event.type === "landing-started") {
+      if (event.type === 'approach-warning') {
+        const zone = this.zoneById(event.zoneId);
+        const message = event.reason === 'busy' ? 'Runway busy — reroute aircraft' : 'Align with the runway arrow and approach from outside';
+        this.announce(`${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
+        this.game.events.emit('flight-message', `${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
+      } else if (event.type === "landing-started") {
         const zone = this.zoneById(event.zoneId);
         if (zone) {
           this.showGuidance(zone, "landing-started");
@@ -731,7 +788,7 @@ export class PlayScene extends Phaser.Scene {
     return {
       ...target,
       kind: "runway",
-      angle: surface.angle,
+      angle: zone.angle,
       runwayLength: surface.length,
       runwayWidth: surface.width,
     };
@@ -748,7 +805,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private zoneName(zone: LandingZone): string {
-    return zone.accepts === "rotor" ? "Helipad" : "Runway";
+    return zone.accepts === "rotor" ? `Helipad ${zone.label}` : `Runway ${zone.label}`;
   }
 
   private drawingAircraft(): Aircraft | undefined {
@@ -814,5 +871,7 @@ export class PlayScene extends Phaser.Scene {
   private clearAircraftViews(): void {
     for (const view of this.aircraftViews.values()) view.destroy();
     this.aircraftViews.clear();
+    for (const label of this.approachWarningLabels.values()) label.destroy();
+    this.approachWarningLabels.clear();
   }
 }

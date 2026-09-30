@@ -1,3 +1,4 @@
+import { withBidirectionalApproaches } from './bidirectional';
 import type Phaser from 'phaser';
 import type {
   MapDefinition,
@@ -76,7 +77,7 @@ export function defineMap<Layout extends PlayableMapLayout>(
     prepare(input): PreparedMap {
       requirePositiveDimension(input.width, 'width');
       requirePositiveDimension(input.height, 'height');
-      const layout = adapter.createLayout(input);
+      const layout = withBidirectionalApproaches(adapter.createLayout(input));
       assertPreparedLayout(layout, input, adapter.id);
       const prepared: PreparedMap = {
         mapId: adapter.id,

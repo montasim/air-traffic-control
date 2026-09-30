@@ -3,6 +3,8 @@ import type { AirfieldLayout } from './airfield';
 
 export interface RunwayGuidanceSurface {
   readonly kind: 'runway';
+  readonly runwayId?: string;
+  readonly designators?: readonly [string, string];
   readonly zoneId: string;
   readonly center: Vector2;
   readonly angle: number;
@@ -26,6 +28,8 @@ export function createAirfieldGuidanceSurfaces(
 ): GuidanceSurface[] {
   const surfaces: GuidanceSurface[] = airfield.runways.map((runway) => ({
     kind: 'runway',
+    runwayId: runway.id,
+    designators: runway.designators,
     zoneId: runway.zoneId,
     center: runway.center,
     angle: runway.angle,
