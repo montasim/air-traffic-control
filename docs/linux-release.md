@@ -131,6 +131,29 @@ sudo snap install air-traffic-control
 snap run air-traffic-control
 ```
 
+## Snap release 0.1.1 (2026-09-30)
+
+Version **0.1.1**, Store revision **2**, is published to `latest/stable` and
+`latest/edge`. It includes the visible aiming cursor, mobile aircraft sizing and
+touch selection improvements, preserved shifts during viewport resizing, and
+rotation/practice layout improvements.
+
+Validation passed: 322 automated tests, the desktop production build, and the
+packaged Electron smoke test. The Snap's bundled `app.asar` matches the tested
+unpacked application. The exact Store revision was tested under strict confinement
+in Ubuntu 24.04 with Xvfb: upgrading from revision 1 retained the saved difficulty;
+renderer isolation, bundled assets, gameplay, and pause checks passed. Hardware
+GPU/Wayland behavior and audible playback were not tested. The existing nonfatal
+Electron Vulkan-library lint warning remains.
+
+Artifact: `release/air-traffic-control_0.1.1_amd64.snap` (106 MiB).
+SHA-256: `904545573064db01a7a0d9082711adf28c516e8bcefdca7906a61b61ba20344d`.
+This release updates the Snap package; no 0.1.1 AppImage was built.
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but
