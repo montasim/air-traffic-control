@@ -1345,3 +1345,18 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 }
 
 #gameover-panel .result-body:focus-visible { outline: 3px solid var(--cyan); outline-offset: -3px; }
+
+/* Optional runway rule, separate from the difficulty radio group. */
+.runway-option { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; margin: 10px 0 16px; cursor: pointer; text-align: left; }
+.runway-option > span { flex: 1; min-width: 0; }
+.runway-option small { display: block; margin-top: 3px; font-size: 0.8rem; line-height: 1.4; }
+.runway-option input { appearance: none; position: relative; flex: 0 0 44px; width: 44px; height: 26px; margin: 0; border: 2px solid #647870; border-radius: 20px; background: #d9decf; cursor: pointer; }
+.runway-option input::before { content: ''; position: absolute; width: 18px; height: 18px; top: 2px; left: 2px; border-radius: 50%; background: #344e46; }
+.runway-option input:checked { background: #28766d; border-color: #28766d; }
+.runway-option input:checked::before { transform: translateX(18px); background: #fff5df; }
+.runway-option input:disabled { cursor: wait; opacity: .55; }
+.runway-option input:focus-visible { outline: 3px solid #28766d; outline-offset: 3px; }
+@media (forced-colors: active) {
+  .runway-option input { appearance: auto; }
+  .runway-option input::before { display: none; }
+}

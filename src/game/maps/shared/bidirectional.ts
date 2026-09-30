@@ -1,11 +1,13 @@
 import type { PlayableMapLayout } from '../types';
 
 /** Expand authored thresholds once, at the map boundary; scenery keeps its original geometry. */
-export function withBidirectionalApproaches<T extends PlayableMapLayout>(layout: T): T {
+export function withBidirectionalApproaches<T extends PlayableMapLayout>(layout: T, twoEndLanding = false): T {
   const landingZones = layout.landingZones.flatMap(zone => {
     const surface = layout.guidanceSurfaces.find(s => s.zoneId === zone.id);
     if (surface?.kind !== 'runway' || !surface.runwayId || !surface.designators) return [zone];
     const approach = { runwayId: surface.runwayId, end: 0 as const };
+    const original = { ...zone, label: surface.designators[0], approach };
+    if (!twoEndLanding) return [original];
     return [
       { ...zone, label: surface.designators[0], approach },
       { ...zone, id: `${zone.id}-reverse`, label: surface.designators[1],
@@ -15,7 +17,7 @@ export function withBidirectionalApproaches<T extends PlayableMapLayout>(layout:
     ];
   });
   const guidanceSurfaces = layout.guidanceSurfaces.flatMap(surface =>
-    surface.kind === 'runway' && surface.runwayId && surface.designators
+    twoEndLanding && surface.kind === 'runway' && surface.runwayId && surface.designators
       ? [surface, { ...surface, zoneId: `${surface.zoneId}-reverse`, angle: Math.atan2(Math.sin(surface.angle + Math.PI), Math.cos(surface.angle + Math.PI)) }]
       : [surface]);
   return { ...layout, landingZones, guidanceSurfaces };

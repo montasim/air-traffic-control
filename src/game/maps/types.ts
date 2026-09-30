@@ -25,6 +25,7 @@ export interface MapMetadata {
 }
 
 export interface MapPreparationInput {
+  readonly twoEndLanding?: boolean;
   readonly width: number;
   readonly height: number;
   readonly detailLevel: WorldDetailLevel;

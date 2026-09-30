@@ -176,6 +176,11 @@ function layoutChanged(): boolean {
 let categoryFilter = 'all';
 let activeMapId: MapId = currentSave.selectedMapId;
 let activeDifficulty: DifficultyId = currentSave.selectedDifficulty;
+let activeTwoEndLanding = currentSave.settings.twoEndLanding;
+let savingLandingMode = false;
+let restoreLandingModeFocus = false;
+const landingModeInput = document.querySelector<HTMLInputElement>('#two-end-landing')!;
+const landingModeLabel = () => activeTwoEndLanding ? 'Both landing ends' : 'One landing end';
 let activeRunId = '';
 let finishingRunId = '';
 let sceneReady = false;
@@ -209,6 +214,7 @@ elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
 function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
+  activeTwoEndLanding = currentSave.settings.twoEndLanding;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
   const nextGame = new Phaser.Game({
     type: Phaser.AUTO,
@@ -218,13 +224,16 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
-    scene: [new PlayScene(mapDefinitionById(mapId))],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding)],
   });
 
   nextGame.events.on("scene-ready", () => {
     sceneReady = true;
+    const focusLandingMode = restoreLandingModeFocus;
+    restoreLandingModeFocus = false;
+    landingModeInput.disabled = savingLandingMode || !isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
     document.dispatchEvent(new Event("game-ready"));
-    elements.startButton.disabled = !isMapUnlocked(
+    elements.startButton.disabled = savingLandingMode || !isMapUnlocked(
       activeMapId,
       currentSave.career.earnedRankId,
     );
@@ -235,7 +244,9 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
     if (startAfterRebuild) {
       startAfterRebuild = false;
       requestAnimationFrame(beginRun);
-    } else if (!elements.startPanel.hidden) {
+    } else if (focusLandingMode && !elements.startPanel.hidden) {
+      landingModeInput.focus({ preventScroll: true });
+    } else if (!elements.startPanel.hidden && document.activeElement !== landingModeInput) {
       (elements.startButton.disabled
         ? elements.mapOptions.querySelector<HTMLButtonElement>(".is-selected")
         : elements.startButton
@@ -498,7 +509,8 @@ function renderShell(): void {
 }
 
 function beginRun(): void {
-  if (createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
+  if (savingLandingMode) return;
+  if (activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
     rebuildForTarget(profileForViewport(), activeMapId, true);
     return;
   }
@@ -523,7 +535,7 @@ function beginRun(): void {
   hideRouteCoachmark();
   if (!routeCoachCompleted && !routeCoachDismissed) {
     elements.routeCoachmarkCopy.textContent =
-      "Draw to either runway end or to the matching helipad.";
+      activeTwoEndLanding ? "Draw to either runway end or to the matching helipad." : "Draw to the highlighted runway end or matching helipad.";
     elements.routeCoachmark.hidden = false;
     routeCoachTimer = window.setTimeout(hideRouteCoachmark, 6_000);
   }
@@ -573,7 +585,7 @@ function pauseRun(): void {
   scene.pauseRun();
   showOnly(elements.pausePanel);
   document.querySelector("#pause-context")!.textContent =
-    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id}`;
+    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id} · ${landingModeLabel()}`;
   updateResizeNotice();
   elements.pauseButton.setAttribute("aria-label", "Resume game");
   mountHugeIcon(elements.pauseIcon, "play", 22);
@@ -622,7 +634,7 @@ async function handleGameOver({
   const isRecord = score > activeRecord().difficultyScores[activeDifficulty][activeProfile.id];
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
   document.querySelector("#result-best-label")!.textContent =
-    `${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · Best`;
+    `${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()} · Best`;
   document.querySelector('#result-difficulty')!.textContent = `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
@@ -704,6 +716,20 @@ document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(
   activeDifficulty = currentSave.selectedDifficulty;
   renderShell();
 }));
+landingModeInput.addEventListener('change', async () => {
+  if (savingLandingMode || elements.startPanel.hidden || !utilityScreen.hidden) return;
+  savingLandingMode = true;
+  restoreLandingModeFocus = document.activeElement === landingModeInput;
+  landingModeInput.disabled = true;
+  elements.startButton.disabled = true;
+  try {
+    currentSave = await gameStore.setTwoEndLanding(landingModeInput.checked);
+    resetPractice();
+  } finally {
+    savingLandingMode = false;
+  }
+  rebuildForTarget(profileForViewport(), activeMapId, false);
+});
 elements.startButton.addEventListener("click", () => void startRun());
 elements.restartButton.addEventListener("click", () => void startRun());
 elements.restartFromPause.addEventListener("click", () =>
@@ -778,7 +804,7 @@ window.addEventListener("resize", () => {
 window.addEventListener("pagehide", () => void audio.destroy(), { once: true });
 
 const utilityScreen = document.querySelector<HTMLElement>("#utility-screen")!;
-const resetPractice = mountPractice();
+const resetPractice = mountPractice(() => currentSave.settings.twoEndLanding);
 let utilityReturnPanel: HTMLElement = elements.startPanel;
 let utilityReturnFocus: HTMLElement | null = null;
 const utilityNames = ["settings", "career", "help", "practice", "airfields"] as const;
@@ -819,12 +845,14 @@ function renderFieldDetail(): void {
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   document.querySelector('#difficulty-description')!.textContent = DIFFICULTY_DESCRIPTIONS[currentSave.selectedDifficulty];
+  landingModeInput.checked = currentSave.settings.twoEndLanding;
+  landingModeInput.disabled = savingLandingMode || !sceneReady || !unlocked;
   const lock = document.querySelector<HTMLElement>("#field-lock")!;
   lock.hidden = unlocked;
   const rank = rankDefinition(definition.metadata.unlockRankId);
   const r = rank.requirements;
   lock.textContent = `Earn ${rank.name}: ${r.minimumSafeLandings} safe landings, ${r.minimumShifts} shifts, and a best of ${r.qualifyingBestScore}+ on ${r.minimumDistinctMaps} ${r.minimumDistinctMaps === 1 ? "airfield" : "airfields"}. See Your career for your progress.`;
-  elements.startButton.disabled = !sceneReady || !unlocked;
+  elements.startButton.disabled = savingLandingMode || !sceneReady || !unlocked;
 }
 
 function updateResizeNotice(): void {

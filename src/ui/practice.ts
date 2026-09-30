@@ -16,7 +16,7 @@ function paintPlane(group: Element): void {
 }
 
 /** A self-contained exercise; never touches the live simulation or saved career. */
-export function mountPractice(): () => void {
+export function mountPractice(twoEndLanding: () => boolean = () => false): () => void {
   document.querySelectorAll('[data-help-plane]').forEach(paintPlane);
   const field = document.querySelector<SVGSVGElement>('#practice-field')!;
   const plane = document.querySelector<SVGGElement>('#practice-aircraft')!;
@@ -26,7 +26,7 @@ export function mountPractice(): () => void {
   const start = { x: 82, y: 230 };
   const ends = [{ x: 370, y: 110 }, { x: 520, y: 110 }];
   const reverseTarget = document.querySelector<SVGCircleElement>('#practice-target-reverse')!;
-  function selectedEnd(p: Point): number { return ends.findIndex(end => Math.hypot(p.x-end.x,p.y-end.y) <= 32); }
+  function selectedEnd(p: Point): number { return ends.findIndex((end, index) => (index === 0 || twoEndLanding()) && Math.hypot(p.x-end.x,p.y-end.y) <= 32); }
   let points: Point[] = [], pointer: number | undefined, frame = 0, flying = false;
   paintPlane(plane);
   const position = (p: Point, angle = -18) => plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${angle})`);
@@ -43,7 +43,8 @@ export function mountPractice(): () => void {
     plane.style.opacity = '1';
     target.setAttribute('stroke', '#f0bd66');
     reverseTarget.setAttribute('stroke', '#f0bd66');
-    status.textContent = 'Draw to either runway end.';
+    reverseTarget.style.display = twoEndLanding() ? '' : 'none';
+    status.textContent = twoEndLanding() ? 'Draw to either runway end.' : 'Draw to the highlighted runway end.';
   }
   function fly(): void {
     flying = true;
@@ -70,7 +71,10 @@ export function mountPractice(): () => void {
   }
   function point(event: PointerEvent): Point {
     const matrix = field.getScreenCTM();
-    return matrix ? new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse()) : start;
+    if (!matrix) return { ...start };
+    const transformed = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+    // DOMPoint coordinates are accessors and are lost by object spread in fly().
+    return { x: transformed.x, y: transformed.y };
   }
   field.addEventListener('pointerdown', event => {
     if (flying || pointer !== undefined || distance(point(event), start) > 46) return;
@@ -87,7 +91,7 @@ export function mountPractice(): () => void {
     const acquired = index >= 0;
     target.setAttribute('stroke', acquired && index === 0 ? '#fff5df' : '#f0bd66');
     reverseTarget.setAttribute('stroke', acquired && index === 1 ? '#fff5df' : '#f0bd66');
-    status.textContent = acquired ? 'Runway matched. Release to land.' : 'Draw to either landing circle.';
+    status.textContent = acquired ? 'Runway matched. Release to land.' : (twoEndLanding() ? 'Draw to either landing circle.' : 'Draw to the highlighted landing circle.');
   });
   field.addEventListener('pointerup', event => {
     if (pointer !== event.pointerId) return;
@@ -96,7 +100,7 @@ export function mountPractice(): () => void {
     pointer = undefined;
     const index = selectedEnd(p);
     if (index >= 0) { points.push(ends[index]); draw(); fly(); }
-    else { reset(); status.textContent = 'Finish your route in either landing circle. Try again.'; }
+    else { reset(); status.textContent = 'Finish your route in a highlighted landing circle. Try again.'; }
   });
   field.addEventListener('pointercancel', reset);
   document.querySelector('#practice-reset')!.addEventListener('click', reset);

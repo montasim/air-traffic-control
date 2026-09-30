@@ -195,7 +195,7 @@ describe('Twin Banks layout', () => {
       height: 900,
       detailLevel: 'desktop'
     });
-    expect(prepared.layout.landingZones).toHaveLength(5);
+    expect(prepared.layout.landingZones).toHaveLength(3);
     expect(prepared.layout.variant).toBe('landscape');
   });
 

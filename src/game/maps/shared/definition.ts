@@ -77,7 +77,7 @@ export function defineMap<Layout extends PlayableMapLayout>(
     prepare(input): PreparedMap {
       requirePositiveDimension(input.width, 'width');
       requirePositiveDimension(input.height, 'height');
-      const layout = withBidirectionalApproaches(adapter.createLayout(input));
+      const layout = withBidirectionalApproaches(adapter.createLayout(input), input.twoEndLanding);
       assertPreparedLayout(layout, input, adapter.id);
       const prepared: PreparedMap = {
         mapId: adapter.id,

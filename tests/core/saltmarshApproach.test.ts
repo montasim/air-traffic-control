@@ -3,7 +3,7 @@ import { Simulation } from '../../src/core/Simulation';
 import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
 
 const layout = MAP_DEFINITIONS.find(map => map.id === 'saltmarsh-gateway')!
-  .prepare({ width: 1909, height: 929, detailLevel: 'desktop' }).layout;
+  .prepare({ width: 1909, height: 929, detailLevel: 'desktop', twoEndLanding: true }).layout;
 
 for (const zone of layout.landingZones.filter(zone => zone.approach)) {
   it(`Saltmarsh ${zone.label}: lands from sideways and aligned entries`, () => {

@@ -22,7 +22,7 @@ export function reviewSave(params: URLSearchParams): GameSaveV3 {
           earnedRankId: "chief-controller",
           acknowledgedRankId: "chief-controller",
         },
-    settings: { audio: { enabled: false, volume: 0.8 } },
+    settings: { ...save.settings, audio: { enabled: false, volume: 0.8 } },
   };
 }
 

@@ -24,6 +24,7 @@ export interface AudioSettings {
 }
 
 export interface GameSettings {
+  readonly twoEndLanding: boolean;
   readonly audio: AudioSettings;
 }
 
@@ -105,6 +106,7 @@ export function createDefaultGameSave(): GameSaveV3 {
     achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
+      twoEndLanding: false,
       audio: {
         enabled: true,
         volume: DEFAULT_AUDIO_VOLUME
@@ -196,6 +198,7 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV3 {
     lastCommittedRunId: typeof value.lastCommittedRunId === 'string' ? value.lastCommittedRunId : undefined,
     selectedMapId: isMapId(value.selectedMapId) ? value.selectedMapId : DEFAULT_MAP_ID,
     settings: {
+      twoEndLanding: settings.twoEndLanding === true,
       audio: {
         enabled: booleanValue(storedAudio.enabled, defaults.settings.audio.enabled),
         volume: audioVolume(storedAudio.volume)
@@ -239,6 +242,7 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV3 {
     achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
+      twoEndLanding: false,
       audio: {
         enabled: booleanValue(value.soundEnabled, true),
         volume: DEFAULT_AUDIO_VOLUME
@@ -276,7 +280,7 @@ export function cloneGameSave(save: GameSaveV3): GameSaveV3 {
     ...save,
     achievements: Object.fromEntries(Object.entries(save.achievements).map(([id, award]) => [id, { ...award }])),
     achievementEvidence: { ...save.achievementEvidence },
-    settings: { audio: { ...save.settings.audio } },
+    settings: { ...save.settings, audio: { ...save.settings.audio } },
     career: { ...save.career },
     mapRecords: records
   };

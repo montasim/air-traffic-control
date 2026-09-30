@@ -88,7 +88,7 @@ describe('all playable map runway ends', () => {
   for (const map of MAP_DEFINITIONS) {
     for (const [width,height] of [[900,1600],[1600,900],[900,900],[1948,900]]) {
       it(`${map.id} ${width}x${height}: paired targets, inward approaches, and successful landings`, () => {
-        const layout=map.prepare({width,height,detailLevel:'desktop'}).layout;
+        const layout=map.prepare({width,height,detailLevel:'desktop',twoEndLanding:true}).layout;
         const ends=layout.landingZones.filter(z=>z.approach);
         expect(ends.length).toBeGreaterThanOrEqual(4);
         const ids=new Set(ends.map(z=>z.approach!.runwayId));

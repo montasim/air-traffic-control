@@ -85,6 +85,7 @@ export class PlayScene extends Phaser.Scene {
 
   constructor(
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION,
+    private readonly twoEndLanding = false,
   ) {
     super("play");
   }
@@ -93,7 +94,7 @@ export class PlayScene extends Phaser.Scene {
     const width = this.scale.gameSize.width;
     const height = this.scale.gameSize.height;
     const detailLevel = profileForViewport().detailLevel;
-    const preview = this.mapDefinition.prepare({ width, height, detailLevel });
+    const preview = this.mapDefinition.prepare({ width, height, detailLevel, twoEndLanding: this.twoEndLanding });
     queuePresentationAssets(this, {
       mapId: this.mapDefinition.id,
       variant: preview.layout.variant,
@@ -108,6 +109,7 @@ export class PlayScene extends Phaser.Scene {
       width,
       height,
       detailLevel,
+      twoEndLanding: this.twoEndLanding,
     });
     this.layout = this.preparedMap.layout;
     const canvas = this.game.canvas;
@@ -237,7 +239,7 @@ export class PlayScene extends Phaser.Scene {
 
   /** Detached diagnostics for development browser regression checks. */
   getShiftSnapshot() {
-    return structuredClone({ runId: this.runId, simulation: this.simulation.snapshot(), landingZones: this.layout.landingZones, evidence: this.shiftTracker.evidence });
+    return structuredClone({ twoEndLanding: this.twoEndLanding, runId: this.runId, simulation: this.simulation.snapshot(), landingZones: this.layout.landingZones, evidence: this.shiftTracker.evidence });
   }
 
   getPhase(): SimulationSnapshot["phase"] {

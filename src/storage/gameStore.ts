@@ -47,6 +47,7 @@ export interface GameStore {
   load(): Promise<GameSaveV3>;
   recordShift(shift: CompletedShift): Promise<CompletedShiftResult>;
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3>;
+  setTwoEndLanding(enabled: boolean): Promise<GameSaveV3>;
   selectMap(mapId: MapId): Promise<GameSaveV3>;
   updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV3>;
   acknowledgeEarnedRank(): Promise<GameSaveV3>;
@@ -158,6 +159,13 @@ class SerialGameStore implements GameStore {
       persisted,
       ...result
     }));
+  }
+
+  setTwoEndLanding(enabled: boolean): Promise<GameSaveV3> {
+    return this.enqueue(async current => ({
+      save: { ...current, settings: { ...current.settings, twoEndLanding: enabled === true } },
+      result: undefined
+    })).then(({ save }) => save);
   }
 
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3> {
