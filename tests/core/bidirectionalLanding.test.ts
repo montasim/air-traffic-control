@@ -1,7 +1,7 @@
 import { DEFAULT_TRAFFIC_PROFILE } from '../../src/core/trafficProfile';
 import { describe, expect, it } from 'vitest';
 import { Simulation } from '../../src/core/Simulation';
-import { RunwayTraffic, aligned, crossesCapture } from '../../src/core/runwayApproach';
+import { RunwayTraffic, crossesCapture } from '../../src/core/runwayApproach';
 import { resolveLandingTarget } from '../../src/core/landingTargeting';
 import type { Aircraft, LandingZone } from '../../src/core/types';
 import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
@@ -18,13 +18,11 @@ const previous = (planes: Aircraft[]) => new Map(planes.map(p => [p.id,{...p.pos
 function frames(simulation: Simulation, count: number) { for(let i=0;i<count;i++) simulation.update(1/60); }
 
 describe('runway approach and reservation', () => {
-  it('accepts aligned outside entries with angle wrapping and swept capture, not sideways or from inside', () => {
-    expect(aligned(Math.PI*2,zones[0])).toBe(true);
-    expect(aligned(Math.PI/6,zones[0])).toBe(true);
-    expect(aligned(Math.PI/6+.01,zones[0])).toBe(false);
+  it('captures from any angle or side, including swept entries, but not outside the target', () => {
     expect(crossesCapture({x:300,y:400},plane(1,500),zones[0])).toBe(true);
-    expect(crossesCapture({x:405,y:400},plane(1,406),zones[0])).toBe(false);
-    expect(crossesCapture({x:350,y:400},plane(1,365,Math.PI/2),zones[0])).toBe(false);
+    expect(crossesCapture({x:405,y:400},plane(1,406),zones[0])).toBe(true);
+    expect(crossesCapture({x:350,y:400},plane(1,365,Math.PI/2),zones[0])).toBe(true);
+    expect(crossesCapture({x:200,y:400},plane(1,250),zones[0])).toBe(false);
   });
   it('arbitrates both ends deterministically and releases on reroute, departure, removal and reset', () => {
     const traffic = new RunwayTraffic();
@@ -77,7 +75,7 @@ describe('runway approach and reservation', () => {
     expect(events.filter(e=>e.type==='landed')).toHaveLength(1);
     expect(tracker.evidence.landedTypes.commuter).toBe(1);
   });
-  it('does not switch assigned ends or land from the wrong direction', () => {
+  it('does not land at an end other than the assigned destination', () => {
     for (const heading of [0,Math.PI/2,Math.PI]) {
       const sim=new Simulation(zones,{width:1200,height:1000}); sim.start(11);
       const p=sim.snapshot().aircraft[0]; Object.assign(p,plane(p.id,380,heading)); p.approachZoneId='b';

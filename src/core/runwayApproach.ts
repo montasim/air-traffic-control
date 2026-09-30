@@ -1,29 +1,20 @@
 import type { Aircraft, LandingZone, Vector2 } from './types';
 
-export const APPROACH_ANGLE_TOLERANCE = Math.PI / 6;
-export function aligned(heading: number, zone: LandingZone): boolean {
-  return Math.abs(Math.atan2(Math.sin(heading - zone.angle), Math.cos(heading - zone.angle))) <= APPROACH_ANGLE_TOLERANCE + 1e-9;
-}
-export function approachCoordinates(point: Vector2, zone: LandingZone) {
-  const dx = point.x - zone.position.x, dy = point.y - zone.position.y;
-  return { along: dx * Math.cos(zone.angle) + dy * Math.sin(zone.angle), across: -dx * Math.sin(zone.angle) + dy * Math.cos(zone.angle) };
-}
+/** Reserve nearby runway space without imposing a heading requirement. */
 export function onFinal(plane: Aircraft, zone: LandingZone): boolean {
-  const p = approachCoordinates(plane.position, zone);
-  return aligned(plane.heading, zone) && p.along >= -2 * zone.captureRadius && p.along <= 0 && Math.abs(p.across) <= zone.captureRadius;
+  return Math.hypot(plane.position.x - zone.position.x, plane.position.y - zone.position.y) <= 2 * zone.captureRadius;
 }
+
+/** Normal proximity landing, including a capture area crossed between steps. */
 export function crossesCapture(previous: Vector2, plane: Aircraft, zone: LandingZone): boolean {
-  if (!aligned(plane.heading, zone)) return false;
-  const start = approachCoordinates(previous, zone), end = approachCoordinates(plane.position, zone);
-  // Only an inward entry from the outside half can capture, including swept steps.
-  if (start.along > 0 || end.along < start.along) return false;
-  const dx = end.along - start.along, dy = end.across - start.across;
+  const dx = plane.position.x - previous.x, dy = plane.position.y - previous.y;
   const length = dx * dx + dy * dy;
-  const t = length ? Math.max(0, Math.min(1, -(start.along * dx + start.across * dy) / length)) : 0;
-  return Math.hypot(start.along + t * dx, start.across + t * dy) <= zone.captureRadius;
+  const t = length ? Math.max(0, Math.min(1,
+    ((zone.position.x - previous.x) * dx + (zone.position.y - previous.y) * dy) / length)) : 0;
+  return Math.hypot(previous.x + t * dx - zone.position.x, previous.y + t * dy - zone.position.y) <= zone.captureRadius;
 }
 export interface RunwayReservation { runwayId: string; aircraftId: number; zoneId: string }
-export interface ApproachWarning { aircraftId: number; zoneId: string; reason: 'busy' | 'alignment' }
+export interface ApproachWarning { aircraftId: number; zoneId: string; reason: 'busy' }
 
 export class RunwayTraffic {
   readonly reservations = new Map<string, RunwayReservation>();
@@ -50,11 +41,9 @@ export class RunwayTraffic {
     this.warnings = [];
     for (const p of planes.filter(p => p.state !== 'landing')) {
       for (const z of zones.filter(z => z.approach && eligible(p,z))) {
-        const local = approachCoordinates(p.position,z);
-        if (Math.hypot(local.along,local.across) > z.captureRadius * 4) continue;
+        if (Math.hypot(p.position.x-z.position.x,p.position.y-z.position.y) > z.captureRadius * 4) continue;
         const owner = this.reservations.get(z.approach!.runwayId);
         if (owner && owner.aircraftId !== p.id) this.warnings.push({aircraftId:p.id,zoneId:z.id,reason:'busy'});
-        else if ((p.approachZoneId ?? p.route?.destinationZoneId) === z.id && (!aligned(p.heading,z) || local.along > 0)) this.warnings.push({aircraftId:p.id,zoneId:z.id,reason:'alignment'});
       }
     }
   }

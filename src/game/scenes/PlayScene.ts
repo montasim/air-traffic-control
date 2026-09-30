@@ -620,7 +620,7 @@ export class PlayScene extends Phaser.Scene {
         }).setOrigin(0.5, 1).setDepth(9);
         this.approachWarningLabels.set(plane.id, label);
       }
-      label.setText(warning.reason === 'busy' ? '! Runway busy' : '! Align approach');
+      label.setText('! Runway busy');
       const halfWidth = label.width / 2;
       label.setPosition(
         Phaser.Math.Clamp(plane.position.x, halfWidth + 4, this.layout.width - halfWidth - 4),
@@ -683,7 +683,7 @@ export class PlayScene extends Phaser.Scene {
       this.shiftTracker.accept(event);
       if (event.type === 'approach-warning') {
         const zone = this.zoneById(event.zoneId);
-        const message = event.reason === 'busy' ? 'Runway busy — reroute aircraft' : 'Align with the runway arrow and approach from outside';
+        const message = 'Runway busy — reroute aircraft';
         this.announce(`${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
         this.game.events.emit('flight-message', `${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
       } else if (event.type === "landing-started") {

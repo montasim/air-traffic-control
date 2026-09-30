@@ -523,7 +523,7 @@ function beginRun(): void {
   hideRouteCoachmark();
   if (!routeCoachCompleted && !routeCoachDismissed) {
     elements.routeCoachmarkCopy.textContent =
-      "Draw to either runway end, following its arrow, or to the matching helipad.";
+      "Draw to either runway end or to the matching helipad.";
     elements.routeCoachmark.hidden = false;
     routeCoachTimer = window.setTimeout(hideRouteCoachmark, 6_000);
   }

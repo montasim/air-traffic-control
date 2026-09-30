@@ -1,4 +1,3 @@
-import { aligned } from '../core/runwayApproach';
 import { AIRCRAFT_OUTLINES } from '../core/aircraftCollision';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -28,12 +27,6 @@ export function mountPractice(): () => void {
   const ends = [{ x: 370, y: 110 }, { x: 520, y: 110 }];
   const reverseTarget = document.querySelector<SVGCircleElement>('#practice-target-reverse')!;
   function selectedEnd(p: Point): number { return ends.findIndex(end => Math.hypot(p.x-end.x,p.y-end.y) <= 32); }
-  function validEnd(index: number): boolean {
-    const last = points.at(-1), before = points.at(-3) ?? points[0];
-    if (index < 0 || !last || !before) return false;
-    const end = ends[index], angle = index ? Math.PI : 0;
-    return aligned(Math.atan2(last.y-before.y,last.x-before.x), { id:'practice',label:'C',accepts:'commuter',position:end,angle,captureRadius:32,color:0 }) && (index ? before.x >= end.x : before.x <= end.x);
-  }
   let points: Point[] = [], pointer: number | undefined, frame = 0, flying = false;
   paintPlane(plane);
   const position = (p: Point, angle = -18) => plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${angle})`);
@@ -50,7 +43,7 @@ export function mountPractice(): () => void {
     plane.style.opacity = '1';
     target.setAttribute('stroke', '#f0bd66');
     reverseTarget.setAttribute('stroke', '#f0bd66');
-    status.textContent = 'Choose either runway end. Finish along its inward arrow.';
+    status.textContent = 'Draw to either runway end.';
   }
   function fly(): void {
     flying = true;
@@ -91,10 +84,10 @@ export function mountPractice(): () => void {
     const p = point(event);
     if (distance(p, points.at(-1)!) > 4) { points.push(p); draw(); }
     const index = selectedEnd(p);
-    const acquired = validEnd(index);
+    const acquired = index >= 0;
     target.setAttribute('stroke', acquired && index === 0 ? '#fff5df' : '#f0bd66');
     reverseTarget.setAttribute('stroke', acquired && index === 1 ? '#fff5df' : '#f0bd66');
-    status.textContent = acquired ? 'Runway matched. Release to land.' : 'Approach either end along its inward arrow.';
+    status.textContent = acquired ? 'Runway matched. Release to land.' : 'Draw to either landing circle.';
   });
   field.addEventListener('pointerup', event => {
     if (pointer !== event.pointerId) return;
@@ -102,8 +95,8 @@ export function mountPractice(): () => void {
     field.releasePointerCapture(pointer);
     pointer = undefined;
     const index = selectedEnd(p);
-    if (validEnd(index)) { points.push(ends[index]); draw(); fly(); }
-    else { reset(); status.textContent = 'Enter a landing circle from outside, aligned with its arrow. Try again.'; }
+    if (index >= 0) { points.push(ends[index]); draw(); fly(); }
+    else { reset(); status.textContent = 'Finish your route in either landing circle. Try again.'; }
   });
   field.addEventListener('pointercancel', reset);
   document.querySelector('#practice-reset')!.addEventListener('click', reset);
