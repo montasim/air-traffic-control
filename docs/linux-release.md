@@ -154,6 +154,36 @@ This release updates the Snap package; no 0.1.1 AppImage was built.
 sudo snap refresh air-traffic-control
 ```
 
+## Snap release 0.1.2 (2026-10-01)
+
+Version **0.1.2**, Store revision **3**, is published to `latest/stable` and
+`latest/edge`. It includes optional, saved two-end runway landing with approach
+guidance, active-shift resize improvements, and aligned airplane app icons.
+The source was built from `10fd069` with the package version bumped to 0.1.2.
+
+Validation passed: 414 automated tests, web and desktop production builds, and the
+packaged Electron smoke test, including resize/resume and saved settings. The
+Store-downloaded Snap matches the uploaded artifact, and its `app.asar` matches
+the tested unpacked application. The signed Store revision was installed under
+strict confinement in Ubuntu 24.04 LXD with Xvfb. Upgrading from revision 2 retained
+saved difficulty; bundled assets, renderer isolation, gameplay, pause, the default-off
+runway option, and settings persistence after restart passed. Hardware GPU/Wayland
+behavior and audible playback were not tested.
+
+The normal LXD build failed because the fresh container could not reach external
+services and timed out during `snap unset system proxy.http`. No host firewall
+changes were made. This release was packed with `snapcraft pack` from the verified
+0.1.1 Snap runtime: a recursive comparison confirmed that the Electron runtime was
+identical to the newly packaged application except for `app/resources/app.asar`.
+That bundle, both metadata icons, and the version in `meta/snap.yaml` were replaced
+with the 0.1.2 outputs; the existing strict-confinement configuration and command
+chains were retained. Future normal builds still require the LXD connectivity fix
+below.
+
+Artifact: `release/air-traffic-control_0.1.2_amd64.snap` (111,714,304 bytes).
+SHA-256: `2801f12c7e5cbade1f5d15f518c009f0594dc762651dff533ca673ffef7ee2bf`.
+This release updates the Snap package; no 0.1.2 AppImage was built.
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but
