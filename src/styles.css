@@ -1313,7 +1313,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel #start-button { margin: auto 0 0; min-height: 52px; }
 #start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 16px; color: var(--paper); }
-#start-panel .store-intro > span { font-size: 12px; color: #d2ddc7; }
 #start-panel .store-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 #start-panel .store-links a { display: inline-flex; align-items: center; border-radius: 4px; scroll-margin-block: 24px; }
 #start-panel .store-links img { display: block; width: auto; height: 48px; }
