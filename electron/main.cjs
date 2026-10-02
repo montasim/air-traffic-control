@@ -27,7 +27,7 @@ function createWindow() {
   });
   window.once('ready-to-show', () => window.show());
   window.webContents.setWindowOpenHandler(({ url }) => {
-    if (url === 'https://apps.microsoft.com/detail/9N5536ZQ2XZM' || url === 'https://snapcraft.io/air-traffic-control') {
+    if (url === 'https://apps.microsoft.com/detail/9N5536ZQ2XZM' || url === 'https://snapcraft.io/air-traffic-control' || url === 'https://www.supportkori.com/montasim') {
       shell.openExternal(url).catch(error => console.error('Unable to open external link:', error));
     }
     return { action: 'deny' };

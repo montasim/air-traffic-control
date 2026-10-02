@@ -1172,6 +1172,14 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .settings-save-note { padding: 24px 0; max-width: 570px; font-size: 14px; line-height: 1.6; color: #c9d7bc; }
 .settings-save-note strong { color: var(--paper); }
 .settings-save-note p { margin: 4px 0 0; }
+.settings-support { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border-top: 1px solid #819b87; }
+.settings-support h3 { margin: 0; font-size: 26px; color: var(--paper); }
+.settings-support p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: #d2ddc7; }
+#support-button { min-height: 48px; padding: 12px 24px; flex-shrink: 0; text-decoration: none; }
+#support-button:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
+@media (max-width: 500px) {
+  .settings-support { align-items: flex-start; flex-direction: column; gap: 16px; }
+}
 @media (max-width: 600px) {
   .sound-panel-heading { padding: 24px 20px; gap: 14px; }
   .sound-panel .audio-settings { padding: 24px 20px; }
