@@ -1,0 +1,11 @@
+Registered 2026-09-29 as MSIX or PWA game (overview displays Game).
+Title: Sky Routes: Air Traffic Control
+Store ID: 9N5536ZQ2XZM
+Overview: https://partner.microsoft.com/en-us/dashboard/products/9N5536ZQ2XZM/overview
+Package/Identity/Name: MohammadMontasimAlMamunSh.SkyRoutesAirTrafficContr
+Package/Identity/Publisher: CN=48008124-07D3-463D-AADF-955ABE8DDE30
+Package/Properties/PublisherDisplayName: Mohammad Montasim Al Mamun Shuvo
+Package Family Name: MohammadMontasimAlMamunSh.SkyRoutesAirTrafficContr_nw1wp2kfbkdwj
+Old app 9PHFTW90GM6W and submission deleted with user confirmation.
+Listing backup: old-app-listing-backup.csv
+Submission: 1152921505702003159. Submitted 2026-09-29; In certification (pre-processing). Automatic publishing after approval.
