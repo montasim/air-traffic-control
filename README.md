@@ -1,16 +1,40 @@
 # Air Traffic Control
 
-Draw flight paths. Land aircraft. Avoid collisions.
+> Draw flight paths. Land aircraft. Avoid collisions.
+
+[![CI](https://github.com/montasim/air-traffic-control/actions/workflows/ci.yml/badge.svg)](https://github.com/montasim/air-traffic-control/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Support on SupportKori](https://img.shields.io/badge/Support-SupportKori-00B8B5)](https://www.supportkori.com/montasim)
 
 Air Traffic Control is a browser arcade game for short, increasingly busy air-traffic shifts. Guide three aircraft types to matching destinations across nine airfields, unlock new locations through a local career, and collect achievements.
 
-![Air Traffic Control: draw flight paths, land aircraft, avoid collisions](public/social-preview-v1.png)
+**[Play in your browser](https://airtrafficcontrol.netlify.app/) · [How to play](#how-to-play) · [Run locally](#run-locally) · [Report a bug](https://github.com/montasim/air-traffic-control/issues)**
 
-## Play
+### Get the desktop app
 
-[Play Air Traffic Control](https://airtrafficcontrol.netlify.app/) in your browser.
+<a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM"><img src="public/assets/stores/microsoft-store.svg" alt="Download Air Traffic Control from the Microsoft Store for Windows" height="48" /></a>
+<a href="https://snapcraft.io/air-traffic-control"><img src="public/assets/stores/snap-store.svg" alt="Get Air Traffic Control from the Snap Store for Linux" height="48" /></a>
 
-Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Play**. The **How to play** page includes a practice flight.
+Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
+
+[![Air Traffic Control start screen with airfield selection, difficulty controls, and desktop store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
+
+*Start screen captured from the current local source. The published app may show an earlier version.*
+
+## What you can do
+
+- Draw and revise routes with a mouse, touch, or pen across nine airfields.
+- Match airliners, commuters, and helicopters to their landing destinations.
+- Choose three difficulty levels and optionally allow landings at either runway end.
+- Learn in a practice flight with no timer or effect on your career.
+- Unlock airfields through seven ranks and earn nine achievements.
+- Keep progress on your device and play offline once the browser app is cached.
+
+## How to play
+
+[Open Air Traffic Control](https://airtrafficcontrol.netlify.app/) in your browser, or launch an installed copy.
+
+Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start flight**. The **How to play** page includes a practice flight.
 
 1. Press an aircraft with your mouse, finger, or pen and hold.
 2. Draw a route to the destination with its matching color and letter. By default, use the highlighted end. Enable **Land at both runway ends** below difficulty to use either end. Both settings accept any approach angle. Release when the landing area lights up.
@@ -38,7 +62,7 @@ Seven career ranks and nine achievements reward safe landings, mixed aircraft ha
 
 ## Run locally
 
-Use **Node.js 24** and **npm 11**. The repository uses npm and `package-lock.json`.
+Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`; no database or separate service is needed.
 
 ```bash
 git clone https://github.com/montasim/air-traffic-control.git
@@ -47,7 +71,7 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, choose an airfield, and start a flight. No API keys, accounts, backend, or environment variables are required.
+Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight. No API keys, accounts, backend, or environment variables are required.
 
 | Command | Purpose |
 | --- | --- |
@@ -75,6 +99,8 @@ npm run package:linux # Build an AppImage in release/
 npm run package:snap  # Build a strictly confined core24 Snap (requires Snapcraft + LXD)
 ```
 
+The repository currently configures Linux x86-64 packaging; it does not include a Windows packaging or Microsoft Store publishing workflow.
+
 See [Linux builds and Snap Store publishing](docs/linux-release.md) for prerequisites,
 verification, installation, and publishing commands.
 
@@ -85,6 +111,12 @@ Career progress, achievements, records, selected airfield, difficulty, and audio
 Sound and effects volume are adjustable in Settings. Browsers may require a player interaction before audio starts.
 
 The production build includes a service worker that caches game assets. A first online visit is required; after caching, the game can be reopened offline. Installation and offline behavior depend on browser support. Use HTTPS in production. The development server does not represent the production offline experience.
+
+Store links and the **Support** link in Settings open third-party websites in a new tab (or the system browser in Electron). Those pages require an internet connection and handle their own account or payment information; the game does not embed a payment form.
+
+## Status and limitations
+
+The project is in its **0.x release series**. It is an arcade game, not an operational air-traffic-control simulator.
 
 Menus support keyboard navigation, but drawing flight paths requires a pointer. Responsive layouts have been checked in Chromium; real-device Safari, native touch feel, and long-session difficulty balance still need broader playtesting. See the [end-to-end QA report](docs/end-to-end-qa-report.md) for verification scope.
 
@@ -99,9 +131,11 @@ npm run preview
 
 Publish the **contents of `dist/`** to a static HTTPS host. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`; it requires no server functions or history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
 
-[netlify.toml](netlify.toml) declares the build command, Node version, and publish directory. Manual Netlify uploads must use a fresh local build and `--no-build` to avoid a second remote build. Linking a site and authentication are deployment-operator responsibilities; local Netlify state is ignored by Git.
+[netlify.toml](netlify.toml) declares the build command, Node version, and publish directory. For a manual upload, build locally first and upload the fresh `dist/` contents. Site authentication and linking are deployment-operator responsibilities; local Netlify state is ignored by Git.
 
-GitHub Actions runs the tests and production build on pushes to `main` and pull requests. CI validation does not itself deploy the game.
+The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not itself deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to either store.
+
+For browser regression checks, start `npm run dev -- --port 4287` in one terminal. In another, run `npm run test:resize`, `npm run test:resize:maps`, or `npm run test:runway-ends`. Use `RESIZE_TEST_URL=http://localhost:4287/ npm run test:runway-mode` for the runway-option checks. These scripts use Playwright: provide Chrome through `CHROME_PATH`, use `/usr/bin/google-chrome`, or install its bundled browser with `npx playwright install chromium`. Desktop smoke-test prerequisites are in the [Linux release guide](docs/linux-release.md#verify).
 
 ## Project structure
 
@@ -116,12 +150,32 @@ GitHub Actions runs the tests and production build on pushes to `main` and pull 
 | `tests/` | Simulation, progression, storage, audio, and UI regression tests |
 | `public/` | Bundled fonts, graphics, and public assets |
 
-Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
+The DOM menus configure a shift; Phaser translates pointer input into routes for the simulation. Simulation events drive aircraft rendering, sound, and landing feedback. Completed shifts feed progression and local save storage.
+
+Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies the Linux desktop shell. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
+
+## Documentation
+
+- [Contribution guide](CONTRIBUTING.md): setup, required checks, and save compatibility.
+- [Linux builds and releases](docs/linux-release.md): packaging, installation, verification, and Snap publishing.
+- [End-to-end QA report](docs/end-to-end-qa-report.md): recorded browser checks and remaining coverage gaps.
+- [Mobile verification](docs/mobile-verification.md): device-layout verification notes.
+- [Visual design](DESIGN.md): interface conventions.
 
 ## Contributing and support
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report reproducible bugs or suggestions through [GitHub issues](https://github.com/montasim/air-traffic-control/issues), including browser, airfield, difficulty, and steps to reproduce. Do not post private information or exploitable security details in a public issue.
 
+For security-sensitive problems, do not open a public issue containing exploit details. The repository does not currently publish a dedicated security policy or private disclosure contact. It also has no separate code of conduct; keep contributions respectful and focused.
+
+## Support the project
+
+Optional financial support is available through [SupportKori](https://www.supportkori.com/montasim). You can also help by reporting reproducible bugs, testing on real devices, improving documentation, or contributing code.
+
+## Author
+
+Built and maintained by [Montasim](https://github.com/montasim).
+
 ## License
 
-The project is available under the [MIT license](LICENSE). Bundled fonts retain their own notices in [public/fonts/licenses](public/fonts/licenses); dependencies retain their respective licenses.
+The project is available under the [MIT license](LICENSE). Bundled fonts retain their own notices in [public/fonts/licenses](public/fonts/licenses); dependencies retain their respective licenses. Store badges and logos have separate attribution and terms documented in [public/assets/stores/README.md](public/assets/stores/README.md).
