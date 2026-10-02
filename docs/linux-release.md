@@ -184,6 +184,42 @@ Artifact: `release/air-traffic-control_0.1.2_amd64.snap` (111,714,304 bytes).
 SHA-256: `2801f12c7e5cbade1f5d15f518c009f0594dc762651dff533ca673ffef7ee2bf`.
 This release updates the Snap package; no 0.1.2 AppImage was built.
 
+## Snap release 0.1.3 (2026-10-02)
+
+Version **0.1.3**, Store revision **4**, is published to `latest/stable` and
+`latest/edge`. It includes the wider responsive start screen, Microsoft Store
+and Snap Store badges, the external SupportKori link in Settings, and clearing
+practice routes after a successful landing. The source is `c7e0f3c` with the
+package version bumped to 0.1.3.
+
+Validation passed: 414 automated tests, web and desktop production builds, and
+the packaged Electron smoke test (startup, assets, isolation, gameplay,
+resize/resume, and settings persistence). Additional checks verified both store
+badge assets, all three allowed external links, and practice-route cleanup in
+the packaged application. Store review accepted revision 4. The downloaded
+Store Snap is byte-for-byte identical to the uploaded artifact, and its bundled
+`app.asar` matches the tested unpacked application.
+
+The normal LXD build again timed out at `snap unset system proxy.http`; a
+container request to `api.snapcraft.io` also timed out. As with 0.1.2, this
+release uses `snapcraft pack` with the verified published runtime. The 0.1.2
+Snap's checksum was verified before extraction. A complete file-set and
+SHA-256 comparison of its `app/` directory against the new Electron output
+found only `resources/app.asar` changed. That application bundle and
+`meta/snap.yaml` version were updated; the Electron runtime, strict confinement,
+interfaces, and command chains remain unchanged. No firewall changes were made.
+A fresh installed strict-confinement run, hardware GPU/Wayland behavior, and
+audible playback were not retested for this release. No 0.1.3 AppImage was built.
+
+Artifact: `release/air-traffic-control_0.1.3_amd64.snap` (111,722,496 bytes).
+SHA-256: `601b5f9816d40d2fc52df18d00be63b0adc93e330d96daf38182f2f8e1fabc00`.
+
+Update an existing installation:
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but
