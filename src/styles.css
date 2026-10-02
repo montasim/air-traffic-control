@@ -1371,6 +1371,35 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-preview { max-height: 140px; }
 }
 
+/* Short landscape screens need a launch panel sized for their height. */
+@media (min-width: 600px) and (max-height: 500px) and (orientation: landscape) {
+  #start-panel .intro-content { width: min(100%, 1080px); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 10px; }
+  #start-panel .home-header { display: flex; flex-wrap: nowrap; gap: 12px; }
+  #start-panel #start-title { font-size: 30px; text-align: left; }
+  #start-panel #start-description { margin-top: 4px; font-size: 12px; text-align: left; }
+  #start-panel .home-tools { gap: 0; }
+  #start-panel .home-tools button { padding: 8px; font-size: 15px; }
+  #start-panel .departure-board { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); padding: 12px 16px; gap: 24px; }
+  #start-panel .home-preview { height: 100px; aspect-ratio: auto; max-height: none; margin: 0 0 4px; border-radius: 8px; }
+  #start-panel #home-map-preview { object-fit: contain; }
+  #start-panel .home-assignment { margin: 0; }
+  #start-panel #field-title { font-size: 26px; }
+  #start-panel #field-record { margin-top: 4px; font-size: 12px; }
+  #start-panel #field-description, #start-panel .flight-settings-intro { display: none; }
+  #start-panel .flight-settings { padding: 0; border: 0; }
+  #start-panel #flight-settings-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
+  #start-panel #difficulty-description { margin-top: 4px; font-size: 12px; }
+  #start-panel .runway-option { min-height: 44px; padding: 0; margin: 8px 0; border: 0; }
+  #start-panel .runway-option small { font-size: 12px; }
+  #start-panel #start-button { width: min(100%, 240px); align-self: flex-end; min-height: 44px; padding-block: 8px; }
+  #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
+  #start-panel .home-stores p { margin: 0; font-size: 13px; }
+  #start-panel .store-links { width: auto; flex-wrap: nowrap; gap: 10px; }
+  #start-panel .store-links a { min-height: 44px; }
+  #start-panel .store-links img { height: 36px; }
+}
+
 /* Reserve the same footprint for Pause and first-run guidance. */
 :root { --pause-size: 50px; --pause-right: max(18px, env(safe-area-inset-right)); }
 #dismiss-route-coach { flex: 0 0 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink); pointer-events: auto; }
