@@ -104,6 +104,13 @@ The repository currently configures Linux x86-64 packaging; it does not include 
 See [Linux builds and Snap Store publishing](docs/linux-release.md) for prerequisites,
 verification, installation, and publishing commands.
 
+## Microsoft Store (Windows)
+
+Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** with
+`npm run package:msix`; the registered Partner Center identity is configured.
+See [Microsoft Store release](docs/microsoft-store.md)
+for the exact commands, local test packaging, and submission checklist.
+
 ## Saves, sound, and offline use
 
 Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
