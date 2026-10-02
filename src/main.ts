@@ -1,5 +1,5 @@
 import { AIRPORT_CATEGORIES } from './game/maps/categories';
-import { DIFFICULTY_LABELS, DIFFICULTY_DESCRIPTIONS, isDifficulty, type DifficultyId } from './core/difficulty';
+import { DIFFICULTY_LABELS, isDifficulty, type DifficultyId } from './core/difficulty';
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
 import { renderCareer as renderCareerPage } from "./ui/career";
 import Phaser from "phaser";
@@ -844,7 +844,6 @@ function renderFieldDetail(): void {
     `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best · ${formatScore(mapBest(activeMapId))} landings`;
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
-  document.querySelector('#difficulty-description')!.textContent = DIFFICULTY_DESCRIPTIONS[currentSave.selectedDifficulty];
   landingModeInput.checked = currentSave.settings.twoEndLanding;
   landingModeInput.disabled = savingLandingMode || !sceneReady || !unlocked;
   const lock = document.querySelector<HTMLElement>("#field-lock")!;

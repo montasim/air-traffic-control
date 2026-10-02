@@ -1218,7 +1218,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); border-color: #ebaa44; }
 .difficulty-choices input:focus-visible + span { outline: 3px solid #167b85; outline-offset: 3px; }
 .difficulty-options:disabled { opacity: .5; }
-#difficulty-description { margin: 8px 0 12px; font-size: 12px; }
 .career-mode { max-width: 360px; margin: 0 0 20px; }
 .achievement-caption { color: #c9d7bc; font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
 .achievement-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
@@ -1255,7 +1254,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   #field-record { margin: 6px 0; }
   .departure-board .difficulty-options { margin-top: 6px; }
   .departure-board .difficulty-options legend { margin-bottom: 4px; }
-  #difficulty-description { margin: 5px 0; }
 }
 /* The full collection lives on its own page; home keeps one clear assignment. */
 #choose-airfield { width: 100%; margin-top: 8px; }
@@ -1289,28 +1287,27 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .home-tools button { min-height: 44px; padding: 10px; background: transparent; color: var(--paper); font-size: 16px; font-weight: 600; border: 1px solid transparent; }
 #start-panel .home-tools button:hover { background: #38594c; }
 #start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
-#start-panel .departure-board { position: static; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 36px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 28px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
+#start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 40px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
 #start-panel .home-airfield { min-width: 0; }
-#start-panel .home-preview { margin: 0 0 16px; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
+#start-panel .home-preview { margin: 0; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
 #home-map-preview { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 #home-map-preview:not([src]) { visibility: hidden; }
-#start-panel .home-assignment { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
-#start-panel #choose-airfield { flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 10px; display: inline-flex; align-items: center; gap: 8px; background: transparent; border-color: transparent; color: var(--ink); }
+#start-panel .airfield-details { display: flex; flex-direction: column; gap: 4px; }
+#start-panel .home-assignment { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 0; }
+#start-panel #choose-airfield { font-size: 14px; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: 8px; background: transparent; border-color: transparent; color: var(--ink); }
 #start-panel #choose-airfield:hover { text-decoration: underline; text-underline-offset: 4px; }
 #start-panel .departure-heading { display: block; min-width: 0; color: var(--ink); }
 #start-panel #field-title { font-size: 32px; line-height: 1.1; margin: 0; }
 #start-panel #field-difficulty { display: none; }
-#start-panel #field-description { display: block; margin: 12px 0 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
-#start-panel #field-record { margin: 16px 0 0; font-size: 12px; color: var(--ink); }
-#start-panel .flight-settings { display: flex; flex-direction: column; min-width: 0; padding: 8px 0; }
-#start-panel #flight-settings-title { font-size: 32px; line-height: 1.1; margin: 0; }
-#start-panel .flight-settings-intro { margin: 10px 0 28px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+#start-panel #field-description { display: block; margin: 0; font-size: 14px; line-height: 1.5; color: var(--muted); }
+#start-panel #field-record { margin: 0; font-size: 13px; line-height: 1.5; text-align: right; font-weight: 400; color: var(--ink); }
+#start-panel .flight-settings { display: flex; flex-direction: column; gap: 24px; min-width: 0; padding: 0; }
 #start-panel .difficulty-options { margin: 0; }
+#start-panel .difficulty-choices { gap: 20px; }
 #start-panel .difficulty-options legend { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; font-size: 14px; margin-bottom: 12px; }
-#start-panel #difficulty-description { margin: 0; font-size: 13px; line-height: 1.5; text-align: right; font-weight: 400; }
-#start-panel .runway-option { padding-top: 24px; border-top: 1px solid var(--line); margin: 24px 0 28px; gap: 12px; }
+#start-panel .runway-option { padding-top: 24px; border-top: 1px solid var(--line); margin: 0; gap: 12px; }
 #start-panel .runway-option small { color: var(--muted); }
-#start-panel #start-button { margin: auto 0 0; min-height: 52px; }
+#start-panel #start-button { margin: 0; min-height: 52px; }
 #start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 16px; color: var(--paper); }
 #start-panel .store-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -1336,20 +1333,17 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-tools button:first-child { padding-left: 8px; }
   #start-panel .departure-board { order: 1; grid-template-columns: minmax(0, 1fr); padding: 0 20px 20px; gap: 16px; }
   #start-panel .home-airfield { min-width: 0; }
-  #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px 8px; border-radius: 16px 16px 0 0; }
+  #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px; border-radius: 16px 16px 0 0; }
   #start-panel #home-map-preview { object-fit: cover; }
-  #start-panel .home-assignment { margin-bottom: 4px; }
+  #start-panel .home-assignment { margin: 0; }
   #start-panel #choose-airfield { min-height: 44px; font-size: 13px; }
   #start-panel #field-title { font-size: 28px; }
-  #start-panel #field-record { margin-top: 8px; font-size: 13px; }
+  #start-panel #field-record { font-size: 13px; }
   #start-panel #field-description { display: none; }
-  #start-panel .flight-settings { border: 0; padding: 0; }
-  #start-panel #flight-settings-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  #start-panel .flight-settings-intro { display: none; }
+  #start-panel .flight-settings { gap: 16px; border: 0; padding: 0; }
   #start-panel .difficulty-options legend { font-size: 14px; margin-bottom: 8px; }
   #start-panel .difficulty-choices label span { min-height: 44px; font-size: 14px; }
-  #start-panel #difficulty-description { font-size: 13px; }
-  #start-panel .runway-option { border: 0; margin: 16px 0; padding: 0; min-height: 44px; }
+  #start-panel .runway-option { border: 0; margin: 0; padding: 0; min-height: 44px; }
   #start-panel .runway-option small { font-size: 13px; line-height: 1.4; }
   #start-panel #start-button { min-height: 52px; }
   #start-panel .home-stores { order: 3; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0; }
@@ -1373,24 +1367,23 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Short landscape screens need a launch panel sized for their height. */
 @media (min-width: 600px) and (max-height: 500px) and (orientation: landscape) {
-  #start-panel .intro-content { width: min(100%, 1080px); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 10px; }
+  #start-panel .intro-content { width: min(100%, 1080px); padding: max(12px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); gap: 8px; }
   #start-panel .home-header { display: flex; flex-wrap: nowrap; gap: 12px; }
   #start-panel #start-title { font-size: 30px; text-align: left; }
   #start-panel #start-description { margin-top: 4px; font-size: 12px; text-align: left; }
   #start-panel .home-tools { gap: 0; }
   #start-panel .home-tools button { padding: 8px; font-size: 15px; }
-  #start-panel .departure-board { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); padding: 12px 16px; gap: 24px; }
-  #start-panel .home-preview { height: 100px; aspect-ratio: auto; max-height: none; margin: 0 0 4px; border-radius: 8px; }
+  #start-panel .departure-board { grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); padding: 12px 16px; gap: 16px; }
+  #start-panel .difficulty-choices { gap: 16px; }
+  #start-panel .home-preview { height: 100px; aspect-ratio: auto; max-height: none; margin: 0; border-radius: 8px; }
   #start-panel #home-map-preview { object-fit: contain; }
   #start-panel .home-assignment { margin: 0; }
   #start-panel #field-title { font-size: 26px; }
-  #start-panel #field-record { margin-top: 4px; font-size: 12px; }
-  #start-panel #field-description, #start-panel .flight-settings-intro { display: none; }
-  #start-panel .flight-settings { padding: 0; border: 0; }
-  #start-panel #flight-settings-title { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  #start-panel #field-record { font-size: 12px; }
+  #start-panel .flight-settings { gap: 4px; padding: 0; border: 0; }
+  #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
-  #start-panel #difficulty-description { font-size: 12px; }
-  #start-panel .runway-option { min-height: 44px; padding: 0; margin: 8px 0; border: 0; }
+  #start-panel .runway-option { min-height: 44px; padding: 0; margin: 0; border: 0; }
   #start-panel .runway-option small { font-size: 12px; }
   #start-panel #start-button { width: min(100%, 240px); align-self: flex-end; min-height: 44px; padding-block: 8px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
@@ -1398,6 +1391,13 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .store-links { width: auto; flex-wrap: nowrap; gap: 10px; }
   #start-panel .store-links a { min-height: 44px; }
   #start-panel .store-links img { height: 36px; }
+}
+
+/* In two-column layouts, the map fills the height set by the controls. */
+@media (min-width: 701px), (min-width: 600px) and (max-height: 500px) and (orientation: landscape) {
+  #start-panel .home-airfield { position: relative; align-self: stretch; }
+  #start-panel #home-map-preview { object-position: right center; }
+  #start-panel .home-preview { position: absolute; inset: 0; height: auto; max-height: none; aspect-ratio: auto; margin: 0; }
 }
 
 /* Reserve the same footprint for Pause and first-run guidance. */

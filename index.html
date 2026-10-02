@@ -152,6 +152,9 @@
             <section class="departure-board" aria-label="Selected airfield">
               <div class="home-airfield">
               <div class="home-preview"><img id="home-map-preview" alt="" /></div>
+              </div>
+              <section class="flight-settings" aria-labelledby="field-title">
+              <div class="airfield-details">
               <div class="home-assignment">
                 <div class="departure-heading">
                   <h2 id="field-title">Saltmarsh Gateway</h2>
@@ -160,14 +163,10 @@
                 <button id="choose-airfield" type="button" class="text-button" data-screen="airfields" aria-label="Change airfield">Change airfield<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
               </div>
               <p id="field-description"></p>
-              <p id="field-record"></p>
               <p id="field-lock" hidden></p>
               </div>
-              <section class="flight-settings" aria-labelledby="flight-settings-title">
-                <h2 id="flight-settings-title">Your next flight</h2>
-                <p class="flight-settings-intro">Set the challenge. Take control.</p>
-              <fieldset class="difficulty-options" id="difficulty-options" aria-describedby="difficulty-description">
-                <legend><span>Difficulty</span><span id="difficulty-description">A balanced challenge</span></legend>
+              <fieldset class="difficulty-options" id="difficulty-options">
+                <legend><span>Difficulty</span><span id="field-record"></span></legend>
                 <div class="difficulty-choices">
                   <label><input type="radio" name="difficulty" value="easy" /><span>Easy</span></label>
                   <label><input type="radio" name="difficulty" value="medium" checked /><span>Medium</span></label>
