@@ -1329,7 +1329,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-header { display: contents; }
   #start-panel .home-brand { order: 0; text-align: center; }
   #start-panel #start-title { font-size: 38px; text-align: center; }
-  #start-panel #start-title em { display: block; }
+  #start-panel #start-title em { display: inline; }
   #start-panel #start-description { font-size: 13px; margin-top: 12px; text-align: center; }
   #start-panel .home-tools { order: 2; justify-content: center; gap: 8px; }
   #start-panel .home-tools button { min-height: 44px; padding: 8px; background: transparent; font-size: 16px; gap: 6px; }
