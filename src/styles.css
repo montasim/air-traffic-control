@@ -51,6 +51,7 @@ body {
 /* The outlined native cursor stays legible over grass, water, and runways.
    Its center is the exact route-drawing hotspot, including while dragging. */
 #game canvas,
+#practice-content { max-width: 760px; }
 #practice-field {
   cursor: url("./ui/route-cursor.svg") 16 16, crosshair;
 }
@@ -1062,7 +1063,6 @@ dialog::backdrop {
 .utility-screen .help-steps strong { font: 700 24px/1.2 var(--font-display); margin-top: 18px; }
 .utility-screen .help-steps p { margin-top: 10px; }
 .lesson-art { display: block; width: 100%; border-radius: 14px; background: #dce3ca; }
-#practice-content { max-width: 760px; }
 #practice-field { display: block; width: 100%; touch-action: none; user-select: none; margin: 20px 0; }
 #practice-status { min-height: 3em; }
 .practice-actions { display: flex; flex-wrap: wrap; gap: 12px; }
@@ -1172,13 +1172,14 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .settings-save-note { padding: 24px 0; max-width: 570px; font-size: 14px; line-height: 1.6; color: #c9d7bc; }
 .settings-save-note strong { color: var(--paper); }
 .settings-save-note p { margin: 4px 0 0; }
-.settings-support { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border-top: 1px solid #819b87; }
-.settings-support h3 { margin: 0; font-size: 26px; color: var(--paper); }
-.settings-support p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: #d2ddc7; }
+.utility-support { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border-top: 1px solid #819b87; }
+.utility-support h3 { margin: 0; font-size: 26px; color: var(--paper); }
+.utility-support p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: #d2ddc7; }
+.utility-screen[data-page="settings"] .utility-support { margin-top: 0; }
 #support-button { min-height: 48px; padding: 12px 24px; flex-shrink: 0; text-decoration: none; }
 #support-button:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
 @media (max-width: 500px) {
-  .settings-support { align-items: flex-start; flex-direction: column; gap: 16px; }
+  .utility-support { align-items: flex-start; flex-direction: column; gap: 16px; }
 }
 @media (max-width: 600px) {
   .sound-panel-heading { padding: 24px 20px; gap: 14px; }
@@ -1189,14 +1190,16 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .sound-switch { margin-left: auto; }
 }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"]) { background: #29483e; color: var(--paper); }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) { background: #29483e; color: var(--paper); }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"]) .utility-top { border-color: #fff5df30; }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) .utility-top { border-color: #fff5df30; }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"]) #utility-close { background: var(--paper); border-color: transparent; }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) #utility-close { background: var(--paper); border-color: transparent; }
 
 /* Illustrated flight briefing uses the same cream panels as the other game pages. */
 #help-content .help-lead { color: var(--paper); }
+#practice-content > .fine-copy { color: #c9d7bc; }
+#practice-demo { background: var(--paper); border-color: transparent; }
 .utility-screen #help-content .help-steps li {
   padding: 16px 16px 22px;
   background: var(--paper);

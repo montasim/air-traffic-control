@@ -929,6 +929,7 @@ function openUtility(screen: string, pushHistory = true): void {
   title.textContent = { help: "How to play", career: "Your career", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
   if (screen === "career") renderCareerDetail();
   if (screen === 'airfields') { renderMapOptions(); document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`; }
+  document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
   utilityScreen.hidden = false;
   utilityScreen.scrollTop = 0;
