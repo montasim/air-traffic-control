@@ -197,7 +197,9 @@ Aircraft use a bundled original transparent sprite atlas: cream-and-cyan swept j
 
 ### Launch and Map Selection
 
-A selected airfield fills the scene behind a compact departure board. Four cards use actual thumbnails rendered from each landscape map, with names and selection/lock states. Selected cards have an amber border; hover lifts slightly; locked thumbnails reduce saturation while their text remains legible. Locked fields can be inspected, but Play stays disabled until the existing rank rule permits access. Fallback ground colors cover loading only; they are not the final thumbnail treatment.
+The start screen uses a centered, scrollable green surface with a maximum 1080px content width. A compact header pairs the title and description with labeled How to play, Career, and Settings controls. One cream board places the actual selected-airfield preview, name, description, record, and Change airfield control on the left; difficulty, the optional two-end runway rule, and the amber Start flight action sit on the right. Existing selection, unlocking, and persistence behavior remains authoritative.
+
+At 700px and below, the board stacks in source order and the preview becomes compact. The panel scrolls on short screens without shrinking controls. The secondary footer links to Windows and Linux listings using locally bundled Microsoft Store and Snap Store badges at their original proportions. The requested Snap treatment removes its border and matches the Microsoft badge’s corner radius. Store links retain visible keyboard focus and open externally.
 
 ### Buttons and Navigation
 

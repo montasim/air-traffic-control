@@ -132,17 +132,27 @@
           aria-describedby="start-description"
         >
           <div class="panel-content intro-content">
+            <header class="home-header">
+              <div class="home-brand">
             <h1 id="start-title">
               Air Traffic <em>Control</em>
             </h1>
             <p id="start-description">
               Draw flight paths. Land aircraft. Avoid collisions.
             </p>
+              </div>
+            <nav class="home-tools" aria-label="Game menu">
+              <button type="button" data-screen="help"><span class="button-icon" data-ui-icon="help" aria-hidden="true"></span><span>How to play</span></button>
+              <button type="button" data-screen="career"><span class="button-icon" data-ui-icon="career" aria-hidden="true"></span><span>Career</span></button>
+              <button type="button" data-screen="settings"><span class="button-icon" data-ui-icon="settings" aria-hidden="true"></span><span>Settings</span></button>
+            </nav>
+            </header>
 
             <div class="career-summary" hidden><strong id="current-rank"></strong><small id="rank-progress"></small></div>
             <section class="departure-board" aria-label="Selected airfield">
+              <div class="home-airfield">
               <div class="home-preview"><img id="home-map-preview" alt="" /></div>
-              <div class="home-assignment"><span>Your airfield</span><button id="choose-airfield" type="button" class="text-button" data-screen="airfields" aria-label="Change airfield">Change<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button></div>
+              <div class="home-assignment"><span>Your airfield</span><button id="choose-airfield" type="button" class="text-button" data-screen="airfields" aria-label="Change airfield">Change airfield<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button></div>
               <div class="departure-heading">
                 <h2 id="field-title">Saltmarsh Gateway</h2>
                 <span id="field-difficulty">Beginner</span>
@@ -150,6 +160,10 @@
               <p id="field-description"></p>
               <p id="field-record"></p>
               <p id="field-lock" hidden></p>
+              </div>
+              <section class="flight-settings" aria-labelledby="flight-settings-title">
+                <h2 id="flight-settings-title">Your next flight</h2>
+                <p class="flight-settings-intro">Set the challenge. Take control.</p>
               <fieldset class="difficulty-options" id="difficulty-options" aria-describedby="difficulty-description">
                 <legend>Difficulty</legend>
                 <div class="difficulty-choices">
@@ -174,19 +188,20 @@
                   aria-hidden="true"
                 ></span>
                 <span class="button-label"
-                  >Play
+                  >Start flight
                   <span id="selected-map-name" class="visually-hidden">Saltmarsh Gateway</span></span
                 >
               </button>
-
+              </section>
             </section>
-            <nav class="home-tools" aria-label="Game menu">
-              <button type="button" data-screen="help"><span class="button-icon" data-ui-icon="help" aria-hidden="true"></span><span>How to play</span></button>
-              <button type="button" data-screen="career"><span class="button-icon" data-ui-icon="career" aria-hidden="true"></span><span>Career</span></button>
-              <button type="button" data-screen="settings"><span class="button-icon" data-ui-icon="settings" aria-hidden="true"></span><span>Settings</span></button>
+
+            <nav class="home-stores" aria-label="Get the desktop app">
+              <div class="store-intro"><p>Prefer the desktop app?</p><span>Find Air Traffic Control on your platform.</span></div>
+              <div class="store-links">
+                <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM" target="_blank" rel="noopener noreferrer" aria-label="Microsoft Store for Windows (opens in a new tab)"><img src="/assets/stores/microsoft-store.svg" width="161" height="44" alt="Get it from Microsoft Store for Windows" /></a>
+                <a href="https://snapcraft.io/air-traffic-control" target="_blank" rel="noopener noreferrer" aria-label="Snap Store for Linux (opens in a new tab)"><img src="/assets/stores/snap-store.svg" width="182" height="56" alt="Get it from the Snap Store for Linux" /></a>
+              </div>
             </nav>
-
-
           </div>
         </section>
 

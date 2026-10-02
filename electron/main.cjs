@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, net, protocol, session } = require('electron');
+const { app, BrowserWindow, Menu, net, protocol, session, shell } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -26,7 +26,12 @@ function createWindow() {
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true }
   });
   window.once('ready-to-show', () => window.show());
-  window.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  window.webContents.setWindowOpenHandler(({ url }) => {
+    if (url === 'https://apps.microsoft.com/detail/9N5536ZQ2XZM' || url === 'https://snapcraft.io/air-traffic-control') {
+      shell.openExternal(url).catch(error => console.error('Unable to open external link:', error));
+    }
+    return { action: 'deny' };
+  });
   window.webContents.on('will-navigate', (event, url) => {
     if (url !== `${origin}/` && url !== `${origin}/index.html`) event.preventDefault();
   });
