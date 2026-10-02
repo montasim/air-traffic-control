@@ -1400,6 +1400,13 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-preview { position: absolute; inset: 0; height: auto; max-height: none; aspect-ratio: auto; margin: 0; }
 }
 
+/* Smaller read-only score displays leave more airfield visible on phones. */
+@media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
+  .hud-stat { min-width: 48px; padding: 6px 10px; border-radius: 8px; }
+  .hud-stat span { font-size: 11px; }
+  .hud-stat strong { display: block; font-size: 24px; }
+}
+
 /* Reserve the same footprint for Pause and first-run guidance. */
 :root { --pause-size: 50px; --pause-right: max(18px, env(safe-area-inset-right)); }
 #dismiss-route-coach { flex: 0 0 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink); pointer-events: auto; }
