@@ -51,7 +51,6 @@ body {
 /* The outlined native cursor stays legible over grass, water, and runways.
    Its center is the exact route-drawing hotspot, including while dragging. */
 #game canvas,
-#practice-content { max-width: 760px; }
 #practice-field {
   cursor: url("./ui/route-cursor.svg") 16 16, crosshair;
 }
@@ -1075,7 +1074,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #help-content > .primary-button + p { margin-top: 24px; }
 
 /* Career: a controller's service record, using the same materials as the airfield HUD. */
-.utility-screen[data-page="career"] .utility-page { max-width: 1120px; }
 .career-overview { display: grid; grid-template-columns: .85fr 1.4fr; gap: 24px; }
 .controller-card, .promotion-card { border-radius: 18px; padding: 28px; }
 .controller-card { background: #173b33; border: 1px solid #688372; text-align: center; position: relative; }
@@ -1140,7 +1138,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 }
 
 /* Settings shares the controller record palette, with one focused sound console. */
-.utility-screen[data-page="settings"] .utility-page { max-width: 860px; }
 .settings-intro { color: #d2ddc7; margin: 0 0 24px; }
 .sound-panel { background: var(--paper); color: var(--ink); border-radius: 18px; overflow: hidden; box-shadow: 0 5px 0 #142f2940; }
 .sound-panel-heading { display: flex; align-items: center; gap: 18px; padding: 28px 32px; background: #efe4c7; border-bottom: 1px solid var(--line); }
