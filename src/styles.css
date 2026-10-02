@@ -926,9 +926,6 @@ dialog::backdrop {
   #start-title {
     font-size: 2.7rem;
   }
-  #start-description {
-    display: none;
-  }
   .home-tools {
     margin-top: 12px;
   }
