@@ -64,6 +64,8 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
       if (segment < points.length) frame = requestAnimationFrame(tick);
       else {
         plane.style.opacity = '0';
+        points = [];
+        draw();
         status.textContent = 'Safe landing! You’re ready to guide traffic. Try again, or go back.';
       }
     }
