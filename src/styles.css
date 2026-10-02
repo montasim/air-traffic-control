@@ -1284,7 +1284,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .home-tools button { min-height: 44px; padding: 10px; background: transparent; color: var(--paper); font-size: 16px; font-weight: 600; border: 1px solid transparent; }
 #start-panel .home-tools button:hover { background: #38594c; }
 #start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
-#start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 40px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 40px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
+#start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 30px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
 #start-panel .home-airfield { min-width: 0; }
 #start-panel .home-preview { margin: 0; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
 #home-map-preview { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
