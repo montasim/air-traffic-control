@@ -220,6 +220,39 @@ Update an existing installation:
 sudo snap refresh air-traffic-control
 ```
 
+## Snap release 0.1.4 (2026-10-02)
+
+Version **0.1.4**, Store revision **5**, is published to `latest/stable` and
+`latest/edge`. It adds the shared SupportKori footer to Help, Career, and Practice,
+unifies the four utility pages at a 1040px maximum content width, and matches
+Practice's background and text colors to the other pages. Source: `b256a0b`
+with the package version bumped to 0.1.4.
+
+Validation passed: 414 automated tests, web and desktop production builds, and
+the packaged Electron smoke test covering gameplay, resize/resume, assets,
+renderer isolation, and persistent settings. Release-specific desktop checks
+confirmed matching widths and backgrounds, functional external support links on
+all four pages, and no support footer in the airfield picker. Store review passed;
+the downloaded revision 5 Snap is byte-for-byte identical to the uploaded file.
+The Snap's bundled `app.asar` matches the tested desktop application.
+
+Packaging used the documented `snapcraft pack` fallback because of the LXD
+network failure observed during the preceding 0.1.3 release. The normal LXD build
+was not retried for 0.1.4. The published 0.1.3 Snap's checksum was verified before
+extraction; complete file-set and SHA-256 comparison against the new Electron
+output found only `resources/app.asar` changed. Only that application bundle and
+the version in `meta/snap.yaml` were replaced. The runtime, strict confinement,
+interfaces, and command chains are unchanged. A fresh installed strict-confinement
+run, hardware GPU/Wayland behavior, and audible playback were not retested.
+No 0.1.4 AppImage was built.
+
+Artifact: `release/air-traffic-control_0.1.4_amd64.snap` (111,722,496 bytes).
+SHA-256: `532ab85be84036ef41c093f1c95df3579c9bdf234ff110cd3afbca111daf337e`.
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but
