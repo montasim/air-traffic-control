@@ -692,6 +692,23 @@ dialog::backdrop {
   pointer-events: none;
   box-shadow: 0 4px 16px #203d3930;
 }
+/* Phones show flight messages at the bottom, centred level with the pause button and clear of it,
+   so they never sit between the score and best displays. */
+@media (max-width: 650px), (max-height: 500px) {
+  #flight-message {
+    top: auto;
+    bottom: calc(max(18px, var(--safe-bottom)) + var(--pause-size) / 2);
+    transform: translate(-50%, 50%);
+    width: max-content;
+    max-width: calc(100% - 2 * (var(--pause-right) + var(--pause-size) + 12px));
+  }
+  /* The first-shift route hint also sits at the bottom; while it shows, messages use the top instead. */
+  .route-coachmark:not([hidden]) ~ #flight-message {
+    top: 86px;
+    bottom: auto;
+    transform: translateX(-50%);
+  }
+}
 @media (min-width: 1000px) {
   .intro-panel {
     background: linear-gradient(90deg, #25443999, transparent 57%);
@@ -817,11 +834,6 @@ dialog::backdrop {
   .text-button {
     padding: 8px 10px;
     font-size: 0.85rem;
-  }
-  #flight-message {
-    top: 86px;
-    max-width: calc(100% - 32px);
-    width: max-content;
   }
   .hud-stat {
     min-width: 56px;
