@@ -92,23 +92,30 @@ interface DesertProfile {
   readonly liner: NormalizedRunway;
   readonly commuter: NormalizedRunway;
   readonly helipad: Vector2;
+  /** Paved between the runways; preparation trims it clear of both runway edges. */
   readonly apron: readonly Vector2[];
+  /** Where both taxiways meet on the apron. */
+  readonly apronCenter: Vector2;
+  /** FIELD OPS sits at the quiet west end of the apron, away from the taxiways. */
+  readonly ops: Vector2;
   readonly routingArea: RoutingArea;
   readonly coastFragments: readonly (readonly Vector2[])[];
 }
 
 const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
   landscape: {
-    liner: { center: { x: 0.72, y: 0.25 }, length: 0.84, width: 0.052, angle: 0.07, landingAlong: -0.36 },
-    commuter: { center: { x: 0.66, y: 0.47 }, length: 0.68, width: 0.044, angle: 0.07, landingAlong: -0.34 },
-    helipad: { x: 0.79, y: 0.37 },
+    liner: { center: { x: 0.72, y: 0.2 }, length: 0.84, width: 0.052, angle: 0.07, landingAlong: -0.36 },
+    commuter: { center: { x: 0.64, y: 0.57 }, length: 0.62, width: 0.044, angle: 0.07, landingAlong: -0.34 },
+    helipad: { x: 0.9, y: 0.45 },
     apron: [
-      { x: 0.61, y: 0.31 },
-      { x: 0.79, y: 0.33 },
-      { x: 0.83, y: 0.51 },
-      { x: 0.64, y: 0.57 },
-      { x: 0.57, y: 0.44 }
+      { x: 0.5, y: 0.2 },
+      { x: 0.84, y: 0.24 },
+      { x: 0.86, y: 0.6 },
+      { x: 0.62, y: 0.62 },
+      { x: 0.48, y: 0.5 }
     ],
+    apronCenter: { x: 0.7, y: 0.4 },
+    ops: { x: 0.56, y: 0.38 },
     routingArea: { x: 0, y: 0.16, width: 0.43, height: 0.84 },
     coastFragments: [
       [{ x: 0, y: 0.69 }, { x: 0.08, y: 0.73 }, { x: 0.13, y: 0.88 }, { x: 0.1, y: 1 }, { x: 0, y: 1 }],
@@ -117,16 +124,18 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
     ]
   },
   portrait: {
-    liner: { center: { x: 0.51, y: 0.2 }, length: 0.82, width: 0.054, angle: 0.04, landingAlong: -0.36 },
-    commuter: { center: { x: 0.57, y: 0.36 }, length: 0.66, width: 0.045, angle: 0.04, landingAlong: -0.34 },
-    helipad: { x: 0.74, y: 0.43 },
+    liner: { center: { x: 0.51, y: 0.17 }, length: 0.82, width: 0.054, angle: 0.04, landingAlong: -0.36 },
+    commuter: { center: { x: 0.47, y: 0.45 }, length: 0.64, width: 0.045, angle: 0.04, landingAlong: -0.34 },
+    helipad: { x: 0.87, y: 0.34 },
     apron: [
-      { x: 0.43, y: 0.25 },
-      { x: 0.75, y: 0.25 },
-      { x: 0.84, y: 0.43 },
-      { x: 0.61, y: 0.5 },
-      { x: 0.39, y: 0.4 }
+      { x: 0.16, y: 0.18 },
+      { x: 0.78, y: 0.2 },
+      { x: 0.78, y: 0.47 },
+      { x: 0.3, y: 0.47 },
+      { x: 0.14, y: 0.4 }
     ],
+    apronCenter: { x: 0.52, y: 0.31 },
+    ops: { x: 0.24, y: 0.3 },
     routingArea: { x: 0, y: 0.58, width: 1, height: 0.42 },
     coastFragments: [
       [{ x: 0, y: 0.62 }, { x: 0.12, y: 0.66 }, { x: 0.18, y: 0.82 }, { x: 0.12, y: 1 }, { x: 0, y: 1 }],
@@ -135,16 +144,18 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
     ]
   },
   square: {
-    liner: { center: { x: 0.59, y: 0.24 }, length: 0.8, width: 0.052, angle: 0.06, landingAlong: -0.36 },
-    commuter: { center: { x: 0.61, y: 0.44 }, length: 0.65, width: 0.044, angle: 0.06, landingAlong: -0.34 },
-    helipad: { x: 0.80, y: 0.35 },
+    liner: { center: { x: 0.59, y: 0.2 }, length: 0.8, width: 0.052, angle: 0.06, landingAlong: -0.36 },
+    commuter: { center: { x: 0.54, y: 0.54 }, length: 0.63, width: 0.044, angle: 0.06, landingAlong: -0.34 },
+    helipad: { x: 0.92, y: 0.47 },
     apron: [
-      { x: 0.49, y: 0.3 },
-      { x: 0.75, y: 0.31 },
-      { x: 0.83, y: 0.49 },
-      { x: 0.61, y: 0.56 },
-      { x: 0.44, y: 0.43 }
+      { x: 0.3, y: 0.2 },
+      { x: 0.84, y: 0.24 },
+      { x: 0.84, y: 0.56 },
+      { x: 0.4, y: 0.56 },
+      { x: 0.28, y: 0.46 }
     ],
+    apronCenter: { x: 0.6, y: 0.37 },
+    ops: { x: 0.38, y: 0.34 },
     routingArea: { x: 0, y: 0.61, width: 1, height: 0.39 },
     coastFragments: [
       [{ x: 0, y: 0.7 }, { x: 0.08, y: 0.72 }, { x: 0.14, y: 0.88 }, { x: 0.1, y: 1 }, { x: 0, y: 1 }],
@@ -313,7 +324,8 @@ export function createDesertParallelLayout(
       color: DESERT_PARALLEL_PALETTE.rotor
     }
   ];
-  const apronCenter = scalePoint({ x: 0.7, y: variant === 'portrait' ? 0.36 : 0.41 }, width, height);
+  const apronCenter = scalePoint(profile.apronCenter, width, height);
+  const opsCenter = scalePoint(profile.ops, width, height);
   const taxiwayWidth = Math.max(10, unit * 0.016);
   const taxiways: readonly MapTaxiway<DesertTaxiwayId, DesertConnectionId>[] = [
     {
@@ -354,9 +366,9 @@ export function createDesertParallelLayout(
     }
   ];
   const serviceLandmark: DesertServiceLandmark = {
-    center: apronCenter,
-    width: unit * 0.18,
-    height: unit * 0.085,
+    center: opsCenter,
+    width: unit * 0.13,
+    height: unit * 0.06,
     angle: 0.02,
     label: 'FIELD OPS'
   };
@@ -368,15 +380,16 @@ export function createDesertParallelLayout(
     length: unit * 0.043
   }));
   const propAnchors: readonly AirfieldPropAnchor[] = [
-    { id: 'desert-ops', kind: 'service', label: 'OPS', position: apronCenter, angle: 0.02, size: unit * 0.075 },
-    { id: 'desert-hangar', kind: 'hangar', label: 'HANGAR', position: interpolate(apron[3], apronCenter, 0.18), angle: liner.angle, size: unit * 0.07 },
-    { id: 'desert-fuel', kind: 'fuel', label: 'FUEL', position: interpolate(apron[2], apronCenter, 0.2), angle: commuter.angle, size: unit * 0.034 },
-    { id: 'desert-windsock', kind: 'windsock', label: 'WIND', position: interpolate(apron[4], apronCenter, 0.14), angle: liner.angle, size: unit * 0.022 }
+    { id: 'desert-ops', kind: 'service', label: 'OPS', position: opsCenter, angle: 0.02, size: unit * 0.075 },
+    // Hangar and fuel keep beside FIELD OPS, leaving the middle of the apron to the stands.
+    { id: 'desert-hangar', kind: 'hangar', label: 'HANGAR', position: pointOnRunway({ ...liner, center: opsCenter }, -unit * 0.12), angle: liner.angle, size: unit * 0.07 },
+    { id: 'desert-fuel', kind: 'fuel', label: 'FUEL', position: pointOnRunway({ ...liner, center: opsCenter }, 0, unit * 0.075), angle: commuter.angle, size: unit * 0.034 },
+    { id: 'desert-windsock', kind: 'windsock', label: 'WIND', position: interpolate(apron[4], opsCenter, 0.14), angle: liner.angle, size: unit * 0.022 }
   ];
   const signs: readonly AirfieldSign[] = [
     { id: 'desert-sign-a', kind: 'taxiway', label: 'A', position: taxiways[0].path[1], angle: liner.angle },
     { id: 'desert-sign-b', kind: 'taxiway', label: 'B', position: taxiways[1].path[1], angle: commuter.angle },
-    { id: 'desert-sign-ops', kind: 'facility', label: 'FIELD OPS', position: apronCenter, angle: 0 }
+    { id: 'desert-sign-ops', kind: 'facility', label: 'FIELD OPS', position: opsCenter, angle: 0 }
   ];
   const routingArea = {
     x: profile.routingArea.x * width,

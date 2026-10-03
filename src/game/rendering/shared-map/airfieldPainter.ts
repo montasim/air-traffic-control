@@ -7,6 +7,7 @@ import type {
   MapTaxiway,
 } from "../../maps/shared/airfield";
 import {
+  buildingCenterClearOfRunways,
   localRunwayPoint,
   rotatedRectangle,
   strokePolyline,
@@ -210,22 +211,7 @@ export function paintBuilding(
   palette: CivilMapPalette,
   runways: readonly MapRunway[] = [],
 ): void {
-  let center = { ...building.center };
-  for (const runway of runways) {
-    const dx = center.x - runway.center.x,
-      dy = center.y - runway.center.y;
-    const along = dx * Math.cos(runway.angle) + dy * Math.sin(runway.angle);
-    const across = -dx * Math.sin(runway.angle) + dy * Math.cos(runway.angle);
-    const clearance =
-      runway.width * 0.65 + Math.hypot(building.width, building.height) * 0.5;
-    if (Math.abs(along) < runway.length * 0.5 && Math.abs(across) < clearance) {
-      const move = (across < 0 ? -1 : 1) * clearance - across;
-      center = {
-        x: center.x - Math.sin(runway.angle) * move,
-        y: center.y + Math.cos(runway.angle) * move,
-      };
-    }
-  }
+  const center = buildingCenterClearOfRunways(building.center, building.width, building.height, runways);
   const points = rotatedRectangle(
     center,
     building.width,

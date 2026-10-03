@@ -1,11 +1,11 @@
 import type Phaser from 'phaser';
 import {
   composeStaticMap,
-  paintApron,
+  clearOfAirfield,
+  paintAirfieldGround,
   paintBuilding,
   paintHelipad,
   paintRunway,
-  paintTaxiway,
   paintWaterPolygon,
   rotatedRectangle,
   tracePolygon,
@@ -103,6 +103,7 @@ function paintTerrain(
 
   for (const decoration of layout.decorations) {
     const size = unit * 0.01 * decoration.scale;
+    if (!clearOfAirfield(layout, decoration.position, size * 2.8)) continue;
     if (decoration.kind === 'strata') {
       graphics.lineStyle(Math.max(1, unit * 0.002), DESERT_PARALLEL_PALETTE.dryWash, 0.23);
       graphics.lineBetween(
@@ -169,18 +170,6 @@ function paintFacilities(
     }
   }
 
-  graphics.lineStyle(Math.max(1.2, unit * 0.002), DESERT_PARALLEL_PALETTE.runwayMarking, 0.38);
-  for (const stand of layout.parkingStands) {
-    const dx = Math.cos(stand.angle) * stand.length * 0.5;
-    const dy = Math.sin(stand.angle) * stand.length * 0.5;
-    graphics.lineBetween(
-      stand.position.x - dx,
-      stand.position.y - dy,
-      stand.position.x + dx,
-      stand.position.y + dy
-    );
-  }
-
   for (const sign of visibleDesertLabels(layout)) paintVectorLabel(graphics, sign, unit);
 }
 
@@ -191,9 +180,8 @@ export function renderDesertParallelMap(
 ): void {
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit),
-    operational: ({graphics, unit}) => {
-    paintApron(graphics, layout.apron, CIVIL_PALETTE);
-    for (const taxiway of layout.taxiways) paintTaxiway(graphics, taxiway, CIVIL_PALETTE);
+    operational: ({graphics, unit, detailLevel}) => {
+    paintAirfieldGround(graphics, layout, CIVIL_PALETTE, detailLevel);
     for (const runway of layout.runways) {
       paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.strata);
     }

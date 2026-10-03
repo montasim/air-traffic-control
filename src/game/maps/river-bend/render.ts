@@ -9,14 +9,14 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  clearOfAirfield,
+  paintAirfieldGround,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
-  paintApron,
   paintBuilding,
   paintHelipad,
   paintRiver,
   paintRunway,
-  paintTaxiway,
   paintTree,
   smoothPath,
   strokePolyline,
@@ -83,8 +83,7 @@ function paintOperational(
   const palette = RIVER_BEND_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
 
-  paintApron(graphics, layout.apron, palette);
-  for (const taxiway of layout.taxiways) paintTaxiway(graphics, taxiway, palette);
+  paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
     paintRunway(graphics, runway, palette, budget.surfaceWear);
   }
@@ -103,7 +102,7 @@ function paintDetail(
 
   for (let index = 0; index < Math.min(budget.trees, layout.bankTrees.length); index += 1) {
     const tree = layout.bankTrees[index];
-    paintTree(graphics, tree.center, tree.radius, palette, index);
+    if (clearOfAirfield(layout, tree.center, tree.radius)) paintTree(graphics, tree.center, tree.radius, palette, index);
   }
 
   graphics.lineStyle(

@@ -2,7 +2,7 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintApron, paintRunway, paintHelipad, paintTaxiway, paintBuilding, paintTree, tracePolygon, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintRunway, paintHelipad, paintBuilding, paintTree, tracePolygon, clearOfAirfield, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
@@ -15,6 +15,15 @@ export interface AirportPlan {
   pads: readonly [number, number][];
   terminal: readonly [number, number];
 }
+/** A small apron fixture (shelter, container, gate, kiosk) drawn in a row by the terminal. */
+export interface SpecialistFixture {
+  readonly id: string;
+  readonly center: Vector2;
+  readonly width: number;
+  readonly height: number;
+  readonly angle: number;
+  readonly index: number;
+}
 export interface SpecialistLayout extends PlayableMapLayout {
   kind: SpecialistKind;
   runways: MapRunway[];
@@ -22,6 +31,8 @@ export interface SpecialistLayout extends PlayableMapLayout {
   taxiways: MapTaxiway[];
   apron: Vector2[];
   buildings: MapBuilding[];
+  /** Laid out with the buildings so stands, taxiways, and cleanup all see them. */
+  fixtures: SpecialistFixture[];
 }
 export function createSpecialistLayout(width: number, height: number, kind: SpecialistKind, plans: Record<'portrait' | 'landscape', AirportPlan>): SpecialistLayout {
   const portrait = width / height < 1.4;
@@ -36,15 +47,23 @@ export function createSpecialistLayout(width: number, height: number, kind: Spec
   }));
   const helipads = plan.pads.map(([x,y], i) => ({ center: point(x,y), radius: u * .037, zoneId: `${kind}-pad-${i}` }));
   const terminal = point(...plan.terminal);
-  const apron = [[-.14,-.07],[.14,-.07],[.17,.07],[-.12,.09]].map(([x,y]) => ({ x: terminal.x + x*u, y: terminal.y + y*u }));
+  const apron = [[-.2,-.09],[.2,-.09],[.22,.1],[-.18,.11]].map(([x,y]) => ({ x: terminal.x + x*u, y: terminal.y + y*u }));
   const buildings: MapBuilding[] = [{ id: 'terminal', center: terminal, width: u * (kind === 'passenger' ? .22 : .13), height: u * .045, angle: 0, kind: 'terminal' }];
   if (kind === 'cargo') for (const side of [-1, 1]) buildings.push({ id: `warehouse-${side}`, center: { x: terminal.x + side*u*.11, y: terminal.y-u*.015 }, width:u*.065,height:u*.055,angle:0,kind:'hangar' });
+  const count = kind === 'military' ? 4 : kind === 'cargo' ? 5 : kind === 'passenger' ? 3 : 2;
+  const fixtures: SpecialistFixture[] = Array.from({ length: count }, (_, i) => {
+    const x = terminal.x + (i - (count - 1) / 2) * u * .055;
+    // Passenger gates are piers off the terminal's airside face; the others stand in a row in front of it.
+    if (kind === 'passenger') return { id: `fixture-${i}`, center: { x, y: terminal.y - u * .0375 }, width: u * .016, height: u * .045, angle: 0, index: i };
+    const [fw, fh] = kind === 'military' ? [.042, .03] : kind === 'cargo' ? [.041, .024] : [.036, .03];
+    return { id: `fixture-${i}`, center: { x, y: terminal.y + u * .055 }, width: u * fw, height: u * fh, angle: 0, index: i };
+  });
   const taxiways: MapTaxiway[] = runways.map((r,i) => ({ id: `taxi-${i}`, connects: [r.id,'apron'], width: u * .018, path: [{...r.center}, { x: terminal.x + (i ? .09 : -.09)*u, y: terminal.y }, terminal] }));
   const landingZones: LandingZone[] = runways.map(r => ({ id: r.zoneId, label: r.accepts === 'liner' ? 'L' : 'C', accepts: r.accepts, position: { x: r.center.x - Math.cos(r.angle)*r.length*.34, y: r.center.y - Math.sin(r.angle)*r.length*.34 }, angle: r.angle, captureRadius: u * .026, color: AIRCRAFT_COLORS[r.accepts] }));
   landingZones.push(...helipads.map((p,i) => ({ id:p.zoneId, label: helipads.length > 1 ? `H${i+1}` : 'H', accepts:'rotor' as const, position:p.center, angle:0, captureRadius:p.radius*.7, color:AIRCRAFT_COLORS.rotor })));
   const guidanceSurfaces = createAirfieldGuidanceSurfaces({runways});
   for (const p of helipads) guidanceSurfaces.push({kind:'pad',zoneId:p.zoneId,center:p.center,angle:0,radius:p.radius});
-  return {width,height,variant,kind,runways,helipads,taxiways,apron,buildings,landingZones,guidanceSurfaces,hudExclusionZones:[{id:'score',x:0,y:0,width:width*.3,height:height*.12},{id:'pause',x:width*.86,y:height*.85,width:width*.14,height:height*.15}]};
+  return {width,height,variant,kind,runways,helipads,taxiways,apron,buildings,fixtures,landingZones,guidanceSurfaces,hudExclusionZones:[{id:'score',x:0,y:0,width:width*.3,height:height*.12},{id:'pause',x:width*.86,y:height*.85,width:width*.14,height:height*.15}]};
 }
 
 export function renderSpecialistAirfield(scene: Phaser.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
@@ -81,23 +100,23 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
       }
     },
     operational:({graphics:g}) => {
-      paintApron(g,layout.apron,palette);
-      for(const taxi of layout.taxiways) paintTaxiway(g,taxi,palette);
+      paintAirfieldGround(g,layout,palette,detailLevel);
       for(const runway of layout.runways) paintRunway(g,runway,palette,0);
       for(const pad of layout.helipads) paintHelipad(g,pad,palette);
     },
     detail:({graphics:g}) => {
       for(const building of layout.buildings) paintBuilding(g,building,palette,layout.runways);
-      const count=kind === 'military' ? 4 : kind === 'cargo' ? 5 : kind === 'passenger' ? 3 : 2;
-      for(let i=0;i<count;i++) {
-        const x=terminal.x+(i-(count-1)/2)*u*.055, y=terminal.y+u*.055;
-        if(kind === 'military') {g.fillStyle(0x4d6652);g.fillRoundedRect(x-u*.021,y-u*.015,u*.042,u*.03,u*.012);g.fillStyle(0xb2b59b);g.fillRect(x-u*.014,y+u*.004,u*.028,u*.006);}
-        else if(kind === 'cargo') {g.fillStyle(i%2 ? 0x647f79 : 0xb89b72);g.fillRect(x-u*.021,y-u*.012,u*.041,u*.024);g.lineStyle(1,0xf4efda,.3);g.lineBetween(x,y-u*.012,x,y+u*.012);}
-        else if(kind === 'passenger') {g.fillStyle(0xd4ccb2);g.fillRect(x-u*.008,terminal.y-u*.06,u*.016,u*.045);}
-        else {g.fillStyle(0xc3c2a6);g.fillRoundedRect(x-u*.018,y-u*.015,u*.036,u*.03,u*.004);}
+      for(const {center:{x,y},width:fw,height:fh,index:i} of layout.fixtures) {
+        if(kind === 'military') {g.fillStyle(0x4d6652);g.fillRoundedRect(x-fw/2,y-fh/2,fw,fh,u*.012);g.fillStyle(0xb2b59b);g.fillRect(x-u*.014,y+u*.004,u*.028,u*.006);}
+        else if(kind === 'cargo') {g.fillStyle(i%2 ? 0x647f79 : 0xb89b72);g.fillRect(x-fw/2,y-fh/2,fw,fh);g.lineStyle(1,0xf4efda,.3);g.lineBetween(x,y-fh/2,x,y+fh/2);}
+        else if(kind === 'passenger') {g.fillStyle(0xd4ccb2);g.fillRect(x-fw/2,y-fh/2,fw,fh);}
+        else {g.fillStyle(0xc3c2a6);g.fillRoundedRect(x-fw/2,y-fh/2,fw,fh,u*.004);}
       }
       if(kind === 'rescue') for(const pad of layout.helipads) {g.fillStyle(0xfff5df);g.fillRect(pad.center.x+u*.052,pad.center.y-u*.012,u*.022,u*.024);g.fillStyle(0xb86d55);g.fillRect(pad.center.x+u*.061,pad.center.y-u*.008,u*.004,u*.016);g.fillRect(pad.center.x+u*.055,pad.center.y-u*.002,u*.016,u*.004);}
-      if(kind !== 'rescue' && kind !== 'cargo') for(let i=0;i<(detailLevel==='mobile'?8:16);i++) paintTree(g,{x:w*.055+i*u*.028,y:h*.62+Math.sin(i*.7)*u*.014},u*.008,palette,i);
+      if(kind !== 'rescue' && kind !== 'cargo') for(let i=0;i<(detailLevel==='mobile'?8:16);i++) {
+        const at={x:w*.055+i*u*.028,y:h*.62+Math.sin(i*.7)*u*.014};
+        if(clearOfAirfield(layout,at,u*.008)) paintTree(g,at,u*.008,palette,i);
+      }
     }
   },{materialTextureKey:`terrain:arcade:${kind==='cargo'?'mineral':'meadow'}`});
   if (kind === 'rescue') layout.helipads.forEach((pad,i) => scene.add.text(pad.center.x, pad.center.y+pad.radius+u*.008, `H${i+1}`, { ...PHASER_TEXT_STYLES.airfieldMarking, fontSize: `${Math.max(10,u*.021)}px`, color: '#203d39', backgroundColor: '#fff5df', padding: { x: 3, y: 1 } }).setOrigin(.5,0).setDepth(-19));
