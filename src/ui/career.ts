@@ -4,7 +4,8 @@ import { MAP_DEFINITIONS } from '../game/maps/registry';
 import type { MapId } from '../game/maps/mapIds';
 import { RANK_CATALOG, rankDefinition, rankIndex, isMapUnlocked, promotionProgress } from '../progression/ranks';
 import type { GameSaveV3 } from '../storage/gameSave';
-import { mountHugeIcon, type AppIconName } from './hugeicons';
+import { ACHIEVEMENT_ICONS } from './achievementIcons';
+import { mountHugeIcon } from './hugeicons';
 
 function node<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
   const element = document.createElement(tag);
@@ -124,8 +125,7 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
   for (const achievement of ACHIEVEMENTS) {
     const earned = !!save.achievements[achievement.id];
     const card = node('article', `achievement-card${earned ? ' is-earned' : ''}`);
-    const icons: Record<string, AppIconName> = { 'first-landing': 'landing', 'getting-comfortable': 'target', 'busy-shift': 'career', 'mixed-fleet': 'fleet', 'steady-hands': 'safety', 'airfield-explorer': 'explore', 'expanded-horizons': 'explore', 'under-pressure': 'pressure', 'veteran-controller': 'veteran' };
-    const icon = node('span', 'achievement-icon'); mountHugeIcon(icon, icons[achievement.id], 28);
+    const icon = node('span', 'achievement-icon'); mountHugeIcon(icon, ACHIEVEMENT_ICONS[achievement.id], 28);
     card.append(icon, node('span', 'achievement-state', earned ? 'Earned' : 'In progress'), node('h4', '', achievement.name), node('p', '', achievement.description));
     const progress = node('progress', ''); progress.max = achievement.goal; progress.value = earned ? achievement.goal : Math.min(achievement.value(save), achievement.goal); progress.setAttribute('aria-label', achievement.name);
     card.append(progress, node('small', '', earned ? 'Completed' : `${progress.value} / ${achievement.goal}`)); badges.append(card);

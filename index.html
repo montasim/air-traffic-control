@@ -74,16 +74,19 @@
         border-radius: inherit; background: #ebaa44; animation: boot-taxi 1.6s ease-in-out infinite alternate; }
       #boot-screen a { color: #254039; background: #ebaa44; padding: 10px 24px;
         border-radius: 12px; font-weight: 700; text-decoration: none; }
+      #boot-screen .boot-credit { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom));
+        max-width: none; color: #a9bfb1; font-size: 14px; letter-spacing: 0.02em; opacity: 0; transition: opacity 420ms ease 120ms; }
+      #boot-screen.is-revealed .boot-credit { opacity: 1; }
       #boot-screen [hidden] { display: none; }
       #boot-screen.is-ready { opacity: 0; pointer-events: none; }
       html[data-boot="error"] .boot-track { display: none; }
       @keyframes boot-taxi { to { transform: translateX(150%); } }
       @media (prefers-reduced-motion: reduce) {
-        #boot-screen, #boot-screen .boot-content, #boot-screen .boot-details { transition: none; }
+        #boot-screen, #boot-screen .boot-content, #boot-screen .boot-details, #boot-screen .boot-credit { transition: none; }
         #boot-screen .boot-track::after { animation: none; }
       }
     </style>
-    <noscript><style>#boot-screen .boot-details { opacity: 1; transform: translate(-50%, 0); }</style></noscript>
+    <noscript><style>#boot-screen .boot-details { opacity: 1; transform: translate(-50%, 0); } #boot-screen .boot-credit { opacity: 1; }</style></noscript>
     <title>Air Traffic Control</title>
   </head>
   <body>
@@ -114,6 +117,7 @@
           </div>
         </div>
       </div>
+      <p class="boot-credit">by Montasim</p>
     </div>
     <main id="app" inert>
       <section class="game-frame" aria-label="Air Traffic Control game">
@@ -226,7 +230,7 @@
             </section>
 
             <nav class="home-stores" aria-label="Get the desktop app">
-              <div class="store-intro"><p>Find Air Traffic Control on your platform.</p></div>
+              <div class="store-intro"><p>Available on your platform.</p></div>
               <div class="store-links">
                 <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM" target="_blank" rel="noopener noreferrer" aria-label="Microsoft Store for Windows (opens in a new tab)"><img src="/assets/stores/microsoft-store.svg" width="161" height="44" alt="Get it from Microsoft Store for Windows" /></a>
                 <a href="https://snapcraft.io/air-traffic-control" target="_blank" rel="noopener noreferrer" aria-label="Snap Store for Linux (opens in a new tab)"><img src="/assets/stores/snap-store.svg" width="182" height="56" alt="Get it from the Snap Store for Linux" /></a>
@@ -307,16 +311,13 @@
                   <dd id="final-score">00</dd>
                 </div>
                 <div>
-                  <dt id="result-best-label">Best</dt>
+                  <dt><span id="result-best-label">Best</span><span id="record-message" class="record-badge" hidden>New best</span></dt>
                   <dd id="final-best">00</dd>
                 </div>
               </dl>
               <p id="result-difficulty"></p>
-              <p id="achievement-result" class="achievement-result" hidden></p>
-              <p id="record-message" hidden>New personal best!</p>
-              <p id="career-result" class="career-result" aria-live="polite">
-                Recording shift…
-              </p>
+              <div id="achievement-result" class="achievement-result" hidden></div>
+              <div id="career-result" class="career-result" aria-live="polite">Recording shift…</div>
             </div>
             <div class="panel-actions result-actions">
               <button
@@ -355,7 +356,6 @@
             </button>
           </div>
           <div id="settings-content" hidden>
-            <p class="settings-intro">Set the sound for your next shift.</p>
             <section class="sound-panel" aria-labelledby="sound-title">
               <header class="sound-panel-heading">
                 <span class="sound-emblem button-icon" data-ui-icon="settings" aria-hidden="true"></span>
@@ -372,13 +372,18 @@
                 </div>
                 <div class="sound-volume">
                   <label for="settings-volume"><span>Effects volume</span><output for="settings-volume" data-audio-value>80%</output></label>
-                  <input id="settings-volume" type="range" min="0" max="100" step="5" value="80" data-audio-volume aria-describedby="sound-status" />
+                  <input id="settings-volume" type="range" min="0" max="100" step="5" value="80" data-audio-volume />
                   <div class="volume-scale" aria-hidden="true"><span>Silent</span><span>Full volume</span></div>
                 </div>
-                <p id="sound-status" class="sound-status" aria-live="polite">Sound effects are on.</p>
               </div>
             </section>
-            <div class="settings-save-note"><strong>Ready for your next shift.</strong><p>Your preferences save automatically on this device, along with your career. No account needed.</p></div>
+            <section class="developer-info" aria-labelledby="developer-heading">
+              <div><h3 id="developer-heading">Developer</h3><p>Made by Montasim.</p></div>
+              <a id="developer-link" class="secondary-button button-with-icon" href="https://montasim.dev/" target="_blank" rel="noopener noreferrer" aria-label="montasim.dev (opens in a new tab)">
+                <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/></svg>
+                <span>montasim.dev</span>
+              </a>
+            </section>
           </div>
           <div id="airfields-content" hidden>
             <p class="help-lead">Choose your next assignment.</p>
@@ -407,7 +412,7 @@
               </li>
               <li>
                 <svg class="lesson-art" viewBox="0 0 260 130" aria-hidden="true"><path d="M40 35 Q150 0 220 30 M40 100 Q140 140 220 96" fill="none" stroke="#ebaa44" stroke-width="3" stroke-dasharray="6 6"/><g data-help-plane transform="translate(75 33) scale(.65)"/><g data-help-plane transform="translate(175 101) scale(.65)"/></svg>
-                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Amber labels identify a busy runway. Personal bests are shared across both runway settings. Only one aircraft uses a runway on final approach at a time. Reroute blocked aircraft; they will not wait automatically.</p>
+                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Personal bests are shared across both runway settings.</p>
               </li>
             </ol>
             <p>
@@ -435,7 +440,7 @@
             </svg>
             <div class="practice-actions">
               <button id="practice-reset" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="restart" aria-hidden="true"></span>Try again</button>
-              <button id="practice-demo" type="button" class="text-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Show demonstration</button>
+              <button id="practice-demo" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Show demonstration</button>
             </div>
             <p class="fine-copy">Practice does not affect your score or career. Your current game stays paused.</p>
           </div>

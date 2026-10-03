@@ -34,6 +34,7 @@ import {
 import { mountHugeIcon } from "./ui/hugeicons";
 import { mountPractice } from "./ui/practice";
 import { createMapPreviews } from "./ui/mapPreviews";
+import { renderAchievementBadges, renderPromotion, resetCareerResult } from "./ui/shiftCelebration";
 
 const reviewParams = new URLSearchParams(window.location.search);
 const review =
@@ -359,9 +360,9 @@ function formatScore(value: number): string {
 
 function announce(message: string): void {
   elements.routeStatus.textContent = "";
+  // Play stays quiet: only a rejected route is shown, because it explains a failed input.
+  // Every message, landings included, still reaches screen readers through #route-status.
   if (message.startsWith("Route not added")) showFlightMessage(message);
-  if (message.startsWith("Aircraft landed"))
-    showFlightMessage("+1 · Safely landed");
   requestAnimationFrame(() => {
     elements.routeStatus.textContent = message;
   });
@@ -468,15 +469,6 @@ function renderMapOptions(): void {
 function syncAudioControls(): void {
   const settings = currentSave.settings.audio;
   audio.setSettings(settings);
-  const soundStatus = document.querySelector<HTMLElement>("#sound-status");
-  if (soundStatus) {
-    soundStatus.textContent = !settings.enabled
-      ? "Sound is off. Your volume is kept for when you turn it back on."
-      : settings.volume === 0
-        ? "Volume is at zero. Raise it to hear flight cues and alerts."
-        : "Sound effects are on. Visual warnings stay visible at any volume.";
-  }
-
   elements.audioToggles.forEach((button) => {
     button.setAttribute("aria-pressed", String(settings.enabled));
     button.setAttribute("aria-label", "Sound effects");
@@ -639,8 +631,7 @@ async function handleGameOver({
     `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()}`;
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
-  elements.careerResult.textContent = "Recording shift…";
-  elements.careerResult.classList.remove("is-promotion");
+  resetCareerResult(elements.careerResult, "Recording shift…");
   elements.pauseButton.disabled = true;
   elements.restartButton.disabled = true;
   elements.chooseMapButton.disabled = true;
@@ -655,15 +646,13 @@ async function handleGameOver({
     safeLandings: score,
   });
   currentSave = result.save;
-  const achievementResult = document.querySelector<HTMLElement>('#achievement-result')!;
-  achievementResult.hidden = result.newAchievements.length === 0;
-  achievementResult.textContent = `Achievements earned: ${result.newAchievements.map(id => ACHIEVEMENTS.find(a => a.id === id)!.name).join(' · ')}`;
-  if (result.newAchievements.length) announce(achievementResult.textContent);
+  renderAchievementBadges(document.querySelector<HTMLElement>('#achievement-result')!, result.newAchievements);
+  if (result.newAchievements.length) announce(`Achievements earned: ${result.newAchievements.map(id => ACHIEVEMENTS.find(a => a.id === id)!.name).join(' · ')}`);
   renderShell();
   if (result.promoted) {
     const earned = rankDefinition(result.earnedRankId);
-    elements.careerResult.textContent = `Promoted — ${earned.name}${earned.unlocks.length ? `. ${earned.unlocks.map((id) => mapDefinitionById(id).metadata.name).join(", ")} now open!` : ""}`;
-    elements.careerResult.classList.add("is-promotion");
+    const promotionDelay = reason === "collision" ? 940 : 0;
+    renderPromotion(elements.careerResult, earned.name, earned.unlocks.map((id) => mapDefinitionById(id).metadata.name), promotionDelay);
     announce(`Promoted to ${earned.name}.`);
     promotionAudioTimer = window.setTimeout(
       () => {
@@ -673,14 +662,17 @@ async function handleGameOver({
           rankId: result.earnedRankId,
         });
       },
-      reason === "collision" ? 940 : 0,
+      promotionDelay,
     );
     currentSave = await acknowledgeEarnedRank();
   } else {
     elements.careerResult.textContent = rankProgressCopy();
   }
   if (!result.persisted) {
-    elements.careerResult.textContent += ' Progress is available this session only; saving on this device failed.';
+    const note = document.createElement("span");
+    note.className = "career-result-note";
+    note.textContent = " Progress is available this session only; saving on this device failed.";
+    elements.careerResult.append(note);
   }
   elements.restartButton.disabled = false;
   elements.chooseMapButton.disabled = false;
@@ -842,7 +834,7 @@ function renderFieldDetail(): void {
   document.querySelector("#field-description")!.textContent =
     definition.metadata.description;
   document.querySelector("#field-record")!.textContent =
-    `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best · ${formatScore(mapBest(activeMapId))} landings`;
+    `Best · ${formatScore(mapBest(activeMapId))} landings`;
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   landingModeInput.checked = currentSave.settings.twoEndLanding;
