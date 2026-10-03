@@ -1297,6 +1297,10 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .home-preview { margin: 0; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
 #home-map-preview { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 #home-map-preview:not([src]) { visibility: hidden; }
+/* A preview that arrives after the menu is showing fades in rather than popping. */
+#home-map-preview[src] { animation: home-preview-in 320ms ease; }
+@keyframes home-preview-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #home-map-preview[src] { animation: none; } }
 #start-panel .airfield-details { display: flex; flex-direction: column; gap: 4px; }
 #start-panel .home-assignment { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 0; }
 #start-panel #choose-airfield { font-size: 14px; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: 8px; background: transparent; border-color: transparent; color: var(--ink); }
