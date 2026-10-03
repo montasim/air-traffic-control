@@ -20,10 +20,8 @@ for (const map of MAP_DEFINITIONS) for (const [width, height] of [[900,1600],[16
       sim.update(1/60);
       if (zone.approach?.end === 1) {
         expect(plane.state).not.toBe('landing');
-        expect(sim.snapshot().runwayReservations).toHaveLength(0);
       } else {
         expect(plane.state).toBe('landing');
-        expect(sim.snapshot().runwayReservations).toHaveLength(1);
         for (let i=0; i<60; i++) sim.update(1/60);
         expect(sim.snapshot().score).toBe(1);
       }

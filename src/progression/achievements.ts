@@ -10,7 +10,7 @@ export class ShiftTracker {
   private warned = false;
   readonly evidence: ShiftEvidence = { landedTypes: { liner: 0, commuter: 0, rotor: 0 }, initialSafeLandings: 0 };
   accept(event: SimulationEvent): void {
-    if (event.type === 'warning' || event.type === 'approach-warning') this.warned = true;
+    if (event.type === 'warning') this.warned = true;
     if (event.type === 'landed') {
       this.evidence.landedTypes[event.aircraftType]++;
       if (!this.warned) this.evidence.initialSafeLandings++;

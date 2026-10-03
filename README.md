@@ -48,7 +48,7 @@ Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start fl
 
 The runway setting is remembered for your next shift and stays fixed during a shift, including resizing. Personal bests and career progress are shared across both settings.
 
-A runway is reserved by one aircraft on final approach until its landing completes. If it is busy, reroute approaching aircraft; they do not hold or go around automatically. Helipads keep their usual landing behavior.
+Any aircraft that reaches its matching runway end lands, even if another aircraft is landing on the same runway. Helipads keep their usual landing behavior.
 
 Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Resizing preserves the shift and pauses when needed; select **Resume** once the field is large enough to play.
 
