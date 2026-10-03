@@ -7,7 +7,7 @@ export function withBidirectionalApproaches<T extends PlayableMapLayout>(layout:
     if (surface?.kind !== 'runway' || !surface.runwayId || !surface.designators) return [zone];
     const approach = { runwayId: surface.runwayId, end: 0 as const };
     const original = { ...zone, label: surface.designators[0], approach };
-    if (!twoEndLanding) return [original];
+    if (!twoEndLanding || surface.oneWay) return [original];
     return [
       { ...zone, label: surface.designators[0], approach },
       { ...zone, id: `${zone.id}-reverse`, label: surface.designators[1],
@@ -17,7 +17,7 @@ export function withBidirectionalApproaches<T extends PlayableMapLayout>(layout:
     ];
   });
   const guidanceSurfaces = layout.guidanceSurfaces.flatMap(surface =>
-    twoEndLanding && surface.kind === 'runway' && surface.runwayId && surface.designators
+    twoEndLanding && surface.kind === 'runway' && surface.runwayId && surface.designators && !surface.oneWay
       ? [surface, { ...surface, zoneId: `${surface.zoneId}-reverse`, angle: Math.atan2(Math.sin(surface.angle + Math.PI), Math.cos(surface.angle + Math.PI)) }]
       : [surface]);
   return { ...layout, landingZones, guidanceSurfaces };

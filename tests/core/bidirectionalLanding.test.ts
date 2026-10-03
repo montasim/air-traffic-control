@@ -57,10 +57,13 @@ describe('all playable map runway ends', () => {
       it(`${map.id} ${width}x${height}: paired targets, inward approaches, and successful landings`, () => {
         const layout=map.prepare({width,height,detailLevel:'desktop',twoEndLanding:true}).layout;
         const ends=layout.landingZones.filter(z=>z.approach);
-        expect(ends.length).toBeGreaterThanOrEqual(4);
+        // Carrier deck lanes are one-way: landed from the stern only.
+        const oneWay=new Set(layout.guidanceSurfaces.flatMap(s=>s.kind==='runway'&&s.oneWay&&s.runwayId?[s.runwayId]:[]));
+        expect(ends.length).toBeGreaterThanOrEqual(2);
         const ids=new Set(ends.map(z=>z.approach!.runwayId));
         for(const id of ids) {
           const pair=ends.filter(z=>z.approach!.runwayId===id);
+          if (oneWay.has(id)) { expect(pair).toHaveLength(1); continue; }
           expect(pair).toHaveLength(2);
           expect(pair[0].accepts).toBe(pair[1].accepts);
           expect(Math.cos(pair[0].angle-pair[1].angle)).toBeCloseTo(-1);

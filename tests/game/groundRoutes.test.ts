@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LandingZone, Vector2 } from '../../src/core/types';
 import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
 import { createGroundRoutes, filletCorners, groundObstacles, PIVOT_TURN, segmentEntry, type GroundNetwork } from '../../src/game/maps/shared/groundRoutes';
-import { rectsOverlap, runwayApronGap } from '../../src/game/maps/shared/apronLayout';
+import { DECK_LANE_CLEARANCE, deckRunwayIds, rectsOverlap, runwayApronGap } from '../../src/game/maps/shared/apronLayout';
 
 const SHAPES = [[900, 1600], [1600, 900], [900, 900], [1948, 900], [1600, 1520], [1280, 720], [800, 1000]] as const;
 const pathLength = (points: readonly Vector2[]) => points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point.x - points[index].x, point.y - points[index].y), 0);
@@ -72,15 +72,19 @@ describe('ground routes on every playable map', () => {
       const layout = map.prepare({ width, height, detailLevel: 'desktop', twoEndLanding }).layout as any;
       const unit = Math.min(width, height);
       const gap = runwayApronGap(unit);
+      const decks = deckRunwayIds(layout);
       const runways = layout.runways.map((runway: any) => ({ id: runway.id, center: runway.center, width: runway.length, height: runway.width, angle: runway.angle }));
-      // Stands keep the grass strip beside every runway.
+      // Stands keep the grass strip beside every runway, or the foul line beside a carrier deck lane.
       for (const stand of layout.apronMarkings.stands) {
-        for (const runway of runways) expect(rectsOverlap({ center: stand.position, width: stand.length, height: stand.width, angle: stand.angle }, runway, gap / 2), `${stand.id} near ${runway.id}`).toBe(false);
+        for (const runway of runways) {
+          const clearance = decks.has(runway.id) ? DECK_LANE_CLEARANCE : gap;
+          expect(rectsOverlap({ center: stand.position, width: stand.length, height: stand.width, angle: stand.angle }, runway, clearance / 2), `${stand.id} near ${runway.id}`).toBe(false);
+        }
       }
-      // Runway connectors leave their runway at a right angle.
+      // Runway connectors leave their runway at a right angle (carrier deck taxi lines are authored).
       for (const taxiway of layout.taxiways) {
         const runway = layout.runways.find((item: any) => taxiway.connects.includes(item.id));
-        if (!runway || taxiway.path.length !== 2) continue;
+        if (!runway || decks.has(runway.id) || taxiway.path.length !== 2) continue;
         const [a, b] = taxiway.path;
         const along = Math.abs(((b.x - a.x) * Math.cos(runway.angle) + (b.y - a.y) * Math.sin(runway.angle)) / Math.hypot(b.x - a.x, b.y - a.y));
         expect(along, `${taxiway.id} is square to ${runway.id}`).toBeLessThan(0.02);

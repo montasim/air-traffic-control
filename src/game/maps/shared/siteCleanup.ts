@@ -1,7 +1,7 @@
 import type { Vector2 } from '../../../core/types';
 import { buildingCenterClearOfRunways } from '../../rendering/shared-map/geometry';
 import type { PlayableMapLayout } from '../types';
-import { pointInPolygon, rectCorners, rectsOverlap, runwayApronGap, segmentHitsRect, standSize } from './apronLayout';
+import { deckRunwayIds, isDeckApronKey, pointInPolygon, rectCorners, rectsOverlap, runwayApronGap, segmentHitsRect, standSize } from './apronLayout';
 import { isAnchorOf, type GroundNetwork } from './groundRoutes';
 
 type Runway = GroundNetwork['runways'][number];
@@ -276,11 +276,14 @@ function pathUpToBuildings(points: readonly Vector2[], buildings: readonly Footp
 export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(layout: T, unit: number): T {
   const record = layout as unknown as Record<string, unknown>;
   const runways = layout.runways;
+  const decks = deckRunwayIds(layout);
   const changes: Record<string, unknown> = {};
   const aprons: Vector2[][] = [];
   for (const [key, value] of Object.entries(record)) {
     if (!/apron$/i.test(key) || !Array.isArray(value) || value.length < 3) continue;
     if (!value.every((point) => typeof (point as Vector2)?.x === 'number')) continue;
+    // Carrier decks stay as drawn: deck parking sits right beside the lanes, behind the foul line.
+    if (isDeckApronKey(key)) continue;
     const clipped = apronClearOfRunways(value as Vector2[], runways, runwayApronGap(unit));
     changes[key] = clipped;
     if (clipped.length >= 3) aprons.push(clipped);
@@ -307,6 +310,8 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
   const reserved: Footprint[] = [];
   const taxiways = (layout.taxiways as readonly Taxiway[]).map((taxiway) => {
     const runway = runways.find((item) => taxiway.connects.includes(item.id as never));
+    // Deck taxi lines are authored with the carrier.
+    if (runway && decks.has(runway.id)) return taxiway;
     const path = runway && aprons.length ? straightConnector(taxiway, runway, aprons, runways, unit, [...padSquares, ...reserved]) : undefined;
     if (!path) return taxiway;
     const [base, end] = path;

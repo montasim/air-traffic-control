@@ -1,5 +1,5 @@
 import { withBidirectionalApproaches } from './bidirectional';
-import { apronPolygons, createApronMarkings } from './apronLayout';
+import { apronPolygons, createApronMarkings, DECK_LANE_CLEARANCE, deckRunwayIds } from './apronLayout';
 import { clearAirfieldSite } from './siteCleanup';
 import { createGroundRoutes, groundObstacles, hasGroundNetwork, taxiwayExits, type GroundNetwork, type GroundObstacle } from './groundRoutes';
 import type Phaser from 'phaser';
@@ -69,7 +69,11 @@ function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored
   // Aprons come off the runways and buildings off runways and helipads before anything is placed on them.
   const layout = clearAirfieldSite(authored, unit);
   const obstacles = groundObstacles(layout);
-  const runways: GroundObstacle[] = layout.runways.map((runway) => ({ center: runway.center, width: runway.length, height: runway.width, angle: runway.angle }));
+  const decks = deckRunwayIds(layout);
+  const runways = layout.runways.map((runway) => ({
+    center: runway.center, width: runway.length, height: runway.width, angle: runway.angle,
+    clearance: decks.has(runway.id) ? DECK_LANE_CLEARANCE : undefined,
+  }));
   // Stands also keep clear of helipads, taken from the helicopter landing zones every map has.
   const helipads: GroundObstacle[] = layout.landingZones
     .filter((zone) => zone.accepts === 'rotor')

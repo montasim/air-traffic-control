@@ -2,7 +2,7 @@ import type Phaser from "phaser";
 import type { Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { ApronMarkings, ApronStand, GroundRoute, PlayableMapLayout } from "../../maps/types";
-import { apronPolygons, onApron, runwayApronGap } from "../../maps/shared/apronLayout";
+import { apronPolygons, deckRunwayIds, onApron, runwayApronGap } from "../../maps/shared/apronLayout";
 import { apronClearOfRunways } from "../../maps/shared/siteCleanup";
 import { AIRCRAFT_COLORS } from "../../palette";
 import type { WorldDetailLevel } from "../../palette";
@@ -222,6 +222,8 @@ export function paintTaxiwaySurface(
     readonly laneStarts?: readonly Vector2[];
     /** Where the stand approaches leave the taxiway; the guide line hands over to them there. */
     readonly handovers?: readonly Vector2[];
+    /** A carrier deck taxi line: painted as a guide line on the deck, with no asphalt. */
+    readonly deck?: boolean;
   },
 ): void {
   const runway = options.runways.find((item) => taxiway.connects.includes(item.id as never));
@@ -235,6 +237,7 @@ export function paintTaxiwaySurface(
   // The taxiway ends where its apron taxilane starts (or runs its whole length, e.g. to a helipad).
   const asphalt = options.laneStarts?.map((start) => cutAtPoint(ordered, start, width / 2)).find(Boolean) ?? ordered;
 
+  if (options.deck && options.pass !== "guide") return;
   if (options.pass === "rim") {
     graphics.lineStyle(width + 4, mixColor(apronTones(palette).fill, PAVING.rim, 0.45), 1);
     strokePolyline(graphics, asphalt);
@@ -429,14 +432,16 @@ export function paintAirfieldGround(
   detailLevel: WorldDetailLevel,
 ): void {
   const unit = Math.min(layout.width, layout.height);
-  const aprons = apronPolygons(layout);
+  const aprons = apronPolygons(layout, "land");
+  const decks = deckRunwayIds(layout);
+  const onDeck = (taxiway: MapTaxiway) => taxiway.connects.some((id) => decks.has(id));
   const laneStarts = (layout.apronMarkings?.taxilanes ?? []).map((lane) => lane.path[0]);
   const approaches = standApproaches(layout.groundRoutes);
   // An approach's second point is where its curve leaves the taxiway's straight stretch.
   const handovers = approaches.map((approach) => approach.points[1]);
   const taxiwayOptions = { unit, runways: layout.runways, laneStarts, handovers };
-  for (const pass of ["rim", "surface"] as const) for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass });
+  for (const pass of ["rim", "surface"] as const) for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass, deck: onDeck(taxiway) });
   paintApronArea(graphics, aprons, layout.apronMarkings, palette, { unit, detailLevel, jointAngle: layout.runways[0]?.angle, runways: layout.runways });
-  for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass: "guide" });
+  for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass: "guide", deck: onDeck(taxiway) });
   paintApronMarkings(graphics, layout.apronMarkings, palette, { unit, detailLevel, approaches });
 }

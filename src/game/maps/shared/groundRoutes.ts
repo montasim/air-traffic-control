@@ -40,6 +40,8 @@ export function groundObstacles(layout: PlayableMapLayout): GroundObstacle[] {
     runways?: GroundNetwork['runways'];
     buildings?: readonly unknown[];
     fixtures?: readonly unknown[];
+    /** Structures that keep their authored place, such as a carrier's island. */
+    fixedObstacles?: readonly unknown[];
     serviceLandmark?: unknown;
     propAnchors?: readonly { kind: string; position: Vector2; angle: number; size: number }[];
   };
@@ -47,7 +49,7 @@ export function groundObstacles(layout: PlayableMapLayout): GroundObstacle[] {
   const drawn = (center: Vector2, width: number, height: number, angle: number): GroundObstacle =>
     ({ center: buildingCenterClearOfRunways(center, width, height, runways), width, height, angle });
   const obstacles: GroundObstacle[] = [];
-  for (const building of [...(rich.buildings ?? []), ...(rich.fixtures ?? [])]) {
+  for (const building of [...(rich.buildings ?? []), ...(rich.fixtures ?? []), ...(rich.fixedObstacles ?? [])]) {
     if (isRect(building)) obstacles.push(drawn(building.center, building.width, building.height, building.angle ?? 0));
   }
   if (isRect(rich.serviceLandmark)) {

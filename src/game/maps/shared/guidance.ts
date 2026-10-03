@@ -10,6 +10,8 @@ export interface RunwayGuidanceSurface {
   readonly angle: number;
   readonly length: number;
   readonly width: number;
+  /** Landed from its first end only, even when both runway ends are in play (carrier decks). */
+  readonly oneWay?: boolean;
 }
 
 export interface PadGuidanceSurface {

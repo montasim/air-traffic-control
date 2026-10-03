@@ -12,7 +12,8 @@ export interface ApronInput {
   readonly aprons: readonly (readonly Vector2[])[];
   /** Buildings and props, at their drawn positions. */
   readonly obstacles: readonly GroundObstacle[];
-  readonly runways: readonly GroundObstacle[];
+  /** Runways; deck lanes carry their own small clearance instead of the grass strip. */
+  readonly runways: readonly (GroundObstacle & { readonly clearance?: number })[];
   readonly hud: readonly HudExclusionZone[];
   readonly standsPerType?: number;
 }
@@ -35,11 +36,24 @@ const turnBetween = (from: number, to: number): number => Math.abs(Math.atan2(Ma
 /** The sharpest turn a guide line may take between taxiway, connector, and taxilane (a right angle, plus a little). */
 const MAX_GUIDE_TURN = (95 * Math.PI) / 180;
 
-/** Every apron polygon a layout carries (one per airport, e.g. Twin Banks' east and west aprons). */
-export function apronPolygons(layout: PlayableMapLayout): Vector2[][] {
+/**
+ * Aprons whose layout key starts with "deck" are carrier flight decks: no grass
+ * strip, no paving, and short deck taxi lines instead of runway connectors.
+ */
+export const isDeckApronKey = (key: string): boolean => /^deck/i.test(key);
+/** The clearance kept between a carrier deck lane and deck parking: its painted foul line. */
+export const DECK_LANE_CLEARANCE = 4;
+/** Runways that are carrier deck lanes, named by the layout. */
+export function deckRunwayIds(layout: PlayableMapLayout): ReadonlySet<string> {
+  return new Set((layout as unknown as { deckRunwayIds?: readonly string[] }).deckRunwayIds ?? []);
+}
+
+/** Every apron polygon a layout carries (one per airport, e.g. Twin Banks' east and west aprons), optionally only land or deck ones. */
+export function apronPolygons(layout: PlayableMapLayout, which: 'all' | 'land' | 'deck' = 'all'): Vector2[][] {
   const polygons: Vector2[][] = [];
   for (const [key, value] of Object.entries(layout as unknown as Record<string, unknown>)) {
     if (!/apron$/i.test(key) || !Array.isArray(value) || value.length < 3) continue;
+    if (which !== 'all' && isDeckApronKey(key) !== (which === 'deck')) continue;
     if (value.every((point) => typeof (point as Vector2)?.x === 'number' && typeof (point as Vector2)?.y === 'number')) polygons.push(value as Vector2[]);
   }
   return polygons;
@@ -183,7 +197,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
       if (along <= skipStart) return true;
       const from = { x: a.x + ((b.x - a.x) * skipStart) / along, y: a.y + ((b.y - a.y) * skipStart) / along };
       return !obstacles.some((rect) => segmentHitsRect(from, b, rect, unit * 0.006))
-        && !runways.some((rect) => segmentHitsRect(from, b, rect, runwayGap))
+        && !runways.some((rect) => segmentHitsRect(from, b, rect, rect.clearance ?? runwayGap))
         && !others.some((rect) => segmentHitsRect(from, b, rect, span * (relaxed ? 0.05 : 0.2)))
         && !otherMouths.some(([m0, m1]) => segmentsCross(from, b, m0, m1));
     };
@@ -229,7 +243,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
                       && corner.x >= 4 && corner.x <= width - 4 && corner.y >= 4 && corner.y <= height - 4)
                     && !obstacles.some((rect) => rectsOverlap(footprint, rect, unit * 0.004))
                     // Both rectangles grow by the margin, so half the gap keeps the full gap between them.
-                    && !runways.some((rect) => rectsOverlap(footprint, rect, runwayGap / 2 + 3))
+                    && !runways.some((rect) => rectsOverlap(footprint, rect, (rect.clearance ?? runwayGap) / 2 + 3))
                     && !hudRects.some((rect) => rectsOverlap(footprint, rect, 2))
                     // The other type's group keeps a clear gap, so the two groups read as separate.
                     && !others.some((rect) => rectsOverlap(footprint, rect, span * (relaxed ? 0.3 : 0.6)))
