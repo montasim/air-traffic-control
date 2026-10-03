@@ -11,7 +11,9 @@ export const RANK_IDS = [
   'approach-controller',
   'area-controller',
   'senior-controller',
-  'chief-controller'
+  'chief-controller',
+  'flight-director',
+  'air-boss'
 ] as const;
 
 export type RankId = (typeof RANK_IDS)[number];
@@ -130,7 +132,29 @@ export const RANK_CATALOG: readonly RankDefinition[] = [
       qualifyingBestScore: 16,
       minimumDistinctMaps: 4
     },
-    unlocks: []
+    unlocks: ['frost-crossing']
+  },
+  {
+    id: 'flight-director',
+    name: 'Flight Director',
+    requirements: {
+      minimumSafeLandings: 340,
+      minimumShifts: 55,
+      qualifyingBestScore: 19,
+      minimumDistinctMaps: 5
+    },
+    unlocks: ['carrier-coast']
+  },
+  {
+    id: 'air-boss',
+    name: 'Air Boss',
+    requirements: {
+      minimumSafeLandings: 460,
+      minimumShifts: 70,
+      qualifyingBestScore: 22,
+      minimumDistinctMaps: 6
+    },
+    unlocks: ['blue-water']
   }
 ] as const;
 

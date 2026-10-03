@@ -3,6 +3,9 @@ import { EXECUTIVE_POINT_DEFINITION } from './executive-point';
 import { METRO_INTERNATIONAL_DEFINITION } from './metro-international';
 import { FREIGHT_JUNCTION_DEFINITION } from './freight-junction';
 import { ISLAND_RESCUE_DEFINITION } from './island-rescue';
+import { FROST_CROSSING_DEFINITION } from './frost-crossing';
+import { CARRIER_COAST_DEFINITION } from './carrier-coast';
+import { BLUE_WATER_DEFINITION } from './blue-water';
 import { DEFAULT_MAP_ID, MAP_IDS, type MapId } from './mapIds';
 import type { MapDefinition } from './types';
 import { SALTMARSH_GATEWAY_DEFINITION } from './saltmarsh-gateway';
@@ -19,7 +22,10 @@ export const MAP_DEFINITIONS: readonly MapDefinition[] = [
   EXECUTIVE_POINT_DEFINITION,
   METRO_INTERNATIONAL_DEFINITION,
   FREIGHT_JUNCTION_DEFINITION,
-  ISLAND_RESCUE_DEFINITION
+  ISLAND_RESCUE_DEFINITION,
+  FROST_CROSSING_DEFINITION,
+  CARRIER_COAST_DEFINITION,
+  BLUE_WATER_DEFINITION
 ];
 
 const DEFINITIONS_BY_ID = new Map<MapId, MapDefinition>(

@@ -44,6 +44,25 @@ export const MAP_TRAFFIC_PROFILES: Readonly<Record<string, ResolvedTrafficProfil
   'metro-international': specialistProfile([60,25,15], ['liner','commuter','rotor'], 10,4.2,9),
   'freight-junction': specialistProfile([50,35,15], ['liner','commuter','rotor'], 10,4.4,9),
   'island-rescue': specialistProfile([15,25,60], ['rotor','commuter','liner'], 11,4.8,8),
+  'frost-crossing': profile({
+    openingSpawns: [{ at: 0, type: 'liner' }, { at: 14, type: 'commuter' }, { at: 28, type: 'rotor' }],
+    aircraftTypeWeights: [{ type: 'liner', weight: 0.4 }, { type: 'commuter', weight: 0.4 }, { type: 'rotor', weight: 0.2 }],
+    spawnIntervalStages: [{ at: 0, interval: 10, transition: 'linear' }, { at: 120, interval: 8, transition: 'linear' }, { at: 240, interval: 6, transition: 'linear' }, { at: 360, interval: 4.4 }],
+    trafficLimitStages: [{ at: 0, limit: 3 }, { at: 60, limit: 4 }, { at: 120, limit: 5 }, { at: 180, limit: 6 }, { at: 240, limit: 7 }, { at: 360, limit: 9 }],
+  }),
+  'carrier-coast': profile({
+    openingSpawns: [{ at: 0, type: 'commuter' }, { at: 14, type: 'liner' }, { at: 28, type: 'rotor' }],
+    aircraftTypeWeights: [{ type: 'liner', weight: 0.35 }, { type: 'commuter', weight: 0.35 }, { type: 'rotor', weight: 0.3 }],
+    spawnIntervalStages: [{ at: 0, interval: 10, transition: 'linear' }, { at: 120, interval: 8, transition: 'linear' }, { at: 240, interval: 6, transition: 'linear' }, { at: 360, interval: 4.2 }],
+    trafficLimitStages: [{ at: 0, limit: 3 }, { at: 60, limit: 4 }, { at: 120, limit: 5 }, { at: 180, limit: 6 }, { at: 240, limit: 7 }, { at: 360, limit: 9 }],
+  }),
+  // Carrier only: no liners, the quickest pace in the game.
+  'blue-water': profile({
+    openingSpawns: [{ at: 0, type: 'commuter' }, { at: 12, type: 'rotor' }, { at: 24, type: 'commuter' }],
+    aircraftTypeWeights: [{ type: 'commuter', weight: 0.55 }, { type: 'rotor', weight: 0.45 }],
+    spawnIntervalStages: [{ at: 0, interval: 10, transition: 'linear' }, { at: 120, interval: 7.6, transition: 'linear' }, { at: 240, interval: 5.6, transition: 'linear' }, { at: 360, interval: 4 }],
+    trafficLimitStages: [{ at: 0, limit: 3 }, { at: 60, limit: 4 }, { at: 120, limit: 5 }, { at: 180, limit: 6 }, { at: 240, limit: 7 }, { at: 360, limit: 9 }],
+  }),
   'saltmarsh-gateway': DEFAULT_TRAFFIC_PROFILE,
   'river-bend': profile({
     openingSpawns: [

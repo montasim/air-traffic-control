@@ -56,6 +56,14 @@ Each safe landing earns one point. A collision or an aircraft leaving the sector
 
 Start at **Saltmarsh Gateway** or **River Bend**. Career promotions unlock Desert Parallel, Twin Banks, Falcon Air Base, Executive Point, Metro International, Freight Junction, and Island Rescue. Military, business, passenger, cargo, and rescue settings share the game's visual style and core routing rules.
 
+The top of the career adds three frontier maps:
+
+- **Frost Crossing** (Chief Controller): two runways cross in a snowbound archipelago.
+- **Carrier Coast** (Flight Director): liners land at a shore airfield, commuters on a carrier offshore.
+- **Blue Water** (Air Boss): open ocean and one carrier deck, with axial and angled lanes, two deck helipads, and no liners.
+
+Carrier decks are landed from the stern only, in both runway-end modes.
+
 Difficulty changes aircraft arrival frequency, speed, and traffic limits. Best scores are tracked separately for each airfield, difficulty, and screen orientation.
 
 Seven career ranks and nine achievements reward safe landings, mixed aircraft handling, exploring airfields, and completing demanding shifts. Progress is recorded when a shift finishes. Restarting or abandoning an unfinished shift discards that shift's progress; practice flights do not affect records or achievements.

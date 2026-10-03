@@ -32,7 +32,9 @@ describe('career ranks', () => {
       'approach-controller',
       'area-controller',
       'senior-controller',
-      'chief-controller'
+      'chief-controller',
+      'flight-director',
+      'air-boss'
     ]);
     expect(RANK_CATALOG.map(({ name }) => name)).toEqual([
       'Control Trainee',
@@ -41,7 +43,9 @@ describe('career ranks', () => {
       'Approach Controller',
       'Area Controller',
       'Senior Controller',
-      'Chief Controller'
+      'Chief Controller',
+      'Flight Director',
+      'Air Boss'
     ]);
   });
 
@@ -105,5 +109,14 @@ describe('career ranks', () => {
       'executive-point'
     ]);
     expect(isMapUnlocked('twin-banks', 'tower-controller')).toBe(true);
+  });
+
+  it('opens the frontier maps one rank at a time at the top of the career', () => {
+    expect(isMapUnlocked('frost-crossing', 'senior-controller')).toBe(false);
+    expect(isMapUnlocked('frost-crossing', 'chief-controller')).toBe(true);
+    expect(isMapUnlocked('carrier-coast', 'chief-controller')).toBe(false);
+    expect(isMapUnlocked('carrier-coast', 'flight-director')).toBe(true);
+    expect(isMapUnlocked('blue-water', 'flight-director')).toBe(false);
+    expect(unlockedMapIds('air-boss')).toHaveLength(12);
   });
 });
