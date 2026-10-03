@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Vector master of the app mark, traced from public/icon.png; Android icons and splash render from it. -->
+  <rect width="512" height="512" fill="#25423c"/>
+  <g fill="none" stroke="#4ad6dc" stroke-linecap="round">
+    <path stroke-width="14" d="M266 258 C243 300 207 350 155 377 C112 398 70 395 59 354 C50 318 85 284 125 282 C160 281 187 302 209 328"/>
+    <path stroke-width="6" d="M395 119 Q414 106 436 96"/>
+  </g>
+  <circle cx="445" cy="91.5" r="19" fill="#fcbd5a"/>
+  <g fill="#fcf2da" transform="translate(337 183.5) rotate(42)">
+    <path d="M0 -98 C11 -98 18 -89 18 -76 L18 50 C18 75 9 98 0 110 C-9 98 -18 75 -18 50 L-18 -76 C-18 -89 -11 -98 0 -98 Z"/>
+    <path d="M14 -14 L108 38 C111 40 111 46 107 47 L14 30 Z M-14 -14 L-108 38 C-111 40 -111 46 -107 47 L-14 30 Z"/>
+    <rect x="43" y="-19" width="14" height="27" rx="7"/>
+    <rect x="-57" y="-19" width="14" height="27" rx="7"/>
+    <path d="M14 76 L47 106 C49 109 47 114 43 113 L12 100 Z M-14 76 L-47 106 C-49 109 -47 114 -43 113 L-12 100 Z"/>
+  </g>
+</svg>
