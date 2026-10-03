@@ -633,9 +633,10 @@ async function handleGameOver({
   elements.gameoverCopy.textContent = copy[1];
   const isRecord = score > activeRecord().difficultyScores[activeDifficulty][activeProfile.id];
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
-  document.querySelector("#result-best-label")!.textContent =
-    `${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()} · Best`;
-  document.querySelector('#result-difficulty')!.textContent = `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]}`;
+  // Both result cards keep one-word labels so they stay level; the record's context reads below them.
+  document.querySelector("#result-best-label")!.textContent = "Best";
+  document.querySelector('#result-difficulty')!.textContent =
+    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()}`;
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
   elements.careerResult.textContent = "Recording shift…";
