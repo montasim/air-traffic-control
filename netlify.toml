@@ -14,3 +14,9 @@
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Clean URL for the privacy policy (linked from Google Play and the other stores).
+[[redirects]]
+  from = "/privacy"
+  to = "/privacy.html"
+  status = 200
