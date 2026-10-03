@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Matches the menu and boot screen background so the splash hands off without a colour change. -->
+    <color name="app_background">#29483E</color>
+</resources>

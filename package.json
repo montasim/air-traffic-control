@@ -15,7 +15,13 @@
     "package:linux": "npm run build:desktop && electron-builder --linux AppImage --x64 --publish never",
     "package:snap": "npm run build:desktop && node scripts/package-snap.mjs",
     "package:msix": "npm run build:desktop && node scripts/package-msix.mjs",
+    "build:android": "tsc --noEmit && vite build --mode android --outDir dist-android",
+    "android:sync": "npm run build:android && cap sync android",
+    "android:open": "cap open android",
+    "android:run": "npm run android:sync && cap run android",
+    "package:android": "npm run android:sync && node scripts/package-android.mjs",
     "icons:windows": "node scripts/generate-windows-icons.mjs",
+    "icons:android": "node scripts/generate-android-icons.mjs",
     "package:dir": "npm run build:desktop && electron-builder --linux --x64 --dir --publish never",
     "test:desktop": "node scripts/test-desktop.mjs",
     "test:resize": "node scripts/test-resize.mjs",
@@ -24,10 +30,16 @@
     "test:runway-ends": "node scripts/test-runway-ends.mjs"
   },
   "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/splash-screen": "8.0.2",
     "@hugeicons/core-free-icons": "4.3.0",
     "phaser": "4.2.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "8.5.2",
     "@playwright/test": "1.62.1",
     "electron": "44.4.5",
     "electron-builder": "26.15.3",

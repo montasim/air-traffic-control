@@ -13,3 +13,10 @@ test-results/
 
 dist-desktop/
 release/
+
+dist-android/
+
+# Android upload key and its local signing settings stay outside version control.
+*.jks
+*.keystore
+android/keystore.properties

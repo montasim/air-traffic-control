@@ -985,8 +985,23 @@ const disposePreviews = createMapPreviews((id, url) => {
   card?.style.setProperty("--map-preview", `url("${url}")`);
 });
 window.addEventListener("pagehide", disposePreviews, { once: true });
-if (import.meta.env.MODE !== "desktop") {
+// Inline MODE checks let Vite drop the unused PWA and Android imports per edition.
+if (import.meta.env.MODE !== "desktop" && import.meta.env.MODE !== "android") {
   void import("virtual:pwa-register").then(({ registerSW }) => registerSW({ immediate: true }));
+}
+
+/** Android back dismisses the topmost layer or pauses play; it never resumes a shift. */
+function handleBackIntent(): boolean {
+  const dialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+  if (dialog) { dialog.close(); return true; }
+  const menu = document.querySelector<HTMLDetailsElement>(".menu-more[open]");
+  if (menu) { menu.open = false; return true; }
+  if (!utilityScreen.hidden) { history.back(); return true; }
+  if (playScene()?.getPhase() === "running") { pauseRun(); return true; }
+  return false;
+}
+if (import.meta.env.MODE === "android") {
+  void import("./platform/android").then(({ installAndroidShell }) => installAndroidShell(handleBackIntent));
 }
 
 review?.mountReviewControls((reason, score) => {
