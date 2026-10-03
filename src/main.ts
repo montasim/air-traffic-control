@@ -34,6 +34,7 @@ import {
 import { mountHugeIcon } from "./ui/hugeicons";
 import { mountPractice } from "./ui/practice";
 import { createMapPreviews } from "./ui/mapPreviews";
+import { renderAchievementBadges, renderPromotion, resetCareerResult } from "./ui/shiftCelebration";
 
 const reviewParams = new URLSearchParams(window.location.search);
 const review =
@@ -359,9 +360,9 @@ function formatScore(value: number): string {
 
 function announce(message: string): void {
   elements.routeStatus.textContent = "";
+  // Play stays quiet: only a rejected route is shown, because it explains a failed input.
+  // Every message, landings included, still reaches screen readers through #route-status.
   if (message.startsWith("Route not added")) showFlightMessage(message);
-  if (message.startsWith("Aircraft landed"))
-    showFlightMessage("+1 · Safely landed");
   requestAnimationFrame(() => {
     elements.routeStatus.textContent = message;
   });
@@ -468,15 +469,6 @@ function renderMapOptions(): void {
 function syncAudioControls(): void {
   const settings = currentSave.settings.audio;
   audio.setSettings(settings);
-  const soundStatus = document.querySelector<HTMLElement>("#sound-status");
-  if (soundStatus) {
-    soundStatus.textContent = !settings.enabled
-      ? "Sound is off. Your volume is kept for when you turn it back on."
-      : settings.volume === 0
-        ? "Volume is at zero. Raise it to hear flight cues and alerts."
-        : "Sound effects are on. Visual warnings stay visible at any volume.";
-  }
-
   elements.audioToggles.forEach((button) => {
     button.setAttribute("aria-pressed", String(settings.enabled));
     button.setAttribute("aria-label", "Sound effects");
@@ -633,13 +625,13 @@ async function handleGameOver({
   elements.gameoverCopy.textContent = copy[1];
   const isRecord = score > activeRecord().difficultyScores[activeDifficulty][activeProfile.id];
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
-  document.querySelector("#result-best-label")!.textContent =
-    `${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()} · Best`;
-  document.querySelector('#result-difficulty')!.textContent = `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]}`;
+  // Both result cards keep one-word labels so they stay level; the record's context reads below them.
+  document.querySelector("#result-best-label")!.textContent = "Best";
+  document.querySelector('#result-difficulty')!.textContent =
+    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()}`;
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
-  elements.careerResult.textContent = "Recording shift…";
-  elements.careerResult.classList.remove("is-promotion");
+  resetCareerResult(elements.careerResult, "Recording shift…");
   elements.pauseButton.disabled = true;
   elements.restartButton.disabled = true;
   elements.chooseMapButton.disabled = true;
@@ -654,15 +646,13 @@ async function handleGameOver({
     safeLandings: score,
   });
   currentSave = result.save;
-  const achievementResult = document.querySelector<HTMLElement>('#achievement-result')!;
-  achievementResult.hidden = result.newAchievements.length === 0;
-  achievementResult.textContent = `Achievements earned: ${result.newAchievements.map(id => ACHIEVEMENTS.find(a => a.id === id)!.name).join(' · ')}`;
-  if (result.newAchievements.length) announce(achievementResult.textContent);
+  renderAchievementBadges(document.querySelector<HTMLElement>('#achievement-result')!, result.newAchievements);
+  if (result.newAchievements.length) announce(`Achievements earned: ${result.newAchievements.map(id => ACHIEVEMENTS.find(a => a.id === id)!.name).join(' · ')}`);
   renderShell();
   if (result.promoted) {
     const earned = rankDefinition(result.earnedRankId);
-    elements.careerResult.textContent = `Promoted — ${earned.name}${earned.unlocks.length ? `. ${earned.unlocks.map((id) => mapDefinitionById(id).metadata.name).join(", ")} now open!` : ""}`;
-    elements.careerResult.classList.add("is-promotion");
+    const promotionDelay = reason === "collision" ? 940 : 0;
+    renderPromotion(elements.careerResult, earned.name, earned.unlocks.map((id) => mapDefinitionById(id).metadata.name), promotionDelay);
     announce(`Promoted to ${earned.name}.`);
     promotionAudioTimer = window.setTimeout(
       () => {
@@ -672,14 +662,17 @@ async function handleGameOver({
           rankId: result.earnedRankId,
         });
       },
-      reason === "collision" ? 940 : 0,
+      promotionDelay,
     );
     currentSave = await acknowledgeEarnedRank();
   } else {
     elements.careerResult.textContent = rankProgressCopy();
   }
   if (!result.persisted) {
-    elements.careerResult.textContent += ' Progress is available this session only; saving on this device failed.';
+    const note = document.createElement("span");
+    note.className = "career-result-note";
+    note.textContent = " Progress is available this session only; saving on this device failed.";
+    elements.careerResult.append(note);
   }
   elements.restartButton.disabled = false;
   elements.chooseMapButton.disabled = false;
@@ -841,7 +834,7 @@ function renderFieldDetail(): void {
   document.querySelector("#field-description")!.textContent =
     definition.metadata.description;
   document.querySelector("#field-record")!.textContent =
-    `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best · ${formatScore(mapBest(activeMapId))} landings`;
+    `Best · ${formatScore(mapBest(activeMapId))} landings`;
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   landingModeInput.checked = currentSave.settings.twoEndLanding;
@@ -985,8 +978,23 @@ const disposePreviews = createMapPreviews((id, url) => {
   card?.style.setProperty("--map-preview", `url("${url}")`);
 });
 window.addEventListener("pagehide", disposePreviews, { once: true });
-if (import.meta.env.MODE !== "desktop") {
+// Inline MODE checks let Vite drop the unused PWA and Android imports per edition.
+if (import.meta.env.MODE !== "desktop" && import.meta.env.MODE !== "android") {
   void import("virtual:pwa-register").then(({ registerSW }) => registerSW({ immediate: true }));
+}
+
+/** Android back dismisses the topmost layer or pauses play; it never resumes a shift. */
+function handleBackIntent(): boolean {
+  const dialog = document.querySelector<HTMLDialogElement>("dialog[open]");
+  if (dialog) { dialog.close(); return true; }
+  const menu = document.querySelector<HTMLDetailsElement>(".menu-more[open]");
+  if (menu) { menu.open = false; return true; }
+  if (!utilityScreen.hidden) { history.back(); return true; }
+  if (playScene()?.getPhase() === "running") { pauseRun(); return true; }
+  return false;
+}
+if (import.meta.env.MODE === "android") {
+  void import("./platform/android").then(({ installAndroidShell }) => installAndroidShell(handleBackIntent));
 }
 
 review?.mountReviewControls((reason, score) => {

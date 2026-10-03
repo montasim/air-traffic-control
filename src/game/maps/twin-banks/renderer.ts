@@ -1,12 +1,12 @@
 import type Phaser from 'phaser';
 import {
   composeStaticMap,
-  paintApron,
+  clearOfAirfield,
+  paintAirfieldGround,
   paintBuilding,
   paintHelipad,
   paintRiver,
   paintRunway,
-  paintTaxiway,
   paintTree,
   runwayCorners,
   smoothPath,
@@ -110,6 +110,7 @@ function paintTerrain(
   for (const [index, decoration] of layout.decorations.entries()) {
     if (decoration.kind === 'river-mark') continue;
     const size = unit * 0.009 * decoration.scale;
+    if (!clearOfAirfield(layout, decoration.position, size)) continue;
     if (decoration.kind === 'tree') {
       paintTree(graphics, decoration.position, size, CIVIL_PALETTE, index);
       continue;
@@ -197,18 +198,6 @@ function paintFacilities(
     }, CIVIL_PALETTE, layout.runways);
   }
 
-  graphics.lineStyle(Math.max(1.1, unit * 0.0018), TWIN_BANKS_PALETTE.runwayMarking, 0.34);
-  for (const stand of layout.parkingStands) {
-    const dx = Math.cos(stand.angle) * stand.length * 0.5;
-    const dy = Math.sin(stand.angle) * stand.length * 0.5;
-    graphics.lineBetween(
-      stand.position.x - dx,
-      stand.position.y - dy,
-      stand.position.x + dx,
-      stand.position.y + dy
-    );
-  }
-
   for (const sign of visibleTwinBanksLabels(layout)) {
     const margin = Math.max(1.4, unit * 0.0024) * (sign.label.length * 2 + 2);
     const overlapsRunway = layout.runways.some((runway) => {
@@ -230,11 +219,9 @@ export function renderTwinBanksMap(
 ): void {
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit),
-    operational: ({graphics, unit}) => {
+    operational: ({graphics, unit, detailLevel}) => {
     paintScenicRunways(graphics, layout);
-    paintApron(graphics, layout.apron, CIVIL_PALETTE);
-    paintApron(graphics, layout.westApron, CIVIL_PALETTE);
-    for (const taxiway of layout.taxiways) paintTaxiway(graphics, taxiway, CIVIL_PALETTE);
+    paintAirfieldGround(graphics, layout, CIVIL_PALETTE, detailLevel);
     for (const runway of layout.runways) {
       paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.fieldBands);
     }

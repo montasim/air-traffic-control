@@ -27,6 +27,19 @@ export const AIRCRAFT_VISUAL_TOKENS = {
   maximumAccentCoverage: 0.35
 } as const;
 
+/**
+ * Landed aircraft are muted so attention stays on the airborne traffic: a stone
+ * body, a soft keyline, and a livery desaturated toward the airfield greys.
+ */
+export const LANDED_AIRCRAFT_TOKENS = {
+  body: 0xc9c8b8,
+  keyline: 0x56665d,
+  livery: 0x9aa197,
+  shadowAlpha: 0.08,
+  /** Blend from the flight palette over this long after touchdown. */
+  blendMilliseconds: 400
+} as const;
+
 export const AIRCRAFT_SILHOUETTES: Readonly<Record<AircraftType, AircraftSilhouetteSpec>> = {
   liner: {
     id: 'swept-liner',

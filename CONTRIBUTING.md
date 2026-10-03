@@ -15,5 +15,10 @@ Report reproducible bugs through GitHub issues, including browser, viewport,
 airfield, difficulty, steps, and expected versus actual behavior. Do not include
 private data or credentials. Do not post exploitable security details publicly.
 
-Changes should remain focused; avoid committing generated `dist/`, local
-Netlify linkage, secrets, or dependency directories.
+The `android/` Capacitor project is committed. Platform-specific behavior
+belongs behind inline `import.meta.env.MODE` checks so other editions do not
+bundle it. Run `npm run android:sync` after web changes when testing on Android.
+
+Changes should remain focused; avoid committing generated `dist/`,
+`dist-android/`, local Netlify linkage, signing keys, secrets, or dependency
+directories.

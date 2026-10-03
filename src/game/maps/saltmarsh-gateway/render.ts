@@ -8,14 +8,14 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 */
 import type Phaser from 'phaser';
 import {
+  clearOfAirfield,
+  paintAirfieldGround,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
-  paintApron,
   paintBuilding,
   paintFieldPolygon,
   paintHelipad,
   paintRunway,
-  paintTaxiway,
   paintTree,
   paintWaterPolygon,
   strokePolyline,
@@ -68,7 +68,7 @@ function paintSaltmarshGateway(
 
   for (let index = 0; index < Math.min(budget.trees, layout.treeBelt.length); index += 1) {
     const tree = layout.treeBelt[index];
-    paintTree(graphics, tree.center, tree.radius, palette, index);
+    if (clearOfAirfield(layout, tree.center, tree.radius)) paintTree(graphics, tree.center, tree.radius, palette, index);
   }
 
  }
@@ -76,8 +76,7 @@ function paintSaltmarshGateway(
 function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, detailLevel: WorldDetailLevel): void {
   const palette = SALTMARSH_GATEWAY_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
-  paintApron(graphics, layout.apron, palette);
-  for (const taxiway of layout.taxiways) paintTaxiway(graphics, taxiway, palette);
+  paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
     paintRunway(graphics, runway, palette, budget.surfaceWear);
   }

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-boot="loading">
+<html lang="en" data-boot="loading" data-platform="%MODE%">
   <head>
     <meta charset="UTF-8" />
     <meta
@@ -52,38 +52,72 @@
       html[data-boot] body { margin: 0; background: #254039; }
       html[data-boot] #app { visibility: hidden; }
       #boot-screen { position: fixed; inset: 0; z-index: 1000; display: grid;
-        place-content: center; justify-items: center; gap: 18px; padding: 24px;
+        place-content: center; padding: 24px;
         background: #254039; color: #fff5df; text-align: center;
-        font: 16px/1.5 system-ui, sans-serif; transition: opacity 180ms ease; }
+        font: 16px/1.5 system-ui, sans-serif; transition: opacity 320ms ease; }
+      /* The logo first sits alone at the display centre, exactly where Android's native splash draws it
+         (0.6 × 288dp art box, anchored on the mark), so the handoff is invisible. bootstrap.ts then lifts it
+         while the name and status fade in, ending with the whole block centred. */
+      #boot-screen .boot-content { position: relative; transition: transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+      #boot-screen .boot-logo { display: block; width: calc(420 / 512 * 172.8px); height: auto; }
+      #boot-screen .boot-details { position: absolute; top: 100%; left: 50%; width: max-content; max-width: calc(100vw - 48px);
+        margin-top: 18px; display: grid; justify-items: center; gap: 18px;
+        opacity: 0; transform: translate(-50%, 12px); transition: opacity 420ms ease 120ms, transform 520ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+      #boot-screen.is-revealed .boot-content { transform: translateY(var(--boot-reveal-shift, 0px)); }
+      #boot-screen.is-revealed .boot-details { opacity: 1; transform: translate(-50%, 0); }
+      #boot-screen .boot-status { display: grid; justify-items: center; gap: 14px; }
       #boot-screen h1 { margin: 0; color: #fff5df; font: 700 clamp(32px, 7vw, 48px)/1.1 "Barlow Condensed", sans-serif; }
       #boot-screen p { margin: 0; max-width: 30ch; }
-      #boot-screen svg { width: 64px; height: 64px; }
       #boot-screen .boot-track { width: 120px; height: 4px; border-radius: 4px;
         background: #48675c; overflow: hidden; }
       #boot-screen .boot-track::after { content: ""; display: block; width: 40%; height: 100%;
         border-radius: inherit; background: #ebaa44; animation: boot-taxi 1.6s ease-in-out infinite alternate; }
       #boot-screen a { color: #254039; background: #ebaa44; padding: 10px 24px;
         border-radius: 12px; font-weight: 700; text-decoration: none; }
+      #boot-screen .boot-credit { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom));
+        max-width: none; color: #a9bfb1; font-size: 14px; letter-spacing: 0.02em; opacity: 0; transition: opacity 420ms ease 120ms; }
+      #boot-screen.is-revealed .boot-credit { opacity: 1; }
       #boot-screen [hidden] { display: none; }
       #boot-screen.is-ready { opacity: 0; pointer-events: none; }
       html[data-boot="error"] .boot-track { display: none; }
       @keyframes boot-taxi { to { transform: translateX(150%); } }
       @media (prefers-reduced-motion: reduce) {
-        #boot-screen { transition: none; }
+        #boot-screen, #boot-screen .boot-content, #boot-screen .boot-details, #boot-screen .boot-credit { transition: none; }
         #boot-screen .boot-track::after { animation: none; }
       }
     </style>
+    <noscript><style>#boot-screen .boot-details { opacity: 1; transform: translate(-50%, 0); } #boot-screen .boot-credit { opacity: 1; }</style></noscript>
     <title>Air Traffic Control</title>
   </head>
   <body>
     <div id="boot-screen" role="status" aria-live="polite" aria-busy="true">
-      <!-- Hugeicons Airplane01Icon: kept inline so the loading screen needs no JavaScript. -->
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.8667 3.7804C16.7931 3.03188 17.8307 2.98644 18.9644 3.00233C19.5508 3.01055 19.844 3.01467 20.0792 3.10588C20.4524 3.2506 20.7494 3.54764 20.8941 3.92081C20.9853 4.15601 20.9894 4.4492 20.9977 5.03557C21.0136 6.16926 20.9681 7.20686 20.2196 8.13326C19.5893 8.91337 18.5059 9.32101 17.9846 10.1821C17.5866 10.8395 17.772 11.5203 17.943 12.2209L19.2228 17.4662C19.4779 18.5115 19.2838 19.1815 18.5529 19.9124C18.164 20.3013 17.8405 20.2816 17.5251 19.779L13.6627 13.6249L11.8181 15.0911C11.1493 15.6228 10.8149 15.8886 10.6392 16.2627C10.2276 17.1388 10.4889 18.4547 10.5022 19.4046C10.5096 19.9296 10.0559 20.9644 9.41391 20.9993C9.01756 21.0209 8.88283 20.5468 8.75481 20.2558L7.52234 17.4544C7.2276 16.7845 7.21552 16.7724 6.54556 16.4777L3.74415 15.2452C3.45318 15.1172 2.97914 14.9824 3.00071 14.5861C3.03565 13.9441 4.07036 13.4904 4.59536 13.4978C5.54532 13.5111 6.86122 13.7724 7.73734 13.3608C8.11142 13.1851 8.37724 12.8507 8.90888 12.1819L10.3751 10.3373L4.22103 6.47489C3.71845 6.15946 3.69872 5.83597 4.08755 5.44715C4.8185 4.7162 5.48851 4.52214 6.53377 4.77718L11.7791 6.05703C12.4797 6.22798 13.1605 6.41343 13.8179 6.0154C14.679 5.49411 15.0866 4.41074 15.8667 3.7804Z" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"/></svg>
-      <h1>Air Traffic Control</h1>
-      <p id="boot-message">Preparing your airfield…</p>
-      <div class="boot-track" aria-hidden="true"></div>
-      <a id="boot-retry" href="" hidden>Try again</a>
-      <noscript><p>Enable JavaScript to play Air Traffic Control.</p></noscript>
+      <div class="boot-content">
+        <!-- App mark from art/brand/logo.svg, inline so the loading screen needs no JavaScript. -->
+        <svg class="boot-logo" viewBox="45 68 420 336" aria-hidden="true">
+          <g fill="none" stroke="#4ad6dc" stroke-linecap="round">
+            <path stroke-width="14" d="M266 258 C243 300 207 350 155 377 C112 398 70 395 59 354 C50 318 85 284 125 282 C160 281 187 302 209 328"/>
+            <path stroke-width="6" d="M395 119 Q414 106 436 96"/>
+          </g>
+          <circle cx="445" cy="91.5" r="19" fill="#fcbd5a"/>
+          <g fill="#fcf2da" transform="translate(337 183.5) rotate(42)">
+            <path d="M0 -98 C11 -98 18 -89 18 -76 L18 50 C18 75 9 98 0 110 C-9 98 -18 75 -18 50 L-18 -76 C-18 -89 -11 -98 0 -98 Z"/>
+            <path d="M14 -14 L108 38 C111 40 111 46 107 47 L14 30 Z M-14 -14 L-108 38 C-111 40 -111 46 -107 47 L-14 30 Z"/>
+            <rect x="43" y="-19" width="14" height="27" rx="7"/>
+            <rect x="-57" y="-19" width="14" height="27" rx="7"/>
+            <path d="M14 76 L47 106 C49 109 47 114 43 113 L12 100 Z M-14 76 L-47 106 C-49 109 -47 114 -43 113 L-12 100 Z"/>
+          </g>
+        </svg>
+        <div class="boot-details">
+          <h1>Air Traffic Control</h1>
+          <div class="boot-status">
+            <p id="boot-message">Preparing your airfield…</p>
+            <div class="boot-track" aria-hidden="true"></div>
+            <a id="boot-retry" href="" hidden>Try again</a>
+            <noscript><p>Enable JavaScript to play Air Traffic Control.</p></noscript>
+          </div>
+        </div>
+      </div>
+      <p class="boot-credit">by Montasim</p>
     </div>
     <main id="app" inert>
       <section class="game-frame" aria-label="Air Traffic Control game">
@@ -196,7 +230,7 @@
             </section>
 
             <nav class="home-stores" aria-label="Get the desktop app">
-              <div class="store-intro"><p>Find Air Traffic Control on your platform.</p></div>
+              <div class="store-intro"><p>Available on your platform.</p></div>
               <div class="store-links">
                 <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM" target="_blank" rel="noopener noreferrer" aria-label="Microsoft Store for Windows (opens in a new tab)"><img src="/assets/stores/microsoft-store.svg" width="161" height="44" alt="Get it from Microsoft Store for Windows" /></a>
                 <a href="https://snapcraft.io/air-traffic-control" target="_blank" rel="noopener noreferrer" aria-label="Snap Store for Linux (opens in a new tab)"><img src="/assets/stores/snap-store.svg" width="182" height="56" alt="Get it from the Snap Store for Linux" /></a>
@@ -277,16 +311,13 @@
                   <dd id="final-score">00</dd>
                 </div>
                 <div>
-                  <dt id="result-best-label">Best</dt>
+                  <dt><span id="result-best-label">Best</span><span id="record-message" class="record-badge" hidden>New best</span></dt>
                   <dd id="final-best">00</dd>
                 </div>
               </dl>
               <p id="result-difficulty"></p>
-              <p id="achievement-result" class="achievement-result" hidden></p>
-              <p id="record-message" hidden>New personal best!</p>
-              <p id="career-result" class="career-result" aria-live="polite">
-                Recording shift…
-              </p>
+              <div id="achievement-result" class="achievement-result" hidden></div>
+              <div id="career-result" class="career-result" aria-live="polite">Recording shift…</div>
             </div>
             <div class="panel-actions result-actions">
               <button
@@ -325,7 +356,6 @@
             </button>
           </div>
           <div id="settings-content" hidden>
-            <p class="settings-intro">Set the sound for your next shift.</p>
             <section class="sound-panel" aria-labelledby="sound-title">
               <header class="sound-panel-heading">
                 <span class="sound-emblem button-icon" data-ui-icon="settings" aria-hidden="true"></span>
@@ -342,13 +372,18 @@
                 </div>
                 <div class="sound-volume">
                   <label for="settings-volume"><span>Effects volume</span><output for="settings-volume" data-audio-value>80%</output></label>
-                  <input id="settings-volume" type="range" min="0" max="100" step="5" value="80" data-audio-volume aria-describedby="sound-status" />
+                  <input id="settings-volume" type="range" min="0" max="100" step="5" value="80" data-audio-volume />
                   <div class="volume-scale" aria-hidden="true"><span>Silent</span><span>Full volume</span></div>
                 </div>
-                <p id="sound-status" class="sound-status" aria-live="polite">Sound effects are on.</p>
               </div>
             </section>
-            <div class="settings-save-note"><strong>Ready for your next shift.</strong><p>Your preferences save automatically on this device, along with your career. No account needed.</p></div>
+            <section class="developer-info" aria-labelledby="developer-heading">
+              <div><h3 id="developer-heading">Developer</h3><p>Made by Montasim.</p></div>
+              <a id="developer-link" class="secondary-button button-with-icon" href="https://montasim.dev/" target="_blank" rel="noopener noreferrer" aria-label="montasim.dev (opens in a new tab)">
+                <svg class="button-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z"/></svg>
+                <span>montasim.dev</span>
+              </a>
+            </section>
           </div>
           <div id="airfields-content" hidden>
             <p class="help-lead">Choose your next assignment.</p>
@@ -377,7 +412,7 @@
               </li>
               <li>
                 <svg class="lesson-art" viewBox="0 0 260 130" aria-hidden="true"><path d="M40 35 Q150 0 220 30 M40 100 Q140 140 220 96" fill="none" stroke="#ebaa44" stroke-width="3" stroke-dasharray="6 6"/><g data-help-plane transform="translate(75 33) scale(.65)"/><g data-help-plane transform="translate(175 101) scale(.65)"/></svg>
-                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Amber labels identify a busy runway. Personal bests are shared across both runway settings. Only one aircraft uses a runway on final approach at a time. Reroute blocked aircraft; they will not wait automatically.</p>
+                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Personal bests are shared across both runway settings.</p>
               </li>
             </ol>
             <p>
@@ -405,7 +440,7 @@
             </svg>
             <div class="practice-actions">
               <button id="practice-reset" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="restart" aria-hidden="true"></span>Try again</button>
-              <button id="practice-demo" type="button" class="text-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Show demonstration</button>
+              <button id="practice-demo" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Show demonstration</button>
             </div>
             <p class="fine-copy">Practice does not affect your score or career. Your current game stays paused.</p>
           </div>

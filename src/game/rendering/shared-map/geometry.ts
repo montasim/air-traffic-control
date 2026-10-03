@@ -110,3 +110,70 @@ export function smoothPath(
   return result;
 }
 
+
+/**
+ * Where a building is actually drawn: one overlapping a runway is pushed
+ * sideways until it clears. Ground routes use the same rule to avoid it.
+ */
+export function buildingCenterClearOfRunways(
+  buildingCenter: Vector2,
+  width: number,
+  height: number,
+  runways: readonly { readonly center: Vector2; readonly length: number; readonly width: number; readonly angle: number }[],
+): Vector2 {
+  let center = { ...buildingCenter };
+  for (const runway of runways) {
+    const dx = center.x - runway.center.x,
+      dy = center.y - runway.center.y;
+    const along = dx * Math.cos(runway.angle) + dy * Math.sin(runway.angle);
+    const across = -dx * Math.sin(runway.angle) + dy * Math.cos(runway.angle);
+    const clearance = runway.width * 0.65 + Math.hypot(width, height) * 0.5;
+    if (Math.abs(along) < runway.length * 0.5 && Math.abs(across) < clearance) {
+      const move = (across < 0 ? -1 : 1) * clearance - across;
+      center = {
+        x: center.x - Math.sin(runway.angle) * move,
+        y: center.y + Math.cos(runway.angle) * move,
+      };
+    }
+  }
+  return center;
+}
+
+const filletDistance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
+
+/** Turns sharper than this are reversals, done as a stop and pivot rather than a curve. */
+export const PIVOT_TURN = (100 * Math.PI) / 180;
+
+function turnAngle(previous: Vector2, corner: Vector2, next: Vector2): number {
+  const a = Math.atan2(corner.y - previous.y, corner.x - previous.x);
+  const b = Math.atan2(next.y - corner.y, next.x - corner.x);
+  return Math.abs(Math.atan2(Math.sin(b - a), Math.cos(b - a)));
+}
+
+/** Round each ordinary corner into a short curve; reversals stay sharp for the pivot. */
+export function filletCorners(points: readonly Vector2[], radius: number): Vector2[] {
+  if (points.length < 3) return points.map((point) => ({ ...point }));
+  const result: Vector2[] = [{ ...points[0] }];
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const [previous, corner, next] = [points[i - 1], points[i], points[i + 1]];
+    const turn = turnAngle(previous, corner, next);
+    if (turn < 0.05 || turn >= PIVOT_TURN) {
+      result.push({ ...corner });
+      continue;
+    }
+    const r = Math.min(radius, filletDistance(previous, corner) * 0.45, filletDistance(corner, next) * 0.45);
+    const entry = { x: corner.x + (previous.x - corner.x) * (r / filletDistance(previous, corner)), y: corner.y + (previous.y - corner.y) * (r / filletDistance(previous, corner)) };
+    const exit = { x: corner.x + (next.x - corner.x) * (r / filletDistance(corner, next)), y: corner.y + (next.y - corner.y) * (r / filletDistance(corner, next)) };
+    // Quadratic curve through the corner; six samples read as smooth at taxi speed.
+    for (let step = 0; step <= 6; step += 1) {
+      const t = step / 6;
+      const u = 1 - t;
+      result.push({
+        x: u * u * entry.x + 2 * u * t * corner.x + t * t * exit.x,
+        y: u * u * entry.y + 2 * u * t * corner.y + t * t * exit.y,
+      });
+    }
+  }
+  result.push({ ...points[points.length - 1] });
+  return result.filter((point, index) => index === 0 || filletDistance(point, result[index - 1]) > 0.01);
+}

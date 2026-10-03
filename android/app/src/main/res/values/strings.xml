@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Air Traffic Control</string>
+    <string name="title_activity_main">Air Traffic Control</string>
+    <string name="package_name">dev.montasim.airtrafficcontrol</string>
+    <string name="custom_url_scheme">dev.montasim.airtrafficcontrol</string>
+</resources>

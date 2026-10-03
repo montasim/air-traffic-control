@@ -77,13 +77,13 @@ try {
         assert.equal(tracked.landingZoneId,zone.id);
         await page.screenshot({path:`test-results/runway-ends/touchdown-${type}-${end}.png`});
       }
-      if(!process.env.SKIP_RESIZE && !resized && !touchdown && s.simulation.runwayReservations?.some(r=>r.aircraftId===p.id)) {
+      if(!process.env.SKIP_RESIZE && !resized && !touchdown && tracked && Math.hypot(tracked.position.x-zone.position.x,tracked.position.y-zone.position.y) <= zone.captureRadius*2) {
         await page.setViewportSize({width:800,height:1000});
         await page.clock.runFor(250);
         const paused=await snapshot();
         assert.equal(paused.simulation.phase,'paused');
         assert.equal(paused.runId,s.runId);
-        assert.deepEqual(paused.simulation.runwayReservations,s.simulation.runwayReservations);
+        assert.equal(paused.simulation.aircraft.find(a=>a.id===p.id)?.approachZoneId,zone.id);
         await page.locator('#resume-button').click();
         resized=true;
       }
@@ -101,7 +101,7 @@ try {
     assert.ok(landed,`${type} must land at end ${end}, phase=${s.simulation.phase}`);
     assert.ok(touchdown,`${type} must enter the landing animation at the selected end`);
     assert.equal(s.evidence.landedTypes[type],1);
-    if (!process.env.SKIP_RESIZE) assert.ok(resized,'Runway ownership must also be checked across resize');
+    if (!process.env.SKIP_RESIZE) assert.ok(resized,'The final approach must also be checked across resize');
     assert.deepEqual(errors,[]);
     console.log(`${type} landed via runway ${zone.label} with pointer-drawn route`);
     await page.close();

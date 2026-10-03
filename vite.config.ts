@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(({ mode }) => ({
-  plugins: mode === 'desktop' ? [] : [
+  // Packaged desktop and Android builds bundle their assets and update through their stores.
+  plugins: mode === 'desktop' || mode === 'android' ? [] : [
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'favicon.ico', 'favicon-airplane-32.png', 'apple-touch-icon-airplane.png'],
@@ -30,7 +31,8 @@ export default defineConfig(({ mode }) => ({
   ],
   build: {
     target: 'es2022',
-    sourcemap: true,
+    // Maps would add ~12 MB to the Play bundle without helping players.
+    sourcemap: mode !== 'android',
     chunkSizeWarningLimit: 1600
   }
 }));

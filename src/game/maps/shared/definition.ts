@@ -1,4 +1,7 @@
 import { withBidirectionalApproaches } from './bidirectional';
+import { apronPolygons, createApronMarkings, DECK_LANE_CLEARANCE, deckRunwayIds } from './apronLayout';
+import { clearAirfieldSite } from './siteCleanup';
+import { createGroundRoutes, groundObstacles, hasGroundNetwork, taxiwayExits, type GroundNetwork, type GroundObstacle } from './groundRoutes';
 import type Phaser from 'phaser';
 import type {
   MapDefinition,
@@ -61,6 +64,33 @@ function assertPreparedLayout(
   }
 }
 
+function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T, input: MapPreparationInput): T {
+  const unit = Math.min(input.width, input.height);
+  // Aprons come off the runways and buildings off runways and helipads before anything is placed on them.
+  const layout = clearAirfieldSite(authored, unit);
+  const obstacles = groundObstacles(layout);
+  const decks = deckRunwayIds(layout);
+  const runways = layout.runways.map((runway) => ({
+    center: runway.center, width: runway.length, height: runway.width, angle: runway.angle,
+    clearance: decks.has(runway.id) ? DECK_LANE_CLEARANCE : undefined,
+  }));
+  // Stands also keep clear of helipads, taken from the helicopter landing zones every map has.
+  const helipads: GroundObstacle[] = layout.landingZones
+    .filter((zone) => zone.accepts === 'rotor')
+    .map((zone) => ({ center: zone.position, width: zone.captureRadius * 3, height: zone.captureRadius * 3, angle: 0 }));
+  const apronMarkings = createApronMarkings({
+    width: input.width,
+    height: input.height,
+    unit,
+    exits: taxiwayExits(layout, obstacles, unit),
+    aprons: apronPolygons(layout),
+    obstacles: [...obstacles, ...helipads],
+    runways,
+    hud: layout.hudExclusionZones,
+  });
+  return { ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) };
+}
+
 /**
  * Hides each adapter's rich layout while preserving a small uniform interface
  * for selection, preparation, rendering, and tests.
@@ -77,7 +107,9 @@ export function defineMap<Layout extends PlayableMapLayout>(
     prepare(input): PreparedMap {
       requirePositiveDimension(input.width, 'width');
       requirePositiveDimension(input.height, 'height');
-      const layout = withBidirectionalApproaches(adapter.createLayout(input), input.twoEndLanding);
+      const approaches = withBidirectionalApproaches(adapter.createLayout(input), input.twoEndLanding);
+      // Apron stands and ground routes follow the final landing zones, so they cover both runway-end modes.
+      const layout = hasGroundNetwork(approaches) ? withGroundTraffic(approaches, input) : approaches;
       assertPreparedLayout(layout, input, adapter.id);
       const prepared: PreparedMap = {
         mapId: adapter.id,

@@ -48,13 +48,21 @@ Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start fl
 
 The runway setting is remembered for your next shift and stays fixed during a shift, including resizing. Personal bests and career progress are shared across both settings.
 
-A runway is reserved by one aircraft on final approach until its landing completes. If it is busy, reroute approaching aircraft; they do not hold or go around automatically. Helipads keep their usual landing behavior.
+Any aircraft that reaches its matching runway end lands, even if another aircraft is landing on the same runway. Helipads keep their usual landing behavior.
 
 Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Resizing preserves the shift and pauses when needed; select **Resume** once the field is large enough to play.
 
 ## Airfields and progression
 
 Start at **Saltmarsh Gateway** or **River Bend**. Career promotions unlock Desert Parallel, Twin Banks, Falcon Air Base, Executive Point, Metro International, Freight Junction, and Island Rescue. Military, business, passenger, cargo, and rescue settings share the game's visual style and core routing rules.
+
+The top of the career adds three frontier maps:
+
+- **Frost Crossing** (Chief Controller): two runways cross in a snowbound archipelago.
+- **Carrier Coast** (Flight Director): liners land at a shore airfield, commuters on a carrier offshore.
+- **Blue Water** (Air Boss): open ocean and one carrier deck, with axial and angled lanes, two deck helipads, and no liners.
+
+Carrier decks are landed from the stern only, in both runway-end modes.
 
 Difficulty changes aircraft arrival frequency, speed, and traffic limits. Best scores are tracked separately for each airfield, difficulty, and screen orientation.
 
@@ -111,6 +119,14 @@ Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** with
 See [Microsoft Store release](docs/microsoft-store.md)
 for the exact commands, local test packaging, and submission checklist.
 
+## Android (Google Play)
+
+The Android app wraps the same build in Capacitor (`android/`). Run
+`npm run android:sync` to build and copy the game into the Android project,
+`npm run android:open` to open it in Android Studio, and `npm run package:android`
+for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
+for signing, icons, verification, and Play Console setup.
+
 ## Saves, sound, and offline use
 
 Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
@@ -119,7 +135,7 @@ Sound and effects volume are adjustable in Settings. Browsers may require a play
 
 The production build includes a service worker that caches game assets. A first online visit is required; after caching, the game can be reopened offline. Installation and offline behavior depend on browser support. Use HTTPS in production. The development server does not represent the production offline experience.
 
-Store links and the **Support** link in Settings open third-party websites in a new tab (or the system browser in Electron). Those pages require an internet connection and handle their own account or payment information; the game does not embed a payment form.
+Store links and the **Support** link in Settings open third-party websites in a new tab (or the system browser in Electron). The Android app hides them. Those pages require an internet connection and handle their own account or payment information; the game does not embed a payment form.
 
 ## Status and limitations
 
@@ -154,17 +170,20 @@ For browser regression checks, start `npm run dev -- --port 4287` in one termina
 | `src/storage/` | IndexedDB saves and migrations |
 | `src/audio/` | Game audio |
 | `src/ui/` | DOM menus and utility pages |
+| `src/platform/` | Android-only native integration (back button, outbound links) |
+| `android/` | Capacitor Android project |
 | `tests/` | Simulation, progression, storage, audio, and UI regression tests |
 | `public/` | Bundled fonts, graphics, and public assets |
 
 The DOM menus configure a shift; Phaser translates pointer input into routes for the simulation. Simulation events drive aircraft rendering, sound, and landing feedback. Completed shifts feed progression and local save storage.
 
-Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies the Linux desktop shell. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
+Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies the desktop shell and Capacitor the Android shell. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
 
 ## Documentation
 
 - [Contribution guide](CONTRIBUTING.md): setup, required checks, and save compatibility.
 - [Linux builds and releases](docs/linux-release.md): packaging, installation, verification, and Snap publishing.
+- [Android release](docs/android-release.md): Capacitor build, signing, and Google Play publishing.
 - [End-to-end QA report](docs/end-to-end-qa-report.md): recorded browser checks and remaining coverage gaps.
 - [Mobile verification](docs/mobile-verification.md): device-layout verification notes.
 - [Visual design](DESIGN.md): interface conventions.

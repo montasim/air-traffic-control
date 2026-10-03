@@ -7,7 +7,10 @@ export const MAP_IDS = [
   'executive-point',
   'metro-international',
   'freight-junction',
-  'island-rescue'
+  'island-rescue',
+  'frost-crossing',
+  'carrier-coast',
+  'blue-water'
 ] as const;
 
 export type MapId = (typeof MAP_IDS)[number];
@@ -20,3 +23,5 @@ export function isMapId(value: unknown): value is MapId {
 
 export const ORIGINAL_MAP_IDS = ['saltmarsh-gateway', 'river-bend', 'desert-parallel', 'twin-banks'] as const;
 export const EXPANSION_MAP_IDS = ['falcon-air-base', 'executive-point', 'metro-international', 'freight-junction', 'island-rescue'] as const;
+/** The top of the career: crossing runways and carrier operations. */
+export const FRONTIER_MAP_IDS = ['frost-crossing', 'carrier-coast', 'blue-water'] as const;

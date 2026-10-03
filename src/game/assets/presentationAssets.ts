@@ -14,7 +14,9 @@ export function presentationAssetFor({ mapId }: PresentationAssetRequest): {
 } {
   const materials: Record<MapId, 'mineral' | 'meadow'> = {
     'saltmarsh-gateway': 'meadow', 'river-bend': 'meadow', 'desert-parallel': 'mineral', 'twin-banks': 'meadow',
-    'falcon-air-base': 'meadow', 'executive-point': 'meadow', 'metro-international': 'meadow', 'freight-junction': 'mineral', 'island-rescue': 'meadow'
+    'falcon-air-base': 'meadow', 'executive-point': 'meadow', 'metro-international': 'meadow', 'freight-junction': 'mineral', 'island-rescue': 'meadow',
+    // Snow, sand, and sea take the fine mineral grain; each renderer decides whether to overlay it.
+    'frost-crossing': 'mineral', 'carrier-coast': 'mineral', 'blue-water': 'mineral'
   };
   const material = materials[mapId];
   return {

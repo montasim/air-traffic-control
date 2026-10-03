@@ -67,7 +67,6 @@ export type RouteAssignmentResult =
     };
 
 export type SimulationEvent =
-  | { type: 'approach-warning'; aircraftId: number; zoneId: string; reason: 'busy' }
   | { type: 'spawned'; aircraftId: number }
   | { type: 'landing-started'; aircraftId: number; zoneId: string }
   | { type: 'landed'; aircraftId: number; aircraftType: AircraftType; score: number }
@@ -79,6 +78,4 @@ export interface SimulationSnapshot {
   elapsed: number;
   score: number;
   aircraft: readonly Aircraft[];
-  runwayReservations?: readonly { runwayId: string; aircraftId: number; zoneId: string }[];
-  approachWarnings?: readonly { aircraftId: number; zoneId: string; reason: 'busy' }[];
 }

@@ -1,11 +1,13 @@
 import { applyDifficulty, type DifficultyId } from '../../core/difficulty';
 import { ShiftTracker } from '../../progression/achievements';
 import {
+  AIRCRAFT_OUTLINES,
   aircraftWarningDistance,
   aircraftCollisionOutline,
   DEFAULT_COLLISION_SCALES,
   type AircraftCollisionScales,
 } from "../../core/aircraftCollision";
+import { GroundTraffic } from "../ground/groundTraffic";
 import { aircraftPresentationScale } from "../rendering/aircraft/visualTokens";
 import { ROUTE_OUTLINE_COLOR } from "../palette";
 import Phaser from "phaser";
@@ -35,6 +37,7 @@ import type {
 } from "../maps/types";
 import {
   createAircraftView,
+  GROUND_SCALE,
   type AircraftView,
 } from "../rendering/AircraftView";
 import {
@@ -56,10 +59,14 @@ export class PlayScene extends Phaser.Scene {
   private failureMarker?: Phaser.GameObjects.Graphics;
   private routeGraphics!: Phaser.GameObjects.Graphics;
   private warningGraphics!: Phaser.GameObjects.Graphics;
-  private approachWarningLabels = new Map<number, Phaser.GameObjects.Text>();
   private previewGraphics!: Phaser.GameObjects.Graphics;
   private routeGuidance!: RouteGuidanceRenderer;
   private aircraftViews = new Map<number, AircraftView>();
+  /** Landed aircraft rolling out and taxiing; presentation only, outside the simulation. */
+  private groundTraffic = new GroundTraffic({}, { unit: 1, gap: 1 });
+  private groundViews = new Map<number, AircraftView>();
+  private groundScales: Record<Aircraft["type"], number> = { liner: GROUND_SCALE, commuter: GROUND_SCALE, rotor: GROUND_SCALE };
+  private lastAircraft = new Map<number, Aircraft>();
   private drawingAircraftId?: number;
   private drawingPointerId?: number;
   private pointerPrecision: PointerPrecision = "mouse";
@@ -78,7 +85,7 @@ export class PlayScene extends Phaser.Scene {
   ): void => {
     this.reducedMotion = event.matches;
     this.routeGuidance?.setReducedMotion(this.reducedMotion);
-    for (const view of this.aircraftViews.values()) {
+    for (const view of [...this.aircraftViews.values(), ...this.groundViews.values()]) {
       view.setReducedMotion(this.reducedMotion);
     }
   };
@@ -125,6 +132,17 @@ export class PlayScene extends Phaser.Scene {
       }),
       rotor: aircraftPresentationScale("rotor", rendered, { width, height }),
     };
+    // Parked aircraft shrink to fit their type's painted stand; followers keep about two lengths behind.
+    const stands = this.layout.apronMarkings?.stands ?? [];
+    let groundLength = 0;
+    for (const type of ["liner", "commuter", "rotor"] as const) {
+      const xs = AIRCRAFT_OUTLINES[type].map(([x]) => x);
+      const airframe = (Math.max(...xs) - Math.min(...xs)) * this.collisionScales[type];
+      const stand = stands.find((item) => item.accepts === type);
+      this.groundScales[type] = stand ? Math.min(GROUND_SCALE, (stand.length * 0.92) / airframe) : GROUND_SCALE;
+      if (type !== "rotor") groundLength = Math.max(groundLength, airframe * this.groundScales[type]);
+    }
+    this.groundTraffic = new GroundTraffic(this.layout.groundRoutes ?? {}, { unit: Math.min(width, height), gap: groundLength * 2 });
     this.simulation = new Simulation(
       this.layout.landingZones,
       { width, height },
@@ -163,6 +181,8 @@ export class PlayScene extends Phaser.Scene {
     );
     this.routeGuidance.setVisible(false);
 
+    this.seedParkedAircraft();
+
     this.input.on("pointerdown", this.handlePointerDown, this);
     this.input.on("pointermove", this.handlePointerMove, this);
     this.input.on("pointerup", this.handlePointerUp, this);
@@ -193,6 +213,7 @@ export class PlayScene extends Phaser.Scene {
     const snapshot = this.simulation.snapshot();
 
     this.syncAircraft(snapshot, deltaMilliseconds);
+    this.syncGroundTraffic(snapshot, deltaMilliseconds);
     this.routeGuidance.update(deltaMilliseconds);
     this.updateGuidanceTimeout(deltaMilliseconds);
     this.drawRoutes(snapshot);
@@ -217,6 +238,7 @@ export class PlayScene extends Phaser.Scene {
     this.failureMarker?.destroy();
     this.failureMarker = undefined;
     this.clearAircraftViews();
+    this.seedParkedAircraft();
     this.simulation.start(Date.now());
     this.lastHudSecond = -1;
     this.finishDrawing();
@@ -493,11 +515,17 @@ export class PlayScene extends Phaser.Scene {
     const activeIds = new Set(snapshot.aircraft.map((aircraft) => aircraft.id));
 
     for (const [id, view] of this.aircraftViews) {
-      if (!activeIds.has(id)) {
-        view.destroy();
-        this.aircraftViews.delete(id);
-      }
+      if (activeIds.has(id)) continue;
+      this.aircraftViews.delete(id);
+      const landed = this.lastAircraft.get(id);
+      if (landed?.state === "landing") {
+        // The simulation is done with it; the same view rolls out and taxis on the ground layer.
+        this.groundTraffic.add(landed, landed.landingZoneId, this.reducedMotion);
+        view.toGround();
+        this.groundViews.set(id, view);
+      } else view.destroy();
     }
+    this.lastAircraft = new Map(snapshot.aircraft.map((aircraft) => [aircraft.id, aircraft]));
 
     for (const aircraft of snapshot.aircraft) {
       let view = this.aircraftViews.get(aircraft.id);
@@ -506,6 +534,7 @@ export class PlayScene extends Phaser.Scene {
           presentationScale: this.collisionScales[aircraft.type],
           reducedMotion: this.reducedMotion,
         });
+        view.setGroundScale(this.groundScales[aircraft.type]);
         this.aircraftViews.set(aircraft.id, view);
       }
 
@@ -518,14 +547,51 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * One aircraft of each fixed-wing type starts parked at its first stand, so the
+   * apron shows where landed aircraft go. Negative ids never meet simulation ids.
+   */
+  private seedParkedAircraft(): void {
+    const seeds = (["liner", "commuter"] as const).flatMap((type, index) => {
+      const stand = this.layout.apronMarkings?.stands.find((item) => item.accepts === type);
+      return stand ? [{ id: -(index + 1), type, stand: { id: stand.id, position: stand.position, angle: stand.angle } }] : [];
+    });
+    this.groundTraffic.seed(seeds);
+    for (const seed of seeds) {
+      this.groundViews.get(seed.id)?.destroy();
+      const view = createAircraftView(this, {
+        id: seed.id, type: seed.type, position: { ...seed.stand.position }, heading: seed.stand.angle,
+        speed: 0, collisionRadius: 0, state: "flying", hasEntered: true, landingProgress: 0,
+      } as Aircraft, { presentationScale: this.collisionScales[seed.type], reducedMotion: this.reducedMotion });
+      view.setGroundScale(this.groundScales[seed.type]);
+      view.toGround(true);
+      this.groundViews.set(seed.id, view);
+    }
+  }
+
+  private syncGroundTraffic(snapshot: SimulationSnapshot, deltaMilliseconds: number): void {
+    const running = snapshot.phase === "running";
+    // Ground traffic freezes with the shift: pause, dialogs, resize settling, and game over.
+    if (running) this.groundTraffic.update(deltaMilliseconds / 1000);
+    const live = new Set<number>();
+    for (const plane of this.groundTraffic.aircraft) {
+      live.add(plane.id);
+      this.groundViews.get(plane.id)?.syncGround(plane, deltaMilliseconds, running && plane.phase !== "fading");
+    }
+    for (const [id, view] of this.groundViews) {
+      if (live.has(id)) continue;
+      view.destroy();
+      this.groundViews.delete(id);
+    }
+  }
+
   private drawRoutes(snapshot: SimulationSnapshot): void {
     this.routeGraphics.clear();
     const drawing = this.drawingAircraft();
     this.layout.landingZones.forEach((zone, index) => {
       const visible = !!drawing && drawing.type === zone.accepts;
       this.approachLabels[index]?.setVisible(visible);
-      const occupied = zone.approach && snapshot.runwayReservations?.some(r => r.runwayId === zone.approach!.runwayId && r.aircraftId !== drawing?.id);
-      this.approachLabels[index]?.setText(zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}${occupied ? ' · BUSY' : ''}` : zone.label);
+      this.approachLabels[index]?.setText(zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}` : zone.label);
       if (!visible) return;
       const {x,y} = zone.position;
       this.routeGraphics.lineStyle(2,zone.color,.65);
@@ -606,34 +672,6 @@ export class PlayScene extends Phaser.Scene {
 
   private drawWarnings(snapshot: SimulationSnapshot): void {
     this.warningGraphics.clear();
-    const warnedAircraft = new Set<number>();
-    for (const warning of snapshot.approachWarnings ?? []) {
-      const plane = snapshot.aircraft.find(p => p.id === warning.aircraftId);
-      if (!plane || plane.state === 'landing') continue;
-      warnedAircraft.add(plane.id);
-      let label = this.approachWarningLabels.get(plane.id);
-      if (!label) {
-        label = this.add.text(0, 0, '', {
-          fontFamily: 'Atkinson Hyperlegible',
-          fontSize: '18px',
-          color: '#36270f',
-          backgroundColor: '#f3bd55',
-          padding: { x: 7, y: 4 },
-        }).setOrigin(0.5, 1).setDepth(9);
-        this.approachWarningLabels.set(plane.id, label);
-      }
-      label.setText('! Runway busy');
-      const halfWidth = label.width / 2;
-      label.setPosition(
-        Phaser.Math.Clamp(plane.position.x, halfWidth + 4, this.layout.width - halfWidth - 4),
-        Phaser.Math.Clamp(plane.position.y - 44, label.height + 4, this.layout.height - 4),
-      );
-    }
-    for (const [id, label] of this.approachWarningLabels) {
-      if (warnedAircraft.has(id)) continue;
-      label.destroy();
-      this.approachWarningLabels.delete(id);
-    }
     for (
       let firstIndex = 0;
       firstIndex < snapshot.aircraft.length;
@@ -683,12 +721,7 @@ export class PlayScene extends Phaser.Scene {
   private processEvents(): void {
     for (const event of this.simulation.drainEvents()) {
       this.shiftTracker.accept(event);
-      if (event.type === 'approach-warning') {
-        const zone = this.zoneById(event.zoneId);
-        const message = 'Runway busy — reroute aircraft';
-        this.announce(`${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
-        this.game.events.emit('flight-message', `${zone ? this.zoneName(zone) + ': ' : ''}${message}`);
-      } else if (event.type === "landing-started") {
+      if (event.type === "landing-started") {
         const zone = this.zoneById(event.zoneId);
         if (zone) {
           this.showGuidance(zone, "landing-started");
@@ -873,7 +906,9 @@ export class PlayScene extends Phaser.Scene {
   private clearAircraftViews(): void {
     for (const view of this.aircraftViews.values()) view.destroy();
     this.aircraftViews.clear();
-    for (const label of this.approachWarningLabels.values()) label.destroy();
-    this.approachWarningLabels.clear();
+    for (const view of this.groundViews.values()) view.destroy();
+    this.groundViews.clear();
+    this.groundTraffic.clear();
+    this.lastAircraft.clear();
   }
 }

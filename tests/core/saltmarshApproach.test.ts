@@ -24,7 +24,6 @@ for (const zone of layout.landingZones.filter(zone => zone.approach)) {
       const events = simulation.drainEvents();
       expect(events).toContainEqual({ type: 'landing-started', aircraftId: aircraft.id, zoneId: zone.id });
       expect(simulation.snapshot().score).toBe(1);
-      expect(events.some(event => event.type === 'approach-warning')).toBe(false);
     }
   });
 }
