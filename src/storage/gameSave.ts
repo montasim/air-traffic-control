@@ -1,3 +1,4 @@
+import { normalizeLivery, type LiveryId } from '../progression/liveries';
 import { DIFFICULTIES, isDifficulty, type DifficultyId } from '../core/difficulty';
 import { ACHIEVEMENTS, evaluateAchievements, type AchievementAwards } from '../progression/achievements';
 import {
@@ -24,6 +25,7 @@ export interface AudioSettings {
 }
 
 export interface GameSettings {
+  readonly livery: LiveryId;
   readonly twoEndLanding: boolean;
   readonly audio: AudioSettings;
 }
@@ -106,6 +108,7 @@ export function createDefaultGameSave(): GameSaveV3 {
     achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
+      livery: 'classic',
       twoEndLanding: false,
       audio: {
         enabled: true,
@@ -198,6 +201,7 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV3 {
     lastCommittedRunId: typeof value.lastCommittedRunId === 'string' ? value.lastCommittedRunId : undefined,
     selectedMapId: isMapId(value.selectedMapId) ? value.selectedMapId : DEFAULT_MAP_ID,
     settings: {
+      livery: normalizeLivery(settings.livery, earnedRankId),
       twoEndLanding: settings.twoEndLanding === true,
       audio: {
         enabled: booleanValue(storedAudio.enabled, defaults.settings.audio.enabled),
@@ -242,6 +246,7 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV3 {
     achievementEvidence: { mixedFleetBest: 0, initialSafeBest: 0 },
     selectedMapId: DEFAULT_MAP_ID,
     settings: {
+      livery: 'classic',
       twoEndLanding: false,
       audio: {
         enabled: booleanValue(value.soundEnabled, true),

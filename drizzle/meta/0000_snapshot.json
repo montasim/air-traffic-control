@@ -1,0 +1,732 @@
+{
+  "id": "d15775d1-f351-43c9-a787-1463be539c02",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.challenge_feedback": {
+      "name": "challenge_feedback",
+      "schema": "",
+      "columns": {
+        "player_id": {
+          "name": "player_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "challenge_id": {
+          "name": "challenge_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fairness": {
+          "name": "fairness",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "factor": {
+          "name": "factor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "challenge_feedback_player_id_players_id_fk": {
+          "name": "challenge_feedback_player_id_players_id_fk",
+          "tableFrom": "challenge_feedback",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "challenge_feedback_challenge_id_challenges_id_fk": {
+          "name": "challenge_feedback_challenge_id_challenges_id_fk",
+          "tableFrom": "challenge_feedback",
+          "tableTo": "challenges",
+          "columnsFrom": [
+            "challenge_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "challenge_feedback_fairness_check": {
+          "name": "challenge_feedback_fairness_check",
+          "value": "\"challenge_feedback\".\"fairness\" IN ('agree', 'unsure', 'disagree')"
+        },
+        "challenge_feedback_factor_check": {
+          "name": "challenge_feedback_factor_check",
+          "value": "\"challenge_feedback\".\"factor\" IN ('same-rules', 'device-controls', 'pausing', 'suspicious-scores', 'connection-verification')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.challenges": {
+      "name": "challenges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "starts_at": {
+          "name": "starts_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ends_at": {
+          "name": "ends_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "map_id": {
+          "name": "map_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "difficulty": {
+          "name": "difficulty",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "two_end_landing": {
+          "name": "two_end_landing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "ruleset": {
+          "name": "ruleset",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seed": {
+          "name": "seed",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "challenges_slug_unique": {
+          "name": "challenges_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "challenges_map_id_check": {
+          "name": "challenges_map_id_check",
+          "value": "\"challenges\".\"map_id\" IN ('saltmarsh-gateway', 'river-bend', 'desert-parallel', 'twin-banks')"
+        },
+        "challenges_difficulty_check": {
+          "name": "challenges_difficulty_check",
+          "value": "\"challenges\".\"difficulty\" IN ('easy', 'medium', 'hard')"
+        },
+        "challenges_seed_check": {
+          "name": "challenges_seed_check",
+          "value": "\"challenges\".\"seed\" BETWEEN 0 AND 4294967295"
+        },
+        "challenges_window_check": {
+          "name": "challenges_window_check",
+          "value": "\"challenges\".\"starts_at\" < \"challenges\".\"ends_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.leaderboard_entries": {
+      "name": "leaderboard_entries",
+      "schema": "",
+      "columns": {
+        "challenge_id": {
+          "name": "challenge_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orientation": {
+          "name": "orientation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "best_run_id": {
+          "name": "best_run_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "achieved_at": {
+          "name": "achieved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "leaderboard_rank": {
+          "name": "leaderboard_rank",
+          "columns": [
+            {
+              "expression": "challenge_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orientation",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "score",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            },
+            {
+              "expression": "achieved_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "best_run_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "leaderboard_entries_challenge_id_challenges_id_fk": {
+          "name": "leaderboard_entries_challenge_id_challenges_id_fk",
+          "tableFrom": "leaderboard_entries",
+          "tableTo": "challenges",
+          "columnsFrom": [
+            "challenge_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leaderboard_entries_player_id_players_id_fk": {
+          "name": "leaderboard_entries_player_id_players_id_fk",
+          "tableFrom": "leaderboard_entries",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "leaderboard_entries_best_run_id_runs_id_fk": {
+          "name": "leaderboard_entries_best_run_id_runs_id_fk",
+          "tableFrom": "leaderboard_entries",
+          "tableTo": "runs",
+          "columnsFrom": [
+            "best_run_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "leaderboard_entries_challenge_id_orientation_player_id_pk": {
+          "name": "leaderboard_entries_challenge_id_orientation_player_id_pk",
+          "columns": [
+            "challenge_id",
+            "orientation",
+            "player_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {
+        "leaderboard_entries_best_run_id_unique": {
+          "name": "leaderboard_entries_best_run_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "best_run_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "leaderboard_entries_orientation_check": {
+          "name": "leaderboard_entries_orientation_check",
+          "value": "\"leaderboard_entries\".\"orientation\" IN ('portrait', 'landscape')"
+        },
+        "leaderboard_entries_score_check": {
+          "name": "leaderboard_entries_score_check",
+          "value": "\"leaderboard_entries\".\"score\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.players": {
+      "name": "players",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "credential_hash": {
+          "name": "credential_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "callsign": {
+          "name": "callsign",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "players_credential_hash_unique": {
+          "name": "players_credential_hash_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "credential_hash"
+          ]
+        },
+        "players_callsign_unique": {
+          "name": "players_callsign_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "callsign"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "players_callsign_length_check": {
+          "name": "players_callsign_length_check",
+          "value": "char_length(\"players\".\"callsign\") BETWEEN 3 AND 32"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.runs": {
+      "name": "runs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "challenge_id": {
+          "name": "challenge_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "player_id": {
+          "name": "player_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "map_id": {
+          "name": "map_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "request_key": {
+          "name": "request_key",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "orientation": {
+          "name": "orientation",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seed": {
+          "name": "seed",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ruleset": {
+          "name": "ruleset",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'started'"
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "submitted_at": {
+          "name": "submitted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "score": {
+          "name": "score",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "game_over_reason": {
+          "name": "game_over_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end_tick": {
+          "name": "end_tick",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rejection_code": {
+          "name": "rejection_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "submit_attempts": {
+          "name": "submit_attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "verification_ms": {
+          "name": "verification_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "command_count": {
+          "name": "command_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "payload_bytes": {
+          "name": "payload_bytes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "replay_hash": {
+          "name": "replay_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "replay": {
+          "name": "replay",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "runs_challenge_player_started": {
+          "name": "runs_challenge_player_started",
+          "columns": [
+            {
+              "expression": "challenge_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "player_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "runs_open_by_player": {
+          "name": "runs_open_by_player",
+          "columns": [
+            {
+              "expression": "player_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "expires_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "runs_replay_hash": {
+          "name": "runs_replay_hash",
+          "columns": [
+            {
+              "expression": "challenge_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "orientation",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "replay_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"runs\".\"status\" = 'verified' AND \"runs\".\"command_count\" > 0",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "runs_challenge_id_challenges_id_fk": {
+          "name": "runs_challenge_id_challenges_id_fk",
+          "tableFrom": "runs",
+          "tableTo": "challenges",
+          "columnsFrom": [
+            "challenge_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "runs_player_id_players_id_fk": {
+          "name": "runs_player_id_players_id_fk",
+          "tableFrom": "runs",
+          "tableTo": "players",
+          "columnsFrom": [
+            "player_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "runs_player_request_unique": {
+          "name": "runs_player_request_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "player_id",
+            "request_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "runs_map_id_check": {
+          "name": "runs_map_id_check",
+          "value": "\"runs\".\"map_id\" IN ('saltmarsh-gateway', 'river-bend', 'desert-parallel', 'twin-banks')"
+        },
+        "runs_orientation_check": {
+          "name": "runs_orientation_check",
+          "value": "\"runs\".\"orientation\" IN ('portrait', 'landscape')"
+        },
+        "runs_seed_check": {
+          "name": "runs_seed_check",
+          "value": "\"runs\".\"seed\" BETWEEN 0 AND 4294967295"
+        },
+        "runs_status_check": {
+          "name": "runs_status_check",
+          "value": "\"runs\".\"status\" IN ('started', 'verified', 'rejected', 'expired')"
+        },
+        "runs_score_check": {
+          "name": "runs_score_check",
+          "value": "\"runs\".\"score\" IS NULL OR \"runs\".\"score\" >= 0"
+        },
+        "runs_game_over_reason_check": {
+          "name": "runs_game_over_reason_check",
+          "value": "\"runs\".\"game_over_reason\" IS NULL OR \"runs\".\"game_over_reason\" IN ('collision', 'airspace')"
+        },
+        "runs_end_tick_check": {
+          "name": "runs_end_tick_check",
+          "value": "\"runs\".\"end_tick\" IS NULL OR \"runs\".\"end_tick\" >= 0"
+        },
+        "runs_submit_attempts_check": {
+          "name": "runs_submit_attempts_check",
+          "value": "\"runs\".\"submit_attempts\" >= 0"
+        },
+        "runs_verification_ms_check": {
+          "name": "runs_verification_ms_check",
+          "value": "\"runs\".\"verification_ms\" IS NULL OR \"runs\".\"verification_ms\" >= 0"
+        },
+        "runs_command_count_check": {
+          "name": "runs_command_count_check",
+          "value": "\"runs\".\"command_count\" >= 0"
+        },
+        "runs_payload_bytes_check": {
+          "name": "runs_payload_bytes_check",
+          "value": "\"runs\".\"payload_bytes\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

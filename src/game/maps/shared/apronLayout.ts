@@ -10,6 +10,8 @@ export interface ApronInput {
   readonly unit: number;
   readonly exits: readonly TaxiExit[];
   readonly aprons: readonly (readonly Vector2[])[];
+  readonly deckAprons?: readonly (readonly Vector2[])[];
+  readonly deckRunwayIds?: ReadonlySet<string>;
   /** Buildings and props, at their drawn positions. */
   readonly obstacles: readonly GroundObstacle[];
   /** Runways; deck lanes carry their own small clearance instead of the grass strip. */
@@ -163,25 +165,27 @@ interface Row {
  * shortest connector wins, so each group sits near its own taxiway.
  */
 export function createApronMarkings(input: ApronInput): ApronMarkings {
-  const { width, height, unit, exits, aprons, obstacles, runways, hud } = input;
+  const { width, height, unit, exits, aprons: allAprons, obstacles, runways, hud } = input;
   const perType = input.standsPerType ?? 2;
   const stands: ApronStand[] = [];
   const taxilanes: ApronTaxilane[] = [];
   const dividers: (readonly [Vector2, Vector2])[] = [];
   const hudRects: GroundObstacle[] = hud.map((zone) => ({ center: { x: zone.x + zone.width / 2, y: zone.y + zone.height / 2 }, width: zone.width, height: zone.height, angle: 0 }));
-  const angles = rowAngles(runways, aprons);
+  const angles = rowAngles(runways, allAprons);
   // Stands and taxilanes stay off the grass strip beside each runway.
   const runwayGap = runwayApronGap(unit);
 
   for (const type of TYPES) {
     const typeExits = exits.filter((exit) => exit.accepts === type);
     if (!typeExits.length) continue;
+    const deck = typeExits.some((exit) => input.deckRunwayIds?.has(exit.runwayId));
+    const aprons = deck ? input.deckAprons ?? [] : allAprons.filter((polygon) => !input.deckAprons?.includes(polygon));
     const exit = [...typeExits].sort((a, b) => Number(onApron(b.apronEnd, aprons, unit * 0.04)) - Number(onApron(a.apronEnd, aprons, unit * 0.04)))[0];
     const start = exit.apronEnd;
     const { length, width: span } = standSize(type, unit);
     const spacing = span * 1.3;
     const laneGap = length * 0.3;
-    const tail = span * 0.6;
+    const tail = span * (deck ? 0.3 : 0.6);
     const others = stands.map(standFootprint);
     // Every other taxiway, and the apron just past its mouth, stays open for its own traffic.
     const otherMouths = exits.filter((item) => item !== exit).map((item) => {
@@ -194,6 +198,12 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
     let relaxed = false;
     const pathClear = (a: Vector2, b: Vector2, skipStart: number) => {
       const along = distance(a, b);
+      if (deck) {
+        const steps = Math.max(1, Math.ceil(along / 4));
+        for (let i = 0; i <= steps; i++) {
+          if (!onApron({ x: a.x + (b.x - a.x) * i / steps, y: a.y + (b.y - a.y) * i / steps }, aprons, 0)) return false;
+        }
+      }
       if (along <= skipStart) return true;
       const from = { x: a.x + ((b.x - a.x) * skipStart) / along, y: a.y + ((b.y - a.y) * skipStart) / along };
       return !obstacles.some((rect) => segmentHitsRect(from, b, rect, unit * 0.006))
@@ -209,7 +219,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
       if (best) break;
       relaxed = pass >= 2;
       const count = pass % 2 || pass === 4 ? 1 : perType;
-      const overhang = pass === 4 ? 1.4 : 0.6;
+      const overhang = deck ? 0 : pass === 4 ? 1.4 : 0.6;
       for (const polygon of aprons) {
         const xs = polygon.map((p) => p.x);
         const ys = polygon.map((p) => p.y);
@@ -227,7 +237,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
               const [near, far] = distance(ends[0], start) <= distance(ends[1], start) ? ends : [ends[1], ends[0]];
               const connector = distance(near, start);
               if (connector > unit * (relaxed ? 0.6 : 0.4) || (best && connector >= best.score)) continue;
-              if (!ends.every((point) => onApron(point, aprons, reach))) continue;
+              if (!ends.every((point) => onApron(point, aprons, deck ? 0 : reach))) continue;
               if (!pathClear(start, near, span * 0.6) || !pathClear(near, far, 0)) continue;
               // Guide lines flow on from the taxiway: no turn along the way doubles back.
               const legs = [exit.heading, ...(connector > 1 ? [Math.atan2(near.y - start.y, near.x - start.x)] : []), angle0(near, far)];
@@ -269,6 +279,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
       stands.push(...best.stands);
       taxilanes.push(best.lane);
     } else {
+      if (deck) throw new Error(`No contained ${type} parking fits on the carrier deck`);
       // Nowhere to mark a stand: park where the taxiway meets the apron, facing along it.
       stands.push({ id: `${type}-stand-1`, label: `${LABEL[type]}1`, accepts: type, position: start, angle: exit.heading, length, width: span, entry: start, laneId: `${type}-lane` });
       taxilanes.push({ id: `${type}-lane`, path: [start] });

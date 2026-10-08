@@ -1,3 +1,5 @@
+import type { LiveryId } from '../../../progression/liveries';
+import { AIRCRAFT_COLORS } from '../../palette';
 import type { AircraftType, Vector2 } from '../../../core/types';
 
 export interface AircraftSilhouetteSpec {
@@ -23,9 +25,28 @@ export const AIRCRAFT_VISUAL_TOKENS = {
   keylineWidth: 2.6,
   selectionLight: 0xfff6df,
   selectionOuterWidth: 6,
-  selectionInnerWidth: 2.4,
-  maximumAccentCoverage: 0.35
+  selectionInnerWidth: 2.4
 } as const;
+
+/** Shared by live aircraft and Career previews; class colors never change meaning. */
+export function aircraftLiveryPaint(livery: LiveryId, type: AircraftType) {
+  const ink = AIRCRAFT_VISUAL_TOKENS;
+  const signal = livery === 'signal';
+  const midnight = livery === 'midnight';
+  const midnightRotor = midnight && type === 'rotor';
+  return {
+    body: signal ? AIRCRAFT_COLORS[type] : midnight ? 0x20354b : ink.bodyHighlight,
+    panel: signal ? ink.bodyHighlight : AIRCRAFT_COLORS[type],
+    wing: signal ? ink.bodyHighlight : AIRCRAFT_COLORS[type],
+    edge: midnight ? ink.bodyHighlight : ink.keyline,
+    cockpit: midnight ? ink.bodyHighlight : ink.keyline,
+    rotor: midnight ? ink.bodyHighlight : ink.keyline,
+    panelX: signal ? -15 : midnightRotor ? -8 : -22,
+    panelWidth: signal ? 28 : midnightRotor ? 23 : type === 'rotor' ? 37 : 41,
+    panelHeight: signal ? 3 : midnightRotor ? 6 : midnight ? 10 : 8,
+    wingWidth: signal ? 2 : midnight ? 6 : 4,
+  };
+}
 
 /**
  * Landed aircraft are muted so attention stays on the airborne traffic: a stone

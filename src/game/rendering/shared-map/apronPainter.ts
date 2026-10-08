@@ -3,6 +3,7 @@ import type { Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { ApronMarkings, ApronStand, GroundRoute, PlayableMapLayout } from "../../maps/types";
 import { apronPolygons, deckRunwayIds, onApron, runwayApronGap } from "../../maps/shared/apronLayout";
+import { taxiGuidePaths } from "../../maps/shared/groundRoutes";
 import { apronClearOfRunways } from "../../maps/shared/siteCleanup";
 import { AIRCRAFT_COLORS } from "../../palette";
 import type { WorldDetailLevel } from "../../palette";
@@ -205,11 +206,11 @@ function cutAtPoint(points: readonly Vector2[], target: Vector2, tolerance: numb
 }
 
 /**
- * Taxiways as asphalt connectors in three passes: a soft shoulder; the asphalt
+ * Taxiways as asphalt connectors in two passes: a soft shoulder, then asphalt
  * with thin yellow edge lines, a curved fillet where it leaves the runway, and a
- * hold-short bar; then the continuous yellow guide line. The first two passes go
+ * hold-short bar. Both passes go
  * under the apron, so the apron edge cuts each taxiway cleanly at any angle and
- * the two always join; the guide line runs on over the apron to its taxilane.
+ * the two always join. Guides are painted separately after the runways.
  */
 export function paintTaxiwaySurface(
   graphics: Phaser.GameObjects.Graphics,
@@ -218,10 +219,8 @@ export function paintTaxiwaySurface(
   options: {
     readonly unit: number;
     readonly runways: readonly MapRunway[];
-    readonly pass: "rim" | "surface" | "guide";
+    readonly pass: "rim" | "surface";
     readonly laneStarts?: readonly Vector2[];
-    /** Where the stand approaches leave the taxiway; the guide line hands over to them there. */
-    readonly handovers?: readonly Vector2[];
     /** A carrier deck taxi line: painted as a guide line on the deck, with no asphalt. */
     readonly deck?: boolean;
   },
@@ -237,18 +236,10 @@ export function paintTaxiwaySurface(
   // The taxiway ends where its apron taxilane starts (or runs its whole length, e.g. to a helipad).
   const asphalt = options.laneStarts?.map((start) => cutAtPoint(ordered, start, width / 2)).find(Boolean) ?? ordered;
 
-  if (options.deck && options.pass !== "guide") return;
+  if (options.deck) return;
   if (options.pass === "rim") {
     graphics.lineStyle(width + 4, mixColor(apronTones(palette).fill, PAVING.rim, 0.45), 1);
     strokePolyline(graphics, asphalt);
-    return;
-  }
-  if (options.pass === "guide") {
-    // Only runway taxiways carry a centre line; service links (to a helipad) are plain paving.
-    if (!runway) return;
-    const guide = guideStyle(palette, options.unit);
-    graphics.lineStyle(guide.width, guide.color, 1);
-    strokePolyline(graphics, options.handovers?.map((point) => cutAtPoint(asphalt, point, 1.5)).find(Boolean) ?? asphalt);
     return;
   }
 
@@ -420,10 +411,9 @@ export function paintApronMarkings(
 }
 
 /**
- * The whole airfield ground in one pass order: taxiway shoulders and asphalt,
- * the apron concrete over their ends (so its edge cuts each taxiway cleanly),
- * the taxiway guide lines running on to the taxilanes, then the typed stand
- * markings. Runways are painted after.
+ * Taxiway shoulders and asphalt, then apron concrete over their ends
+ * so its edge cuts each taxiway cleanly.
+ * Runways and shared movement guides are painted after these surfaces.
  */
 export function paintAirfieldGround(
   graphics: Phaser.GameObjects.Graphics,
@@ -436,12 +426,30 @@ export function paintAirfieldGround(
   const decks = deckRunwayIds(layout);
   const onDeck = (taxiway: MapTaxiway) => taxiway.connects.some((id) => decks.has(id));
   const laneStarts = (layout.apronMarkings?.taxilanes ?? []).map((lane) => lane.path[0]);
-  const approaches = standApproaches(layout.groundRoutes);
-  // An approach's second point is where its curve leaves the taxiway's straight stretch.
-  const handovers = approaches.map((approach) => approach.points[1]);
-  const taxiwayOptions = { unit, runways: layout.runways, laneStarts, handovers };
+  const taxiwayOptions = { unit, runways: layout.runways, laneStarts };
   for (const pass of ["rim", "surface"] as const) for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass, deck: onDeck(taxiway) });
   paintApronArea(graphics, aprons, layout.apronMarkings, palette, { unit, detailLevel, jointAngle: layout.runways[0]?.angle, runways: layout.runways });
-  for (const taxiway of layout.taxiways) paintTaxiwaySurface(graphics, taxiway, palette, { ...taxiwayOptions, pass: "guide", deck: onDeck(taxiway) });
-  paintApronMarkings(graphics, layout.apronMarkings, palette, { unit, detailLevel, approaches });
+}
+
+/** Paint after runway surfaces so the exit curves remain visible, below aircraft. */
+export function paintAirfieldGuides(
+  graphics: Phaser.GameObjects.Graphics,
+  layout: PlayableMapLayout & { readonly runways: readonly MapRunway[]; readonly taxiways: readonly MapTaxiway[] },
+  palette: CivilMapPalette,
+  detailLevel: WorldDetailLevel,
+): void {
+  const unit = Math.min(layout.width, layout.height);
+  const guide = guideStyle(palette, unit);
+  graphics.lineStyle(guide.width, guide.color, 1);
+  const seen = new Set<string>();
+  for (const path of taxiGuidePaths(layout)) {
+    for (let i = 1; i < path.length; i += 1) {
+      const [a, b] = [path[i - 1], path[i]];
+      const key = [a, b].map((p) => `${p.x.toFixed(6)},${p.y.toFixed(6)}`).sort().join(':');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      graphics.lineBetween(a.x, a.y, b.x, b.y);
+    }
+  }
+  paintApronMarkings(graphics, layout.apronMarkings, palette, { unit, detailLevel, approaches: standApproaches(layout.groundRoutes) });
 }

@@ -4,6 +4,7 @@ import {
   clearOfAirfield,
   composeStaticMap,
   paintAirfieldGround,
+  paintAirfieldGuides,
   paintBuilding,
   paintCarrierDeck,
   paintCarrierIsland,
@@ -73,6 +74,7 @@ export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastL
       paintCarrierDeck(graphics, layout.carrier, unit);
       paintAirfieldGround(graphics, layout, CARRIER_COAST_PALETTE, detailLevel);
       paintRunway(graphics, layout.runways[0], CARRIER_COAST_PALETTE);
+      paintAirfieldGuides(graphics, layout, CARRIER_COAST_PALETTE, detailLevel);
       for (const pad of layout.helipads) paintHelipad(graphics, pad, CARRIER_COAST_PALETTE);
     },
     detail: ({ graphics, unit }) => {

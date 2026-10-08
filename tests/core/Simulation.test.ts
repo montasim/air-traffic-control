@@ -38,6 +38,17 @@ const advanceFrames = (simulation: Simulation, count: number): void => {
 };
 
 describe('Simulation', () => {
+  it('counts completed fixed steps and stops counting while paused', () => {
+    const simulation = new Simulation(LANDING_ZONES);
+    simulation.start(42);
+    expect(simulation.snapshot().tick).toBe(0);
+    advanceFrames(simulation, 2);
+    expect(simulation.snapshot().tick).toBe(2);
+    simulation.pause();
+    advanceFrames(simulation, 10);
+    expect(simulation.snapshot().tick).toBe(2);
+  });
+
   it('is deterministic for a seed', () => {
     const first = new Simulation(LANDING_ZONES);
     const second = new Simulation(LANDING_ZONES);

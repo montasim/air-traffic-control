@@ -302,3 +302,26 @@ export function createGroundRoutes(
   }
   return routes;
 }
+
+/** The taxi guide starts at the runway exit curve, omitting rollout and back-taxi. */
+export function taxiGuidePaths(layout: PlayableMapLayout & GroundNetwork): Vector2[][] {
+  const guides: Vector2[][] = [];
+  for (const zone of layout.landingZones) {
+    const route = layout.groundRoutes?.[zone.id];
+    const runway = layout.runways.find((item) => item.id === zone.approach?.runwayId);
+    if (!route || !runway) continue;
+    const axis = { x: Math.cos(runway.angle), y: Math.sin(runway.angle) };
+    const firstOffAxis = route.points.findIndex((point) => distanceToLine(point, runway.center, axis) > 0.01);
+    if (firstOffAxis < 1) continue;
+    const points = route.points.slice(firstOffAxis - 1);
+    // GroundTraffic replaces the last corner with this same stand approach.
+    const approach = route.stands[0]?.approach;
+    const before = route.points.at(-2);
+    if (approach && before && distance(approach[0], before) < 0.5) {
+      guides.push([...points.slice(0, -1), approach[1]]);
+    } else {
+      guides.push(points);
+    }
+  }
+  return guides;
+}

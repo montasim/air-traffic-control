@@ -69,8 +69,9 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   /** A point given as shares of length (x) and beam (y). */
   const at = (x: number, y: number) => world(x * length, y * beam);
 
+  // The aft starboard parking shelf fits full stand footprints even in compact layouts.
   const deck = [
-    [-0.5, -0.34], [-0.5, 0.4], [0.1, 0.5], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
+    [-0.5, -0.34], [-0.5, 0.6], [0.1, 0.7], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
     [0.2, -0.3], [-0.05, -0.5], [-0.3, -0.5], [-0.42, -0.4],
   ].map(([x, y]) => at(x, y));
   const hull = [

@@ -3,6 +3,7 @@ import {
   composeStaticMap,
   clearOfAirfield,
   paintAirfieldGround,
+  paintAirfieldGuides,
   paintBuilding,
   paintHelipad,
   paintRunway,
@@ -185,6 +186,7 @@ export function renderDesertParallelMap(
     for (const runway of layout.runways) {
       paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.strata);
     }
+    paintAirfieldGuides(graphics, layout, CIVIL_PALETTE, detailLevel);
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
     paintFacilities(graphics, layout, unit);
     },

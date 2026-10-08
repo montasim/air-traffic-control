@@ -78,12 +78,16 @@ function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored
   const helipads: GroundObstacle[] = layout.landingZones
     .filter((zone) => zone.accepts === 'rotor')
     .map((zone) => ({ center: zone.position, width: zone.captureRadius * 3, height: zone.captureRadius * 3, angle: 0 }));
+  const landAprons = apronPolygons(layout, 'land');
+  const deckAprons = apronPolygons(layout, 'deck');
   const apronMarkings = createApronMarkings({
     width: input.width,
     height: input.height,
     unit,
     exits: taxiwayExits(layout, obstacles, unit),
-    aprons: apronPolygons(layout),
+    aprons: [...landAprons, ...deckAprons],
+    deckAprons,
+    deckRunwayIds: decks,
     obstacles: [...obstacles, ...helipads],
     runways,
     hud: layout.hudExclusionZones,

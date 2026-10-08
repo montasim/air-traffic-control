@@ -1,3 +1,4 @@
+import { isLiveryUnlocked, type LiveryId } from '../progression/liveries';
 import { isDifficulty, type DifficultyId } from '../core/difficulty';
 import { evaluateAchievements, type AchievementId, type ShiftEvidence } from '../progression/achievements';
 import {
@@ -46,6 +47,7 @@ export interface CompletedShiftResult {
 export interface GameStore {
   load(): Promise<GameSaveV3>;
   recordShift(shift: CompletedShift): Promise<CompletedShiftResult>;
+  selectLivery(livery: LiveryId): Promise<{ save: GameSaveV3; persisted: boolean }>;
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3>;
   setTwoEndLanding(enabled: boolean): Promise<GameSaveV3>;
   selectMap(mapId: MapId): Promise<GameSaveV3>;
@@ -159,6 +161,13 @@ class SerialGameStore implements GameStore {
       persisted,
       ...result
     }));
+  }
+
+  selectLivery(livery: LiveryId): Promise<{ save: GameSaveV3; persisted: boolean }> {
+    return this.enqueue(async current => {
+      if (!isLiveryUnlocked(livery, current.career.earnedRankId)) throw new RangeError('Livery is invalid or locked');
+      return { save: { ...current, settings: { ...current.settings, livery } }, result: undefined };
+    });
   }
 
   setTwoEndLanding(enabled: boolean): Promise<GameSaveV3> {

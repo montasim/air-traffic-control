@@ -5,6 +5,7 @@ import {
   composeStaticMap,
   MAP_DETAIL_BUDGETS,
   paintAirfieldGround,
+  paintAirfieldGuides,
   paintBuilding,
   paintHelipad,
   paintRockRidge,
@@ -65,6 +66,7 @@ export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossin
     operational: ({ graphics }) => {
       paintAirfieldGround(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
       for (const runway of layout.runways) paintRunway(graphics, runway, FROST_CROSSING_PALETTE);
+      paintAirfieldGuides(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
       paintHelipad(graphics, layout.helipad, FROST_CROSSING_PALETTE);
     },
     detail: ({ graphics }) => {

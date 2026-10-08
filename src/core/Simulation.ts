@@ -27,7 +27,7 @@ import {
   type Vector2
 } from './types';
 
-const FIXED_STEP = 1 / 60;
+export const SIMULATION_TICK_SECONDS = 1 / 60;
 
 // The shared heading drives both the visible airframe and its collision polygon.
 function turnToward(current: number, target: number, delta: number): number {
@@ -81,6 +81,7 @@ export class Simulation {
   private activeWarnings = new Set<string>();
 
   private phase: SimulationSnapshot['phase'] = 'idle';
+  private tick = 0;
   private elapsed = 0;
   private score = 0;
   private aircraft: Aircraft[] = [];
@@ -105,6 +106,7 @@ export class Simulation {
     this.events = [];
     this.activeWarnings.clear();
     this.phase = 'running';
+    this.tick = 0;
     this.elapsed = 0;
     this.score = 0;
     this.aircraft = [];
@@ -128,9 +130,10 @@ export class Simulation {
     if (this.phase !== 'running') return;
 
     this.accumulator += Math.min(deltaSeconds, MAX_FRAME_DELTA);
-    while (this.accumulator >= FIXED_STEP && this.phase === 'running') {
-      this.step(FIXED_STEP);
-      this.accumulator -= FIXED_STEP;
+    while (this.accumulator >= SIMULATION_TICK_SECONDS && this.phase === 'running') {
+      this.step(SIMULATION_TICK_SECONDS);
+      this.tick += 1;
+      this.accumulator -= SIMULATION_TICK_SECONDS;
     }
   }
 
@@ -183,6 +186,7 @@ export class Simulation {
   snapshot(): SimulationSnapshot {
     return {
       phase: this.phase,
+      tick: this.tick,
       elapsed: this.elapsed,
       score: this.score,
       aircraft: this.aircraft

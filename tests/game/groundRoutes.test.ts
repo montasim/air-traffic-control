@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { GroundTraffic } from '../../src/game/ground/groundTraffic';
+import { AIRCRAFT_OUTLINES } from '../../src/core/aircraftCollision';
 import type { LandingZone, Vector2 } from '../../src/core/types';
 import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
-import { createGroundRoutes, filletCorners, groundObstacles, PIVOT_TURN, segmentEntry, type GroundNetwork } from '../../src/game/maps/shared/groundRoutes';
-import { DECK_LANE_CLEARANCE, deckRunwayIds, rectsOverlap, runwayApronGap } from '../../src/game/maps/shared/apronLayout';
+import { createGroundRoutes, taxiGuidePaths, filletCorners, groundObstacles, PIVOT_TURN, segmentEntry, type GroundNetwork } from '../../src/game/maps/shared/groundRoutes';
+import { DECK_LANE_CLEARANCE, apronPolygons, deckRunwayIds, onApron, rectCorners, standFootprint, rectsOverlap, runwayApronGap } from '../../src/game/maps/shared/apronLayout';
 
 const SHAPES = [[900, 1600], [1600, 900], [900, 900], [1948, 900], [1600, 1520], [1280, 720], [800, 1000]] as const;
 const pathLength = (points: readonly Vector2[]) => points.slice(1).reduce((sum, point, index) => sum + Math.hypot(point.x - points[index].x, point.y - points[index].y), 0);
@@ -105,6 +107,51 @@ describe('ground routes on every playable map', () => {
   }
 });
 
+describe('carrier parking containment', () => {
+  for (const map of MAP_DEFINITIONS.filter((map) => ['carrier-coast', 'blue-water'].includes(map.id))) {
+    for (const [width, height] of SHAPES) for (const twoEndLanding of [false, true]) {
+      it(`${map.id} ${width}x${height} both ends=${twoEndLanding}: complete stands stay on their surface`, () => {
+        const layout = map.prepare({ width, height, detailLevel: 'desktop', twoEndLanding }).layout;
+        const decks = apronPolygons(layout, 'deck');
+        for (const stand of layout.apronMarkings!.stands) {
+          if (stand.accepts === 'liner') {
+            expect(onApron(stand.position, decks, 0)).toBe(false);
+            continue;
+          }
+          for (const corner of rectCorners(standFootprint(stand))) {
+            expect(onApron(corner, decks, 0), `${stand.id} corner outside deck`).toBe(true);
+          }
+        }
+        for (const zone of layout.landingZones.filter((zone) => zone.accepts === 'commuter')) {
+          const route = layout.groundRoutes![zone.id];
+          for (const stand of route.stands) {
+            const traffic = new GroundTraffic({ [zone.id]: { ...route, stands: [stand] } }, { unit: Math.min(width, height), gap: 50 });
+            traffic.add({ id: 1, type: 'commuter', position: zone.position, heading: zone.angle, speed: 90 }, zone.id);
+            const outline = AIRCRAFT_OUTLINES.commuter;
+            const length = Math.max(...outline.map(([x]) => x)) - Math.min(...outline.map(([x]) => x));
+            const scale = Math.min(0.5, stand.length! * 0.92 / length);
+            let outside: unknown;
+            for (let frame = 0; frame < 3600; frame++) {
+              traffic.update(1 / 60);
+              const plane = traffic.aircraft.find((plane) => plane.id === 1)!;
+              if (plane.phase === 'taxiing' || plane.phase === 'parked') {
+                const c = Math.cos(plane.heading), s = Math.sin(plane.heading);
+                for (const [x, y] of outline) {
+                  const point = { x: plane.position.x + scale * (x * c - y * s), y: plane.position.y + scale * (x * s + y * c) };
+                  if (!onApron(point, decks, 0)) outside ??= { stand: stand.id, phase: plane.phase, point };
+                }
+              }
+              if (plane.phase === 'parked') break;
+            }
+            expect(outside, 'taxiing and parked airframes stay on deck').toBeUndefined();
+            expect(traffic.aircraft.find((plane) => plane.id === 1)?.phase).toBe('parked');
+          }
+        }
+      });
+    }
+  }
+});
+
 const zone = (id: string, x: number, angle: number): LandingZone => ({ id, label: id, accepts: 'liner', position: { x, y: 500 }, angle, captureRadius: 40, color: 0, approach: { runwayId: 'strip', end: angle === 0 ? 0 : 1 } });
 const network = (junctionX: number): GroundNetwork => ({
   runways: [{ id: 'strip', center: { x: 500, y: 500 }, length: 600, width: 30, angle: 0 }],
@@ -113,6 +160,21 @@ const network = (junctionX: number): GroundNetwork => ({
 });
 
 describe('ground route geometry', () => {
+  it('paints the actual rounded exit from either landing direction, without the rollout', () => {
+    const net = network(560);
+    const zones = [zone('west', 300, 0), zone('east', 700, Math.PI)];
+    const groundRoutes = createGroundRoutes(zones, net, 900);
+    const guides = taxiGuidePaths({ ...net, variant: 'square', width: 900, height: 900, landingZones: zones, guidanceSurfaces: [], hudExclusionZones: [], groundRoutes });
+    expect(guides).toHaveLength(2);
+    for (const [index, guide] of guides.entries()) {
+      expect(guide[0].y).toBe(500);
+      expect(Math.abs(guide[0].x - 560)).toBeCloseTo(45);
+      expect(guide.some((p) => p.y > 500 && p.y < 545 && p.x !== 560)).toBe(true);
+      expect(guide.at(-1)).toEqual({ x: 560, y: 650 });
+      for (const point of guide) expect(groundRoutes[zones[index].id].points).toContainEqual(point);
+      expect(guide).not.toContainEqual(zones[index].position);
+    }
+  });
   it('rolls out in the landing direction and leaves by the first exit far enough ahead', () => {
     const routes = createGroundRoutes([zone('west', 300, 0)], network(560), 900);
     const route = routes.west;

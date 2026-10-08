@@ -28,6 +28,7 @@ Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linu
 - Choose three difficulty levels and optionally allow landings at either runway end.
 - Learn in a practice flight with no timer or effect on your career.
 - Unlock airfields through seven ranks and earn nine achievements.
+- Enter an optional weekly Tower Challenge with fixed rules and verified global standings.
 - Keep progress on your device and play offline once the browser app is cached.
 
 ## How to play
@@ -68,9 +69,21 @@ Difficulty changes aircraft arrival frequency, speed, and traffic limits. Best s
 
 Seven career ranks and nine achievements reward safe landings, mixed aircraft handling, exploring airfields, and completing demanding shifts. Progress is recorded when a shift finishes. Restarting or abandoning an unfinished shift discards that shift's progress; practice flights do not affect records or achievements.
 
+### Aircraft liveries
+
+Choose a fleet livery in **Your career → Aircraft liveries**. Classic is available from the start; Signal unlocks at Tower Controller, and Midnight at Senior Controller. Unlocks never equip automatically. Your choice is saved on this device and applies on your next flight. Liveries preserve aircraft shapes, destination colors, speed, and collision behavior.
+
+### Tower Challenge
+
+Tower Challenge is an optional online competition. Each weekly assignment fixes the airfield, seed, Medium difficulty, one-end landing rule, simulation ruleset, and a canonical portrait or landscape world. The two orientations have separate standings. The server reproduces submitted route commands and accepts only the verified score; only a player's best verified run appears.
+
+Ranked flights never update local career progress, personal records, achievements, settings, or livery. Ordinary flights remain local-first and offline-capable. A random device credential and generated callsign provide continuity without an account; clearing app/site storage starts a new identity. See the [privacy policy](https://airtrafficcontrol.netlify.app/privacy).
+
+After three verified runs, a player may answer one bounded, optional fairness survey. No free-text response or third-party analytics service is used.
+
 ## Run locally
 
-Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`; no database or separate service is needed.
+Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`. Ordinary local play needs no database; the optional Tower Challenge API uses Drizzle ORM with Neon PostgreSQL.
 
 ```bash
 git clone https://github.com/montasim/air-traffic-control.git
@@ -79,14 +92,20 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight. No API keys, accounts, backend, or environment variables are required.
+Open the local URL printed by Netlify Dev, normally [http://localhost:8888](http://localhost:8888), choose an airfield, and start a flight. The command injects Tower Challenge's development secrets from Infisical. Use `npm run dev:vite` for frontend-only offline development without Infisical.
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the development server |
+| `npm run dev` | Start the app and local competition Functions through Infisical and Netlify Dev |
+| `npm run dev:vite` | Start only the offline frontend on port 3999 |
 | `npm test` | Run the Vitest suite once |
 | `npm run test:watch` | Watch tests during development |
 | `npm run typecheck` | Check TypeScript |
+| `npm run typecheck:server` | Check Netlify competition functions |
+| `npm run db:generate` | Generate a committed Drizzle migration from the schema |
+| `npm run db:migrate` | Apply committed migrations using Infisical's `dev` secrets |
+| `npm run db:migrate:prod` | Apply committed migrations using Infisical's `prod` secrets |
+| `npm run db:check` | Check the Drizzle migration history for consistency |
 | `npm run build` | Type-check and build production assets into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
@@ -129,7 +148,7 @@ for signing, icons, verification, and Play Console setup.
 
 ## Saves, sound, and offline use
 
-Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
+Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage. Tower Challenge uses a separate anonymous device credential and online score service as described in the privacy policy.
 
 Sound and effects volume are adjustable in Settings. Browsers may require a player interaction before audio starts.
 
@@ -152,9 +171,9 @@ npm run build
 npm run preview
 ```
 
-Publish the **contents of `dist/`** to a static HTTPS host. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`; it requires no server functions or history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
+Deploy the repository to Netlify. The app uses hash routes such as `/#help`, `/#career`, `/#challenge`, and `/#settings`; it needs no history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory. A static-only deployment still supports ordinary play, but not Tower Challenge.
 
-[netlify.toml](netlify.toml) declares the build command, Node version, and publish directory. For a manual upload, build locally first and upload the fresh `dist/` contents. Site authentication and linking are deployment-operator responsibilities; local Netlify state is ignored by Git.
+[netlify.toml](netlify.toml) declares the build command, Node version, function bundler, and publish directory. Tower Challenge connects directly to Neon PostgreSQL through Drizzle. Infisical is the secret source: store the pooled Neon connection string as `DATABASE_URL` and the credential pepper as `COMPETITION_CREDENTIAL_PEPPER` in the project root (`/`) for the `dev` and `prod` environments. Link this checkout once with `infisical init`; database commands inject secrets into their child process and do not use an `.env` file. Apply [the committed Drizzle migrations](drizzle/) with `npm run db:migrate` or `npm run db:migrate:prod` as a controlled deployment step. Configure an Infisical-to-Netlify Secret Sync for production Functions; optionally sync `COMPETITION_ALLOWED_ORIGINS`. Do not prefix server secrets with `VITE_`. Tower Challenge can be disabled at build time with `VITE_CHALLENGE_ENABLED=false`, or pointed at another compatible API with `VITE_COMPETITION_API_URL`.
 
 The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not itself deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to either store.
 
@@ -170,6 +189,9 @@ For browser regression checks, start `npm run dev -- --port 4287` in one termina
 | `src/storage/` | IndexedDB saves and migrations |
 | `src/audio/` | Game audio |
 | `src/ui/` | DOM menus and utility pages |
+| `src/competition/` | Ranked rules, replay verification, API client, and anonymous persistence |
+| `netlify/` | Competition API functions and Drizzle schema/client |
+| `drizzle/` | Generated, committed PostgreSQL migrations |
 | `src/platform/` | Android-only native integration (back button, outbound links) |
 | `android/` | Capacitor Android project |
 | `tests/` | Simulation, progression, storage, audio, and UI regression tests |
@@ -186,6 +208,7 @@ Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies th
 - [Android release](docs/android-release.md): Capacitor build, signing, and Google Play publishing.
 - [End-to-end QA report](docs/end-to-end-qa-report.md): recorded browser checks and remaining coverage gaps.
 - [Mobile verification](docs/mobile-verification.md): device-layout verification notes.
+- [Competition operations](docs/competition-operations.md): rollout, moderation, retention, metrics, and emergency SQL.
 - [Visual design](DESIGN.md): interface conventions.
 
 ## Contributing and support
