@@ -75,8 +75,6 @@ export type SimulationEvent =
 
 export interface SimulationSnapshot {
   phase: GamePhase;
-  /** Number of completed fixed simulation steps. Wall-clock and render time never count. */
-  tick: number;
   elapsed: number;
   score: number;
   aircraft: readonly Aircraft[];

@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Players looking for a focused, touch-friendly air-traffic routing game that works on desktop, tablet, and mobile without requiring an account. Ordinary play works without a connection; an optional verified challenge uses the network.
+Players looking for a focused, touch-friendly air-traffic routing game that works on desktop, tablet, and mobile without requiring an account. Ordinary play works without a connection.
 
 ## Product Purpose
 
@@ -20,7 +20,7 @@ The game combines one-stroke route drawing with an illustrated aviation arcade w
 
 ## Operating Context
 
-The game is played full-screen with mouse, touch, or pen. Sessions are short, aircraft remain visible over the scenery, and ordinary play must launch and reload as an installed PWA while offline. Career state stays local to the device: selected map, audio settings, total safe landings, shifts, earned clearance, and per-map best scores are persisted without an account. Tower Challenge is an explicit online mode with a separate anonymous identity and no effect on career state.
+The game is played full-screen with mouse, touch, or pen. Sessions are short, aircraft remain visible over the scenery, and ordinary play must launch and reload as an installed PWA while offline. Career state stays local to the device: selected map, audio settings, total safe landings, shifts, earned clearance, and per-map best scores are persisted without an account.
 
 ## Capabilities and Constraints
 
@@ -33,8 +33,6 @@ The game is played full-screen with mouse, touch, or pen. Sessions are short, ai
 - Sound on/off and effects volume are player-controlled, synchronized across settings and pause controls, and saved locally.
 - Gameplay, scoring, landing capture, route snapping, pacing, and aircraft selection behavior remain stable unless explicitly requested.
 - No terrain, fonts, textures, audio, or gameplay assets may require a network request at runtime.
-- Tower Challenge fixes its map, seed, difficulty, runway rule, collision scale, world size, and ruleset; portrait and landscape use separate verified standings.
-- Ranked submissions contain route commands, are replayed authoritatively on the server, and never update local career progress or records.
 - Static scenery must not add per-frame work or obscure aircraft, routes, warnings, or landing guidance.
 - DOM icons use Hugeicons only; in-world operational symbols may be drawn as map geometry.
 

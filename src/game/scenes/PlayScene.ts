@@ -1,6 +1,4 @@
 import type { LiveryId } from '../../progression/liveries';
-import type { FrozenChallengeRun } from '../../competition/rules';
-import type { RouteCommand } from '../../competition/verifyRun';
 import { applyDifficulty, type DifficultyId } from '../../core/difficulty';
 import { ShiftTracker } from '../../progression/achievements';
 import {
@@ -82,7 +80,6 @@ export class PlayScene extends Phaser.Scene {
   private routeCoachSelectedEmitted = false;
   private routeCoachLockedEmitted = false;
   private routeCoachSetEmitted = false;
-  private routeCommands: RouteCommand[] = [];
 
   private readonly handleMotionPreference = (
     event: MediaQueryListEvent,
@@ -98,7 +95,6 @@ export class PlayScene extends Phaser.Scene {
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION,
     private readonly twoEndLanding = false,
     private readonly livery: LiveryId = 'classic',
-    private readonly rankedRun?: FrozenChallengeRun,
   ) {
     super("play");
   }
@@ -106,7 +102,7 @@ export class PlayScene extends Phaser.Scene {
   preload(): void {
     const width = this.scale.gameSize.width;
     const height = this.scale.gameSize.height;
-    const detailLevel = this.rankedRun ? 'desktop' : profileForViewport().detailLevel;
+    const detailLevel = profileForViewport().detailLevel;
     const preview = this.mapDefinition.prepare({ width, height, detailLevel, twoEndLanding: this.twoEndLanding });
     queuePresentationAssets(this, {
       mapId: this.mapDefinition.id,
@@ -117,7 +113,7 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     const width = this.scale.gameSize.width;
     const height = this.scale.gameSize.height;
-    const detailLevel = this.rankedRun ? 'desktop' : profileForViewport().detailLevel;
+    const detailLevel = profileForViewport().detailLevel;
     this.preparedMap = this.mapDefinition.prepare({
       width,
       height,
@@ -130,7 +126,7 @@ export class PlayScene extends Phaser.Scene {
       width: canvas.clientWidth || canvas.width,
       height: canvas.clientHeight || canvas.height,
     };
-    this.collisionScales = this.rankedRun?.collisionScales ?? {
+    this.collisionScales = {
       liner: aircraftPresentationScale("liner", rendered, { width, height }),
       commuter: aircraftPresentationScale("commuter", rendered, {
         width,
@@ -240,13 +236,12 @@ export class PlayScene extends Phaser.Scene {
   startRun(difficulty: DifficultyId = 'medium', runId = ''): void {
     this.runId = runId;
     this.shiftTracker = new ShiftTracker();
-    this.routeCommands = [];
     this.simulation = new Simulation(this.layout.landingZones, { width: this.scale.gameSize.width, height: this.scale.gameSize.height }, applyDifficulty(trafficProfileById(this.mapDefinition.trafficProfileId), difficulty), this.collisionScales);
     this.failureMarker?.destroy();
     this.failureMarker = undefined;
     this.clearAircraftViews();
     this.seedParkedAircraft();
-    this.simulation.start(this.rankedRun?.seed ?? Date.now());
+    this.simulation.start(Date.now());
     this.lastHudSecond = -1;
     this.finishDrawing();
     this.routeGuidance.reset();
@@ -269,10 +264,6 @@ export class PlayScene extends Phaser.Scene {
   /** Detached diagnostics for development browser regression checks. */
   getShiftSnapshot() {
     return structuredClone({ twoEndLanding: this.twoEndLanding, runId: this.runId, simulation: this.simulation.snapshot(), landingZones: this.layout.landingZones, evidence: this.shiftTracker.evidence });
-  }
-
-  getRouteCommands(): readonly RouteCommand[] {
-    return structuredClone(this.routeCommands);
   }
 
   getPhase(): SimulationSnapshot["phase"] {
@@ -369,28 +360,12 @@ export class PlayScene extends Phaser.Scene {
       targeting.status === "locked" || targeting.status === "invalid"
         ? targeting.zoneId
         : undefined;
-    const rankedWorld = this.rankedRun?.world;
-    const routePoints = rankedWorld
-      ? this.previewRoutePoints().map((point) => ({
-          x: Math.round(clamp(point.x, 0, rankedWorld.width) * 100) / 100,
-          y: Math.round(clamp(point.y, 0, rankedWorld.height) * 100) / 100,
-        }))
-      : this.previewRoutePoints();
+    const routePoints = this.previewRoutePoints();
     const result = this.simulation.assignRoute(
       aircraft.id,
       routePoints,
       destinationZoneId,
     );
-
-    if (result.accepted && this.rankedRun) {
-      this.routeCommands.push({
-        tick: this.simulation.snapshot().tick,
-        sequence: this.routeCommands.length,
-        aircraftId: result.aircraftId,
-        destinationZoneId: result.destinationZoneId,
-        points: routePoints.slice(1).map((point) => ({ ...point })),
-      });
-    }
 
     this.aircraftViews.get(aircraft.id)?.setSelected(false);
     this.finishDrawing();
@@ -809,7 +784,6 @@ export class PlayScene extends Phaser.Scene {
             score: snapshot.score,
             runId,
             evidence,
-            commands: this.rankedRun ? this.getRouteCommands() : undefined,
           }),
         );
         this.game.events.emit("run-state", "over");

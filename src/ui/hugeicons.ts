@@ -40,7 +40,6 @@ export const APP_ICONS = {
   settings: Settings01Icon,
   help: HelpCircleIcon,
   career: Award01Icon,
-  challenge: Medal01Icon,
   back: ArrowLeft01Icon,
   expand: ArrowDown01Icon,
   volume: VolumeHighIcon,

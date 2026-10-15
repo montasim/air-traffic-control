@@ -17,8 +17,6 @@ import {
   isFieldPlayable,
   shouldPauseForResize,
   profileForViewport,
-  PORTRAIT_PROFILE,
-  LANDSCAPE_PROFILE,
   type ViewportProfile,
 } from "./game/viewport";
 import {
@@ -38,19 +36,6 @@ import { mountHugeIcon } from "./ui/hugeicons";
 import { mountPractice } from "./ui/practice";
 import { createMapPreviews } from "./ui/mapPreviews";
 import { renderAchievementBadges, renderPromotion, resetCareerResult } from "./ui/shiftCelebration";
-import {
-  COMPETITION_ENABLED,
-  CompetitionError,
-  competitionErrorCopy,
-  getChallenge,
-  startChallenge,
-  submitChallenge,
-  submitChallengeFeedback,
-} from './competition';
-import { createChallengeRun, type FrozenChallengeRun } from './competition/rules';
-import type { ChallengeResponse, FairnessAnswer, FairnessFactor, StartChallengeResponse } from './competition/contracts';
-import type { RouteCommand } from './competition/verifyRun';
-import { renderChallenge, type ChallengeViewState } from './ui/challenge';
 
 const reviewParams = new URLSearchParams(window.location.search);
 const review =
@@ -90,7 +75,6 @@ const elements = {
   gameCanvas: document.querySelector<HTMLElement>("#game")!,
   hud: document.querySelector<HTMLElement>(".hud")!,
   scoreTile: document.querySelector<HTMLElement>(".hud-score")!,
-  rankedMarker: document.querySelector<HTMLElement>('#ranked-marker')!,
   score: document.querySelector<HTMLElement>("#score")!,
   best: document.querySelector<HTMLElement>("#best")!,
   routeCoachmark: document.querySelector<HTMLElement>("#route-coachmark")!,
@@ -143,7 +127,7 @@ mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
 mountHugeIcon(elements.restartIcon, "restart", 18);
 mountHugeIcon(elements.chooseMapIcon, "home", 18);
-for (const name of ["home", "settings", "help", "career", "challenge", "back", "expand", "play", "restart", "close"] as const) {
+for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close"] as const) {
   document.querySelectorAll<HTMLElement>(`[data-ui-icon="${name}"]`).forEach(target => {
     mountHugeIcon(target, name, 18);
   });
@@ -229,35 +213,22 @@ try { routeCoachDismissed = sessionStorage.getItem("vector-approach:route-coach-
 let routeCoachTimer = 0;
 let scorePulseTimer = 0;
 
-interface RankedSession {
-  readonly runId: string;
-  readonly expiresAt: string;
-  readonly rules: FrozenChallengeRun;
-  readonly challenge: StartChallengeResponse['challenge'];
-  commands?: readonly RouteCommand[];
-}
-
-let rankedSession: RankedSession | undefined;
-let challengeResponse: ChallengeResponse | undefined;
-let challengeViewState: ChallengeViewState = { status: 'loading' };
-
 elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
 function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
   activeLivery = currentSave.settings.livery;
-  activeTwoEndLanding = rankedSession ? false : currentSave.settings.twoEndLanding;
+  activeTwoEndLanding = currentSave.settings.twoEndLanding;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
-  const world = rankedSession?.rules.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight);
   const nextGame = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
-    ...world,
+    ...worldSizeForViewport(window.innerWidth, window.innerHeight),
     backgroundColor: "#263f3c",
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, rankedSession?.rules)],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery)],
   });
 
   nextGame.events.on("scene-ready", () => {
@@ -534,23 +505,20 @@ function renderShell(): void {
 
 function beginRun(): void {
   if (savingLandingMode) return;
-  if (!rankedSession && (activeLivery !== currentSave.settings.livery || activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight)) {
+  if (activeLivery !== currentSave.settings.livery || activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
     rebuildForTarget(profileForViewport(), activeMapId, true);
     return;
   }
   const scene = playScene();
   if (!scene) return;
   window.clearTimeout(promotionAudioTimer);
-  activeDifficulty = rankedSession?.rules.difficulty ?? currentSave.selectedDifficulty;
+  activeDifficulty = currentSave.selectedDifficulty;
   resetResizeState();
-  activeRunId = rankedSession?.runId ?? crypto.randomUUID();
+  activeRunId = crypto.randomUUID();
   finishingRunId = '';
   scene.startRun(activeDifficulty, activeRunId);
   updateBestDisplays();
-  elements.rankedMarker.hidden = !rankedSession;
-  document.querySelector('#hud-difficulty')!.textContent = rankedSession
-    ? `${rankedSession.rules.orientation === 'portrait' ? 'Portrait' : 'Landscape'} division`
-    : `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
+  document.querySelector('#hud-difficulty')!.textContent = `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   audio.handle({ type: "ui-confirm", action: "play" });
   elements.pauseButton.disabled = false;
   showOnly();
@@ -595,10 +563,6 @@ async function selectMap(mapId: MapId): Promise<void> {
 }
 
 async function startRun(): Promise<void> {
-  if (rankedSession) {
-    await startRankedAttempt(rankedSession.rules.orientation);
-    return;
-  }
   currentSave = await gameStore.load();
   if (!isMapUnlocked(activeMapId, currentSave.career.earnedRankId)) return;
   await audio.unlock();
@@ -616,9 +580,7 @@ function pauseRun(): void {
   scene.pauseRun();
   showOnly(elements.pausePanel);
   document.querySelector("#pause-context")!.textContent =
-    rankedSession
-      ? `${mapDefinitionById(activeMapId).metadata.name} · Ranked ${rankedSession.rules.orientation} division · ${elements.score.textContent} landed`
-      : `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id} · ${landingModeLabel()}`;
+    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id} · ${landingModeLabel()}`;
   updateResizeNotice();
   elements.pauseButton.setAttribute("aria-label", "Resume game");
   mountHugeIcon(elements.pauseIcon, "play", 22);
@@ -629,8 +591,7 @@ async function resumeRun(): Promise<void> {
   const scene = playScene();
   if (!scene || scene.getPhase() !== "paused" || document.hidden
     || !utilityScreen.hidden || document.querySelector("dialog[open]")
-    || resizeSettling || !fieldPlayable()
-    || (rankedSession !== undefined && profileForViewport().id !== rankedSession.rules.orientation)) return;
+    || resizeSettling || !fieldPlayable()) return;
   resetResizeState();
   scene.resumeRun();
   audio.handle({ type: "ui-confirm", action: "resume" });
@@ -639,207 +600,20 @@ async function resumeRun(): Promise<void> {
   mountHugeIcon(elements.pauseIcon, "pause", 22);
 }
 
-function rankedProfile(orientation: FrozenChallengeRun['orientation']): ViewportProfile {
-  return orientation === 'portrait' ? PORTRAIT_PROFILE : LANDSCAPE_PROFILE;
-}
-
-function leaveRankedMode(rebuild = true): void {
-  rankedSession = undefined;
-  elements.rankedMarker.hidden = true;
-  elements.restartButton.querySelector<HTMLElement>('.button-label')!.textContent = 'Play again';
-  elements.chooseMapButton.querySelector<HTMLElement>('.button-label')!.textContent = 'Main menu';
-  activeMapId = currentSave.selectedMapId;
-  activeDifficulty = currentSave.selectedDifficulty;
-  activeProfile = profileForViewport();
-  if (rebuild) rebuildForTarget(activeProfile, activeMapId, false);
-}
-
-function updateChallengeView(): void {
-  renderChallenge(
-    document.querySelector<HTMLElement>('#challenge-content')!,
-    challengeViewState,
-    { play: () => requestRankedStart(profileForViewport().id), refresh: () => void refreshChallenge() },
-  );
-}
-
-function requestRankedStart(orientation: FrozenChallengeRun['orientation']): void {
-  if (playScene()?.getPhase() === 'paused') {
-    confirmAbandon(
-      'Start ranked flight?',
-      'Your unfinished shift will not count toward your career, records, or achievements.',
-      () => void startRankedAttempt(orientation),
-    );
-    return;
-  }
-  void startRankedAttempt(orientation);
-}
-
-async function refreshChallenge(): Promise<void> {
-  challengeViewState = { status: 'loading' };
-  updateChallengeView();
-  try {
-    const result = await getChallenge();
-    challengeResponse = result.data;
-    challengeViewState = {
-      status: 'ready', response: result.data, stale: result.stale,
-      orientation: profileForViewport().id, starting: false,
-    };
-  } catch (error) {
-    challengeViewState = { status: 'error', message: competitionErrorCopy(error) };
-  }
-  updateChallengeView();
-}
-
-async function startRankedAttempt(orientation: FrozenChallengeRun['orientation']): Promise<void> {
-  if (challengeResponse) {
-    challengeViewState = { status: 'ready', response: challengeResponse, stale: false, orientation, starting: true };
-    updateChallengeView();
-  }
-  elements.restartButton.disabled = true;
-  try {
-    const challengeId = challengeResponse?.challenge?.id ?? rankedSession?.challenge.id;
-    if (!challengeId) throw new CompetitionError('challenge-closed', 410, false);
-    const { run } = await startChallenge(challengeId, orientation);
-    const rules = createChallengeRun(run.challenge.mapId, orientation, run.challenge.seed);
-    if (run.challenge.ruleset !== rules.ruleset || run.challenge.difficulty !== rules.difficulty || run.challenge.twoEndLanding !== rules.twoEndLanding) {
-      throw new CompetitionError('update-required', 409, false);
-    }
-    rankedSession = { runId: run.runId, expiresAt: run.expiresAt, rules, challenge: run.challenge };
-    activeMapId = run.challenge.mapId;
-    activeProfile = rankedProfile(orientation);
-    activeDifficulty = rules.difficulty;
-    activeTwoEndLanding = false;
-    utilityScreen.hidden = true;
-    for (const panel of [elements.startPanel, elements.pausePanel, elements.gameoverPanel]) panel.inert = false;
-    history.replaceState(null, '', location.pathname + location.search);
-    elements.restartButton.querySelector<HTMLElement>('.button-label')!.textContent = 'Play ranked again';
-    elements.chooseMapButton.querySelector<HTMLElement>('.button-label')!.textContent = 'Main menu';
-    rebuildForTarget(activeProfile, activeMapId, true);
-  } catch (error) {
-    const message = competitionErrorCopy(error);
-    if (!elements.gameoverPanel.hidden) {
-      elements.careerResult.textContent = message;
-      elements.restartButton.disabled = false;
-    } else {
-      challengeViewState = { status: 'error', message };
-      updateChallengeView();
-    }
-  }
-}
-
-async function handleRankedGameOver(reason: GameOverReason, score: number, session: RankedSession): Promise<void> {
-  const collision = reason === 'collision';
-  elements.gameoverCode.textContent = collision ? 'Aircraft collided' : 'Aircraft left the sector';
-  elements.gameoverCopy.textContent = collision
-    ? 'Two aircraft made contact. Keep their airframes clear of each other.'
-    : 'An aircraft crossed the edge before reaching its landing zone.';
-  elements.finalScore.textContent = formatScore(score);
-  elements.finalBest.textContent = '—';
-  document.querySelector('#result-best-label')!.textContent = 'Ranked best';
-  document.querySelector<HTMLElement>('#record-message')!.hidden = true;
-  document.querySelector('#result-difficulty')!.textContent =
-    `${mapDefinitionById(session.challenge.mapId).metadata.name} · ${DIFFICULTY_LABELS[session.rules.difficulty]} · ${session.rules.orientation} division`;
-  document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
-  resetCareerResult(elements.careerResult, 'Verifying ranked shift…');
-  elements.pauseButton.disabled = true;
-  elements.restartButton.disabled = true;
-  elements.chooseMapButton.disabled = true;
-  showOnly(elements.gameoverPanel);
-
-  const verify = async (): Promise<void> => {
-    resetCareerResult(elements.careerResult, 'Verifying ranked shift…');
-    try {
-      const result = await submitChallenge({ runId: session.runId, commands: session.commands ?? [] });
-      elements.finalScore.textContent = formatScore(result.score);
-      elements.finalBest.textContent = result.personalBest === null ? '—' : formatScore(result.personalBest);
-      document.querySelector<HTMLElement>('#record-message')!.hidden = !result.improved;
-      elements.careerResult.textContent = result.rank
-        ? `Verified · Global rank ${result.rank}${result.personalBest === null ? '' : ` · ${result.personalBest} best landings`}`
-        : `Verified · Score accepted · Standings temporarily unavailable`;
-      if (result.feedbackRequested) renderFairnessSurvey(elements.careerResult, session.challenge.id);
-      announce(result.rank
-        ? `Ranked shift verified. Global rank ${result.rank}.`
-        : 'Ranked shift verified. Standings are temporarily unavailable.');
-    } catch (error) {
-      elements.careerResult.textContent = competitionErrorCopy(error);
-      if (!(error instanceof CompetitionError) || error.transient) {
-        const retry = document.createElement('button');
-        retry.type = 'button';
-        retry.className = 'secondary-button ranked-retry';
-        retry.textContent = 'Retry verification';
-        retry.addEventListener('click', () => void verify(), { once: true });
-        elements.careerResult.append(retry);
-      }
-    } finally {
-      elements.restartButton.disabled = false;
-      elements.chooseMapButton.disabled = false;
-    }
-  };
-  await verify();
-}
-
-function renderFairnessSurvey(container: HTMLElement, challengeId: string): void {
-  const form = document.createElement('form');
-  form.className = 'fairness-survey';
-  form.innerHTML = `
-    <p class="fairness-heading">Optional fairness check</p>
-    <fieldset><legend>The weekly challenge felt fair.</legend>
-      <label><input type="radio" name="fairness" value="agree" required> Agree</label>
-      <label><input type="radio" name="fairness" value="unsure"> Not sure</label>
-      <label><input type="radio" name="fairness" value="disagree"> Disagree</label>
-    </fieldset>
-    <fieldset><legend>What most affected fairness?</legend>
-      <label><input type="radio" name="factor" value="same-rules" required> Same rules</label>
-      <label><input type="radio" name="factor" value="device-controls"> Device or controls</label>
-      <label><input type="radio" name="factor" value="pausing"> Pausing</label>
-      <label><input type="radio" name="factor" value="suspicious-scores"> Suspicious scores</label>
-      <label><input type="radio" name="factor" value="connection-verification"> Connection or verification</label>
-    </fieldset>
-    <button type="submit" class="secondary-button">Send feedback</button>
-    <p class="fairness-status" role="status" aria-live="polite"></p>`;
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    const button = form.querySelector<HTMLButtonElement>('button')!;
-    const status = form.querySelector<HTMLElement>('.fairness-status')!;
-    const data = new FormData(form);
-    button.disabled = true;
-    status.textContent = 'Sending…';
-    try {
-      await submitChallengeFeedback({
-        challengeId,
-        fairness: data.get('fairness') as FairnessAnswer,
-        factor: data.get('factor') as FairnessFactor,
-      });
-      form.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Thanks — feedback recorded.' }));
-    } catch (error) {
-      status.textContent = competitionErrorCopy(error);
-      button.disabled = false;
-    }
-  });
-  container.append(form);
-}
-
 async function handleGameOver({
   reason,
   score,
   runId,
   evidence,
-  commands,
 }: {
   reason: GameOverReason;
   score: number;
   runId?: string;
   evidence?: ShiftEvidence;
-  commands?: readonly RouteCommand[];
 }): Promise<void> {
   if (runId && (runId !== activeRunId || finishingRunId === runId)) return;
   finishingRunId = runId ?? crypto.randomUUID();
   const completedRunId = finishingRunId;
-  if (rankedSession) {
-    rankedSession.commands = commands ?? playScene()?.getRouteCommands() ?? [];
-    await handleRankedGameOver(reason, score, rankedSession);
-    return;
-  }
   const copy =
     reason === "airspace"
       ? [
@@ -970,7 +744,6 @@ elements.restartFromPause.addEventListener("click", () =>
 );
 elements.resumeButton.addEventListener("click", () => void resumeRun());
 elements.chooseMapButton.addEventListener("click", () => {
-  if (rankedSession) leaveRankedMode(true);
   renderShell();
   showOnly(elements.startPanel);
 });
@@ -1037,10 +810,10 @@ const utilityScreen = document.querySelector<HTMLElement>("#utility-screen")!;
 const resetPractice = mountPractice(() => currentSave.settings.twoEndLanding);
 let utilityReturnPanel: HTMLElement = elements.startPanel;
 let utilityReturnFocus: HTMLElement | null = null;
-const utilityNames = ["settings", "career", "challenge", "help", "practice", "airfields"] as const;
+const utilityNames = ["settings", "career", "help", "practice", "airfields"] as const;
 type UtilityName = typeof utilityNames[number];
 function isUtilityName(value: string): value is UtilityName {
-  return utilityNames.some(name => name === value) && (value !== 'challenge' || COMPETITION_ENABLED);
+  return utilityNames.some(name => name === value);
 }
 const confirmDialog =
   document.querySelector<HTMLDialogElement>("#confirm-dialog")!;
@@ -1087,10 +860,7 @@ function renderFieldDetail(): void {
 function updateResizeNotice(): void {
   const notice = document.querySelector<HTMLElement>("#resize-notice")!;
   const playable = fieldPlayable();
-  const wrongRankedOrientation = rankedSession !== undefined && profileForViewport().id !== rankedSession.rules.orientation;
-  const message = wrongRankedOrientation
-    ? `Return to ${rankedSession!.rules.orientation} orientation to continue this ranked shift.`
-    : !playable
+  const message = !playable
     ? "The airfield is too small to play comfortably. Enlarge the window or rotate your device to continue this shift."
     : resizeSettling
       ? "Adjusting to the screen size. Your shift is paused."
@@ -1099,7 +869,7 @@ function updateResizeNotice(): void {
         : "";
   notice.hidden = !message;
   if (notice.textContent !== message) notice.textContent = message;
-  elements.resumeButton.disabled = resizeSettling || !playable || wrongRankedOrientation;
+  elements.resumeButton.disabled = resizeSettling || !playable;
   elements.resumeLabel.textContent = "Resume";
   elements.restartFromPause.hidden = false;
 }
@@ -1134,8 +904,7 @@ document.querySelector("#pause-map")!.addEventListener("click", () =>
     "Leave this shift?",
     "This unfinished shift will not count toward your career, records, or achievements.",
     () => {
-      if (rankedSession) leaveRankedMode(false);
-      rebuildForTarget(profileForViewport(), currentSave.selectedMapId, false);
+      rebuildForTarget(activeProfile, activeMapId, false);
       showOnly(elements.startPanel);
     },
   ),
@@ -1163,9 +932,8 @@ function openUtility(screen: string, pushHistory = true): void {
     document.querySelector<HTMLElement>(`#${name}-content`)!.hidden = name !== screen;
   }
   const title = document.querySelector<HTMLElement>("#utility-title")!;
-  title.textContent = { help: "How to play", career: "Your career", challenge: "Tower Challenge", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
+  title.textContent = { help: "How to play", career: "Your career", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
   if (screen === "career") renderCareerDetail();
-  if (screen === 'challenge') void refreshChallenge();
   if (screen === 'airfields') { renderMapOptions(); document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`; }
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
@@ -1206,8 +974,6 @@ for (const [id, label] of Object.entries({ all: 'All airfields', ...AIRPORT_CATE
   document.querySelector('#category-filters')!.append(button);
 }
 renderShell();
-const challengeButton = document.querySelector<HTMLButtonElement>('[data-screen="challenge"]')!;
-challengeButton.hidden = !COMPETITION_ENABLED;
 showOnly(elements.startPanel);
 const initialUtility = location.hash.slice(1);
 if (isUtilityName(initialUtility)) {

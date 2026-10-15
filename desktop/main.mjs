@@ -10,9 +10,7 @@ protocol.registerSchemesAsPrivileged([
 await app.whenReady();
 session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
 session.defaultSession.setPermissionCheckHandler(() => false);
-session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, ({ url }, callback) => {
-  callback({ cancel: !url.startsWith('https://airtrafficcontrol.netlify.app/api/challenge') });
-});
+session.defaultSession.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, callback) => callback({ cancel: true }));
 protocol.handle('atc', async (request) => {
   try {
     const file = resolveAsset(join(app.getAppPath(), 'dist'), request.url);

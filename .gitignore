@@ -7,7 +7,6 @@ test-results/
 .DS_Store
 
 .netlify/
-deno.lock
 .env
 .env.*
 !.env.example

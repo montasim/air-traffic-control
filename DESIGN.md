@@ -227,11 +227,6 @@ Career includes an optional Fleet livery fieldset with native radio rows on crea
 
 Rows use control-size corners, an amber selected border, and an amber keyboard-focus outline. At widths up to 480px, each preview stacks above its name and availability text. A live status reports saving, success, or failure; selection applies on the next flight. Classic uses cream paint and a narrow class-color stripe. Signal uses a class-colored body and wings with a thin cream spine and narrow wing accents. Midnight uses navy paint, class-color panels, and a pale edge backed by a dark outline for contrast over water and snow. Its helicopter has a compact coral cabin panel that leaves the navy body and tail visible at phone size. Saved Twin bands and Chevron selections migrate to Signal and Midnight respectively. Live aircraft and previews share the paint palette. Aircraft silhouettes, class colors, and flight physics stay unchanged.
 
-### Tower Challenge
-
-The home utility row exposes the optional Tower Challenge. Its full-page briefing uses the established forest surface, one compact assignment ledger, an amber Play ranked action, and a cream semantic standings table. A small amber Ranked marker appears only during competitive play. Loading, offline cache, unavailable challenge, server error, submission, rejection, and verification states always use text in addition to color.
-
-Ranked play visibly names the portrait or landscape division and locks that orientation until the shift ends. It does not show or alter career rewards. The result card replaces career feedback with verification status, ranked best, and global rank; a transient submission failure offers retry without replaying the flight.
 
 ### Motion
 

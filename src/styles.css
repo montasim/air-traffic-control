@@ -1207,11 +1207,11 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .sound-switch { margin-left: auto; }
 }
 
-.utility-screen:is([data-page="career"], [data-page="challenge"], [data-page="settings"], [data-page="help"], [data-page="practice"]) { background: #29483e; color: var(--paper); }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) { background: #29483e; color: var(--paper); }
 
-.utility-screen:is([data-page="career"], [data-page="challenge"], [data-page="settings"], [data-page="help"], [data-page="practice"]) .utility-top { border-color: #fff5df30; }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) .utility-top { border-color: #fff5df30; }
 
-.utility-screen:is([data-page="career"], [data-page="challenge"], [data-page="settings"], [data-page="help"], [data-page="practice"]) #utility-close { background: var(--paper); border-color: transparent; }
+.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) #utility-close { background: var(--paper); border-color: transparent; }
 
 /* Illustrated flight briefing uses the same cream panels as the other game pages. */
 #help-content .help-lead { color: var(--paper); }
@@ -1541,42 +1541,3 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 }
 
 .livery-legend { margin-bottom: 8px; font-weight: 700; }
-
-/* Tower Challenge keeps competitive information legible and deliberately separate from career play. */
-.ranked-marker { align-self: center; padding: 7px 11px; border-radius: 999px; background: #ebaa44; color: #203d39; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; box-shadow: 0 3px 0 #203d3940; }
-#challenge-content { display: grid; gap: 24px; }
-.challenge-intro { max-width: 760px; }
-.challenge-lead { margin: 0; font: 700 clamp(25px, 4vw, 38px)/1.12 var(--font-display); color: #ffcc78; }
-.challenge-copy { max-width: 64ch; color: #d2ddc7; line-height: 1.6; }
-.challenge-status { width: fit-content; max-width: 64ch; margin: 0; padding: 14px 16px; border-radius: 10px; background: #38594c; line-height: 1.5; }
-.challenge-status.is-error { background: #713d35; }
-.challenge-status.is-stale { margin-top: 18px; background: #5f593e; color: #fff5df; }
-.challenge-assignment { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 0; overflow: hidden; border: 1px solid #718a78; border-radius: 14px; background: #173b33; }
-.challenge-assignment > div { min-width: 0; padding: 18px; border-right: 1px solid #718a78; }
-.challenge-assignment > div:last-child { border-right: 0; }
-.challenge-assignment dt { color: #bfcfb9; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
-.challenge-assignment dd { margin: 7px 0 0; font-weight: 700; line-height: 1.35; }
-.challenge-standings { overflow-x: auto; border-radius: 14px; background: var(--paper); color: var(--ink); }
-.challenge-standings h3 { margin: 0; padding: 20px 22px 14px; font: 700 28px/1.1 var(--font-display); }
-.challenge-standings table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.challenge-standings :is(th, td) { padding: 12px 22px; border-top: 1px solid #d5d7c4; text-align: left; }
-.challenge-standings :is(th, td):first-child { width: 82px; }
-.challenge-standings :is(th, td):last-child { width: 110px; text-align: right; }
-.challenge-standings th { color: #59664f; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
-.challenge-standings tr.is-player { background: #efdbac; font-weight: 700; }
-.challenge-empty { margin: 0; padding: 0 22px 22px; color: var(--muted); }
-.ranked-retry { display: block; margin-top: 12px; }
-.fairness-survey { display: grid; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #203d3930; }
-.fairness-heading { margin: 0; font-weight: 800; }
-.fairness-survey fieldset { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 0; padding: 0; border: 0; }
-.fairness-survey legend { width: 100%; margin-bottom: 6px; font-weight: 700; }
-.fairness-survey label { display: inline-flex; align-items: center; gap: 5px; font-size: .82rem; }
-.fairness-survey input { width: 18px; height: 18px; accent-color: #28766d; }
-.fairness-survey button { justify-self: start; }
-.fairness-status { min-height: 1.4em; margin: 0; font-size: .8rem; }
-@media (max-width: 760px) {
-  .challenge-assignment { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .challenge-assignment > div { border-right: 0; border-bottom: 1px solid #718a78; }
-  .challenge-assignment > div:last-child { grid-column: 1 / -1; border-bottom: 0; }
-  .challenge-standings :is(th, td) { padding-inline: 14px; }
-}

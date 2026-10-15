@@ -35,6 +35,5 @@
         </provider>
     </application>
 
-    <!-- Ordinary play remains offline; Tower Challenge uses this optional network access. -->
-    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- No permissions: the game is bundled and plays offline; outbound links open in the system browser. -->
 </manifest>
