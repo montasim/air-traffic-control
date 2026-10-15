@@ -1,23 +1,18 @@
 # Microsoft Store release (Windows x64)
 
-## Update prepared October 2, 2026
+## Update prepared October 15, 2026
 
-- Version: 0.1.3 (MSIX 0.1.3.0), following the live 0.1.1.0 package.
-- Artifact: `release/windows-store/SkyRoutes-0.1.3-x64.msix`.
-- Update draft: submission `1152921505702030148` for product `9N5536ZQ2XZM`.
-- Validation: 416 tests passed; desktop build and desktop smoke test passed,
-  including gameplay, resize/resume, renderer isolation, and saved settings.
-- Resolved stash conflicts by keeping upstream 0.1.3 and its favicon/PWA icons,
-  while retaining the Windows MSIX scripts and registered Store identity.
-- User will review and submit manually. Do not submit for certification.
-- Partner Center validated and saved 0.1.3.0 in the draft. Release notes,
-  the runway-option feature bullet, the current desktop home screenshot,
-  and certification testing instructions were updated. Pricing, ratings,
-  remaining artwork, and existing publishing settings were retained.
+- Version: 0.1.4 (MSIX 0.1.4.0), updating the live 0.1.3.0 package.
+- Artifact: `release/windows-store/SkyRoutes-0.1.4-x64.msix`.
+- Update draft: Submission 3 (`1152921505702141646`) for product `9N5536ZQ2XZM`.
+- Validation: TypeScript checking, the desktop build, and production MSIX packaging passed.
+  The package was uploaded to Partner Center and validated successfully.
+- Partner Center retained the existing pricing, properties, age ratings, store listing,
+  and submission options; only the package changed for this submission.
 
-Release notes: Optional landings at both runway ends with a saved preference;
-active shifts survive window resizing; practice routes clear after landing;
-refreshed start, help, and support screens; consistent airplane branding.
+Release notes: New airfields and expanded ground traffic with realistic aprons,
+taxiways, and parking; refreshed achievements and results presentation; Android
+release support; updated privacy and store assets.
 
 The desktop edition bundles the game in Electron, following ISPCine's
 electron-builder AppX/MSIX approach. It plays offline from first launch and
@@ -48,7 +43,7 @@ npm test
 npm run package:msix
 ```
 
-Upload `release/windows-store/SkyRoutes-0.1.3-x64.msix` to the
+Upload `release/windows-store/SkyRoutes-0.1.4-x64.msix` to the
 submission's **Packages** page. Version comes from `package.json`; increment it
 for subsequent submissions. The fourth Windows
 version component is reserved for the Store and stays zero. Electron-builder produces the equivalent AppX
