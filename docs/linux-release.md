@@ -291,6 +291,31 @@ and pause, with no browser errors.
 sudo snap refresh air-traffic-control
 ```
 
+## Snap release 0.1.6 (2026-10-15)
+
+Version **0.1.6**, Store revision **7**, is published to `latest/stable` and
+`latest/edge`. It follows the tower-challenge revert and the refreshed game
+presentation. The source package version was bumped to 0.1.6.
+
+Validation passed: 1,034 automated tests, the desktop production build, and a
+complete Electron runtime comparison showing only `resources/app.asar` changed
+from the verified 0.1.5 runtime. The Snap was accepted by Store review and
+released to both channels. A packaged desktop smoke test reached the app but
+failed when the career/livery overlay intercepted the start button; this remains
+a release validation limitation. Hardware GPU/Wayland behavior and audible
+playback were not retested. No 0.1.6 AppImage was built.
+
+Packaging used the documented `snapcraft pack` fallback. The normal LXD build
+was not retried. The strict-confinement runtime, interfaces, and command chains
+remain unchanged.
+
+Artifact: `release/air-traffic-control_0.1.6_amd64.snap` (SHA-256
+`30b38919291b34d1cc87eea4105bdab1b05d76dc6cae22a99986e1624dd9cb0a`).
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but
