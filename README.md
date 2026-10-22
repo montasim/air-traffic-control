@@ -10,14 +10,15 @@ Air Traffic Control is a browser arcade game for short, increasingly busy air-tr
 
 **[Play in your browser](https://airtrafficcontrol.netlify.app/) · [How to play](#how-to-play) · [Run locally](#run-locally) · [Report a bug](https://github.com/montasim/air-traffic-control/issues)**
 
-### Get the desktop app
+### Get the app
 
+<a href="https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol"><img src="public/assets/stores/google-play.svg" alt="Get Air Traffic Control on Google Play for Android" height="48" /></a>
 <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM"><img src="public/assets/stores/microsoft-store.svg" alt="Download Air Traffic Control from the Microsoft Store for Windows" height="48" /></a>
 <a href="https://snapcraft.io/air-traffic-control"><img src="public/assets/stores/snap-store.svg" alt="Get Air Traffic Control from the Snap Store for Linux" height="48" /></a>
 
-Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
+Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol). Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
 
-[![Air Traffic Control start screen with airfield selection, difficulty controls, and desktop store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
+[![Air Traffic Control start screen with airfield selection, difficulty controls, and app store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
 
 *Start screen captured from the current local source. The published app may show an earlier version.*
 
@@ -94,6 +95,16 @@ Open the local URL printed by Vite, normally [http://localhost:5173](http://loca
 | `npm run build` | Type-check and build production assets into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
+## Android (Google Play)
+
+Install [Air Traffic Control from Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol).
+
+The Android app wraps the same build in Capacitor (`android/`). Run
+`npm run android:sync` to build and copy the game into the Android project,
+`npm run android:open` to open it in Android Studio, and `npm run package:android`
+for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
+for signing, icons, verification, and Play Console setup.
+
 ## Linux desktop
 
 The Electron version bundles the game for offline play on Linux x86-64, with separate
@@ -122,14 +133,6 @@ Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** with
 `npm run package:msix`; the registered Partner Center identity is configured.
 See [Microsoft Store release](docs/microsoft-store.md)
 for the exact commands, local test packaging, and submission checklist.
-
-## Android (Google Play)
-
-The Android app wraps the same build in Capacitor (`android/`). Run
-`npm run android:sync` to build and copy the game into the Android project,
-`npm run android:open` to open it in Android Studio, and `npm run package:android`
-for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
-for signing, icons, verification, and Play Console setup.
 
 ## Saves, sound, and offline use
 

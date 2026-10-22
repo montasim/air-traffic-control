@@ -199,7 +199,7 @@ Aircraft use a bundled original transparent sprite atlas: cream-and-cyan swept j
 
 The start screen uses a centered, scrollable green surface with a maximum 1080px content width. A compact header pairs the title and description with labeled How to play, Career, and Settings controls. One cream board places the actual selected-airfield preview, name, description, record, and Change airfield control on the left; difficulty, the optional two-end runway rule, and the amber Start flight action sit on the right. Existing selection, unlocking, and persistence behavior remains authoritative.
 
-At 700px and below, the board stacks in source order and the preview becomes compact. The panel scrolls on short screens without shrinking controls. The secondary footer links to Windows and Linux listings using locally bundled Microsoft Store and Snap Store badges at their original proportions. The requested Snap treatment removes its border and matches the Microsoft badge’s corner radius. Store links retain visible keyboard focus and open externally.
+At 700px and below, the board stacks in source order and the preview becomes compact. The panel scrolls on short screens without shrinking controls. The secondary footer links to Android, Windows, and Linux listings, in that order, using locally bundled Google Play, Microsoft Store, and Snap Store badges at their original proportions. The requested Snap treatment removes its border and matches the Microsoft badge’s corner radius. Store links retain visible keyboard focus and open externally.
 
 ### Buttons and Navigation
 

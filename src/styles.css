@@ -1357,7 +1357,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .runway-option { padding-top: 24px; border-top: 1px solid var(--line); margin: 0; gap: 12px; }
 #start-panel .runway-option small { color: var(--muted); }
 #start-panel #start-button { margin: 0; min-height: 52px; }
-#start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 4px; }
+#start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0 4px; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 16px; color: var(--paper); }
 #start-panel .store-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 #start-panel .store-links a { display: inline-flex; align-items: center; border-radius: 4px; scroll-margin-block: 24px; }
@@ -1437,7 +1437,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #start-button { width: min(100%, 240px); align-self: flex-end; min-height: 44px; padding-block: 8px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
   #start-panel .home-stores p { margin: 0; font-size: 13px; }
-  #start-panel .store-links { width: auto; flex-wrap: nowrap; gap: 10px; }
+  #start-panel .store-links { width: auto; flex-wrap: wrap; gap: 10px; }
   #start-panel .store-links a { min-height: 44px; }
   #start-panel .store-links img { height: 36px; }
 }
