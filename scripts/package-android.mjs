@@ -10,7 +10,8 @@ if (!existsSync(`${android}/keystore.properties`)) {
   process.exit(1);
 }
 
-const gradle = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
+// A full path: cmd.exe does not always search the working directory (e.g. when launched from Git Bash).
+const gradle = process.platform === 'win32' ? `"${android}gradlew.bat"` : './gradlew';
 const result = spawnSync(gradle, ['bundleRelease'], { cwd: android, stdio: 'inherit', shell: process.platform === 'win32' });
 if (result.status !== 0) process.exit(result.status ?? 1);
 
