@@ -1,3 +1,4 @@
+import type { LiveryId } from '../../progression/liveries';
 import { applyDifficulty, type DifficultyId } from '../../core/difficulty';
 import { ShiftTracker } from '../../progression/achievements';
 import {
@@ -93,6 +94,7 @@ export class PlayScene extends Phaser.Scene {
   constructor(
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION,
     private readonly twoEndLanding = false,
+    private readonly livery: LiveryId = 'classic',
   ) {
     super("play");
   }
@@ -531,6 +533,7 @@ export class PlayScene extends Phaser.Scene {
       let view = this.aircraftViews.get(aircraft.id);
       if (!view) {
         view = createAircraftView(this, aircraft, {
+          livery: this.livery,
           presentationScale: this.collisionScales[aircraft.type],
           reducedMotion: this.reducedMotion,
         });
@@ -562,7 +565,7 @@ export class PlayScene extends Phaser.Scene {
       const view = createAircraftView(this, {
         id: seed.id, type: seed.type, position: { ...seed.stand.position }, heading: seed.stand.angle,
         speed: 0, collisionRadius: 0, state: "flying", hasEntered: true, landingProgress: 0,
-      } as Aircraft, { presentationScale: this.collisionScales[seed.type], reducedMotion: this.reducedMotion });
+      } as Aircraft, { livery: this.livery, presentationScale: this.collisionScales[seed.type], reducedMotion: this.reducedMotion });
       view.setGroundScale(this.groundScales[seed.type]);
       view.toGround(true);
       this.groundViews.set(seed.id, view);

@@ -253,6 +253,69 @@ SHA-256: `532ab85be84036ef41c093f1c95df3579c9bdf234ff110cd3afbca111daf337e`.
 sudo snap refresh air-traffic-control
 ```
 
+## Snap release 0.1.5 (2026-10-04)
+
+Version **0.1.5**, Store revision **6**, is published to `latest/stable` and
+`latest/edge`. It adds Frost Crossing, Carrier Coast, and Blue Water; realistic
+aprons and typed parking stands; animated landing rollout, taxiing, and parking;
+quieter play without runway reservations; results-screen celebrations; and
+responsive interface improvements. Source: `abfc43e` with the package version
+bumped to 0.1.5.
+
+Validation passed: 1,002 automated tests, web and desktop production builds,
+a local web gameplay check, and the packaged Electron smoke test covering
+startup, assets, renderer isolation, gameplay, resize/resume, and saved settings
+across restart. Store review accepted revision 6. The downloaded Store Snap is
+byte-for-byte identical to the uploaded artifact, and its bundled `app.asar`
+matches the tested desktop application.
+
+Packaging used the documented `snapcraft pack` fallback. The normal LXD build
+was not retried. The published 0.1.4 Snap's checksum was verified before
+extraction; complete file-set, SHA-256, and file-mode comparisons against the
+new Electron output found only `resources/app.asar` changed. Only that bundle
+and the version in `meta/snap.yaml` were replaced. The runtime, strict
+confinement, interfaces, and command chains remain unchanged. A fresh installed
+strict-confinement run, hardware GPU/Wayland behavior, and audible playback were
+not retested. No 0.1.5 AppImage was built.
+
+Artifact: `release/air-traffic-control_0.1.5_amd64.snap` (111,874,048 bytes).
+SHA-256: `26609f44595d07a4ccfbe9170e368fb2804535ab615bb85987fb91739c7c357b`.
+
+The same source was deployed to [Netlify production](https://airtrafficcontrol.netlify.app/)
+as [deploy 6ac15ffde290a895d6c47aaa](https://app.netlify.com/projects/airtrafficcontrol/deploys/6ac15ffde290a895d6c47aaa).
+Live verification passed for release HTML (apart from Netlify's injected hosting
+comment), service-worker cache headers, startup, bundled assets, gameplay,
+and pause, with no browser errors.
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
+## Snap release 0.1.6 (2026-10-15)
+
+Version **0.1.6**, Store revision **7**, is published to `latest/stable` and
+`latest/edge`. It follows the tower-challenge revert and the refreshed game
+presentation. The source package version was bumped to 0.1.6.
+
+Validation passed: 1,034 automated tests, the desktop production build, and a
+complete Electron runtime comparison showing only `resources/app.asar` changed
+from the verified 0.1.5 runtime. The Snap was accepted by Store review and
+released to both channels. A packaged desktop smoke test reached the app but
+failed when the career/livery overlay intercepted the start button; this remains
+a release validation limitation. Hardware GPU/Wayland behavior and audible
+playback were not retested. No 0.1.6 AppImage was built.
+
+Packaging used the documented `snapcraft pack` fallback. The normal LXD build
+was not retried. The strict-confinement runtime, interfaces, and command chains
+remain unchanged.
+
+Artifact: `release/air-traffic-control_0.1.6_amd64.snap` (SHA-256
+`30b38919291b34d1cc87eea4105bdab1b05d76dc6cae22a99986e1624dd9cb0a`).
+
+```bash
+sudo snap refresh air-traffic-control
+```
+
 ## Local build environment troubleshooting
 
 The first Snap build failed when the managed LXD container could resolve DNS but

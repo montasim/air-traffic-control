@@ -1,5 +1,7 @@
 # Android release (Google Play)
 
+Published as [Air Traffic Control on Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol).
+
 The Android edition wraps the same Vite build as the web and desktop editions
 in Capacitor. It plays offline from first launch and keeps progress in the
 app's own IndexedDB; browser and desktop saves are separate. Updates come from

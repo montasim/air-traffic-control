@@ -11,6 +11,7 @@ import type { WorldDetailLevel } from '../../palette';
 import {
   clearOfAirfield,
   paintAirfieldGround,
+  paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
   paintBuilding,
@@ -87,6 +88,7 @@ function paintOperational(
   for (const runway of layout.runways) {
     paintRunway(graphics, runway, palette, budget.surfaceWear);
   }
+  paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
 
 

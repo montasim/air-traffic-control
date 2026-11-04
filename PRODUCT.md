@@ -8,7 +8,7 @@ web
 
 ## Users
 
-Players looking for a focused, touch-friendly air-traffic routing game that works on desktop, tablet, and mobile without requiring an account or connection.
+Players looking for a focused, touch-friendly air-traffic routing game that works on desktop, tablet, and mobile without requiring an account. Ordinary play works without a connection.
 
 ## Product Purpose
 
@@ -20,7 +20,7 @@ The game combines one-stroke route drawing with an illustrated aviation arcade w
 
 ## Operating Context
 
-The game is played full-screen with mouse, touch, or pen. Sessions are short, aircraft remain visible over the scenery, and the complete game must launch and reload as an installed PWA while offline. Career state stays local to the device: selected map, audio settings, total safe landings, shifts, earned clearance, and per-map best scores are persisted without an account or network service.
+The game is played full-screen with mouse, touch, or pen. Sessions are short, aircraft remain visible over the scenery, and ordinary play must launch and reload as an installed PWA while offline. Career state stays local to the device: selected map, audio settings, total safe landings, shifts, earned clearance, and per-map best scores are persisted without an account.
 
 ## Capabilities and Constraints
 

@@ -1,3 +1,4 @@
+import { LIVERIES } from './progression/liveries';
 import { AIRPORT_CATEGORIES } from './game/maps/categories';
 import { DIFFICULTY_LABELS, isDifficulty, type DifficultyId } from './core/difficulty';
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
@@ -177,6 +178,7 @@ function layoutChanged(): boolean {
 let categoryFilter = 'all';
 let activeMapId: MapId = currentSave.selectedMapId;
 let activeDifficulty: DifficultyId = currentSave.selectedDifficulty;
+let activeLivery = currentSave.settings.livery;
 let activeTwoEndLanding = currentSave.settings.twoEndLanding;
 let savingLandingMode = false;
 let restoreLandingModeFocus = false;
@@ -215,6 +217,7 @@ elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
 function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
+  activeLivery = currentSave.settings.livery;
   activeTwoEndLanding = currentSave.settings.twoEndLanding;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
   const nextGame = new Phaser.Game({
@@ -225,7 +228,7 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding)],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery)],
   });
 
   nextGame.events.on("scene-ready", () => {
@@ -502,7 +505,7 @@ function renderShell(): void {
 
 function beginRun(): void {
   if (savingLandingMode) return;
-  if (activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
+  if (activeLivery !== currentSave.settings.livery || activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
     rebuildForTarget(profileForViewport(), activeMapId, true);
     return;
   }
@@ -653,7 +656,14 @@ async function handleGameOver({
     const earned = rankDefinition(result.earnedRankId);
     const promotionDelay = reason === "collision" ? 940 : 0;
     renderPromotion(elements.careerResult, earned.name, earned.unlocks.map((id) => mapDefinitionById(id).metadata.name), promotionDelay);
-    announce(`Promoted to ${earned.name}.`);
+    const liveries = LIVERIES.filter(livery => rankIndex(livery.rank) > rankIndex(result.previousRankId) && rankIndex(livery.rank) <= rankIndex(result.earnedRankId));
+    if (liveries.length) {
+      const reward = document.createElement('p');
+      reward.className = 'career-result-note';
+      reward.textContent = `${liveries.map(livery => livery.name).join(' and ')} livery unlocked. Choose it in Your career.`;
+      elements.careerResult.append(reward);
+    }
+    announce(`Promoted to ${earned.name}.${liveries.length ? ' New liveries available in Your career.' : ''}`);
     promotionAudioTimer = window.setTimeout(
       () => {
         audio.handle({
@@ -901,7 +911,11 @@ document.querySelector("#pause-map")!.addEventListener("click", () =>
 );
 
 function renderCareerDetail(): void {
-  renderCareerPage(document.querySelector<HTMLElement>("#career-content")!, currentSave, previews);
+  renderCareerPage(document.querySelector<HTMLElement>("#career-content")!, currentSave, previews, currentSave.selectedDifficulty, async livery => {
+    const result = await gameStore.selectLivery(livery);
+    currentSave = result.save;
+    return result;
+  });
 }
 
 function openUtility(screen: string, pushHistory = true): void {

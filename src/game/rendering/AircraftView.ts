@@ -1,3 +1,4 @@
+import type { LiveryId } from '../../progression/liveries';
 import Phaser from "phaser";
 import { AIRCRAFT_OUTLINES } from "../../core/aircraftCollision";
 import type { Aircraft } from "../../core/types";
@@ -8,6 +9,7 @@ import {
   AIRCRAFT_SILHOUETTES,
   LANDED_AIRCRAFT_TOKENS as LANDED,
   aircraftPresentationScale,
+  aircraftLiveryPaint,
 } from "./aircraft/visualTokens";
 
 /** Ground scale after touchdown: smaller than in flight so landed traffic recedes. */
@@ -19,6 +21,7 @@ function mixColor(from: number, to: number, t: number): number {
 }
 
 export interface AircraftViewOptions {
+  livery?: LiveryId;
   reducedMotion?: boolean;
   presentationScale?: number;
 }
@@ -32,6 +35,7 @@ export class AircraftView {
   private readonly rotorAssembly?: Phaser.GameObjects.Graphics;
   private rotorAngle: number;
   private reducedMotion: boolean;
+  private readonly livery: LiveryId;
   private readonly type: Aircraft["type"];
   private readonly outline: Phaser.Math.Vector2[];
   private readonly shadow: Phaser.GameObjects.Graphics;
@@ -70,6 +74,7 @@ export class AircraftView {
       .circle(0, 0, spec.selectionRadius, 0, 0)
       .setStrokeStyle(1.8, AIRCRAFT_STYLE[aircraft.type].color, 1)
       .setVisible(false);
+    this.livery = options.livery ?? 'classic';
     this.type = aircraft.type;
     this.outline = AIRCRAFT_OUTLINES[aircraft.type].map(([x, y]) => new Phaser.Math.Vector2(x, y));
     const shadow = (this.shadow = scene.add.graphics().setPosition(3, 4));
@@ -81,7 +86,7 @@ export class AircraftView {
       this.rotorAssembly = scene.add.graphics().setPosition(5, 0);
       this.rotorAssembly.fillStyle(INK.bodyHighlight, 0.08);
       this.rotorAssembly.fillCircle(0, 0, 25);
-      this.rotorAssembly.fillStyle(INK.keyline, 0.42);
+      this.rotorAssembly.fillStyle(aircraftLiveryPaint(this.livery, this.type).rotor, 0.42);
       this.rotorAssembly.fillRoundedRect(-25, -1.5, 50, 3, 1.5);
       this.rotorAssembly.fillRoundedRect(-1.5, -25, 3, 50, 1.5);
       this.rotorAssembly.setRotation(this.rotorAngle);
@@ -135,27 +140,32 @@ export class AircraftView {
   }
   /** Draw the airframe, blending from flight colours (0) to landed colours (1). */
   private paint(landed: number): void {
-    const color = AIRCRAFT_STYLE[this.type].color;
+    const paint = aircraftLiveryPaint(this.livery, this.type);
     const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
-    const livery = mixColor(color, LANDED.livery, landed);
+    const edge = mixColor(paint.edge, LANDED.keyline, landed);
     this.shadow.clear();
     this.shadow.fillStyle(INK.shadow, 0.16 + (LANDED.shadowAlpha - 0.16) * landed);
     this.shadow.fillPoints(this.outline, true);
     const body = this.body.clear();
-    body.fillStyle(mixColor(INK.bodyHighlight, LANDED.body, landed), 1);
+    body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
     body.fillPoints(this.outline, true);
-    body.lineStyle(2.4, keyline, 1);
+    // Midnight needs a pale edge on dark scenery, backed by dark ink on snow.
+    if (this.livery === 'midnight') {
+      body.lineStyle(4.4, keyline, 1);
+      body.strokePoints(this.outline, true);
+    }
+    body.lineStyle(2.4, edge, 1);
     body.strokePoints(this.outline, true);
     // One generous livery panel and one cockpit remain readable at flight scale.
-    body.fillStyle(livery, 1);
-    body.fillRoundedRect(-22, -4, this.type === "rotor" ? 37 : 41, 8, 4);
+    body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
+    body.fillRoundedRect(paint.panelX, -paint.panelHeight / 2, paint.panelWidth, paint.panelHeight, Math.min(4, paint.panelHeight / 2));
     if (this.type !== "rotor") {
       const wingX = this.type === "liner" ? -7 : -4;
-      body.lineStyle(4, livery, 1);
+      body.lineStyle(paint.wingWidth, mixColor(paint.wing, LANDED.livery, landed), 1);
       body.lineBetween(wingX, -19, wingX + 3, -9);
       body.lineBetween(wingX, 19, wingX + 3, 9);
     }
-    body.fillStyle(keyline, 1);
+    body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
     body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
   }
   /** Draw a landed aircraft from presentation-only ground state. */

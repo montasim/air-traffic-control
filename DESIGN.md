@@ -199,7 +199,7 @@ Aircraft use a bundled original transparent sprite atlas: cream-and-cyan swept j
 
 The start screen uses a centered, scrollable green surface with a maximum 1080px content width. A compact header pairs the title and description with labeled How to play, Career, and Settings controls. One cream board places the actual selected-airfield preview, name, description, record, and Change airfield control on the left; difficulty, the optional two-end runway rule, and the amber Start flight action sit on the right. Existing selection, unlocking, and persistence behavior remains authoritative.
 
-At 700px and below, the board stacks in source order and the preview becomes compact. The panel scrolls on short screens without shrinking controls. The secondary footer links to Windows and Linux listings using locally bundled Microsoft Store and Snap Store badges at their original proportions. The requested Snap treatment removes its border and matches the Microsoft badge’s corner radius. Store links retain visible keyboard focus and open externally.
+At 700px and below, the board stacks in source order and the preview becomes compact. The panel scrolls on short screens without shrinking controls. The secondary footer links to Android, Windows, and Linux listings, in that order, using locally bundled Google Play, Microsoft Store, and Snap Store badges at their original proportions. The requested Snap treatment removes its border and matches the Microsoft badge’s corner radius. Store links retain visible keyboard focus and open externally.
 
 ### Buttons and Navigation
 
@@ -220,6 +220,13 @@ Settings, Your career, and How to play share a native dialog with a clear Back t
 ### Career Counters
 
 Each next-rank prerequisite has its own label, current/required count, and native progress element: safe landings, completed shifts, and airfields meeting the qualifying best. Values are capped visually at the target while text retains the actual count. Orientation-specific map records and lock rank names follow. Highest rank has explicit completion copy. These are prerequisite counters, not a single invented XP scale.
+
+### Aircraft Liveries
+
+Career includes an optional Fleet livery fieldset with native radio rows on cream paper with forest text. Each row shows the liner, commuter, and helicopter together using the existing airframe outlines and class colors. Classic is the default; Signal unlocks at Tower Controller and Midnight at Senior Controller. Locked rows remain visible with disabled radios and explicit rank requirements. The next-promotion reward names any livery earned at that rank.
+
+Rows use control-size corners, an amber selected border, and an amber keyboard-focus outline. At widths up to 480px, each preview stacks above its name and availability text. A live status reports saving, success, or failure; selection applies on the next flight. Classic uses cream paint and a narrow class-color stripe. Signal uses a class-colored body and wings with a thin cream spine and narrow wing accents. Midnight uses navy paint, class-color panels, and a pale edge backed by a dark outline for contrast over water and snow. Its helicopter has a compact coral cabin panel that leaves the navy body and tail visible at phone size. Saved Twin bands and Chevron selections migrate to Signal and Midnight respectively. Live aircraft and previews share the paint palette. Aircraft silhouettes, class colors, and flight physics stay unchanged.
+
 
 ### Motion
 

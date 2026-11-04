@@ -10,6 +10,7 @@ import type Phaser from 'phaser';
 import {
   clearOfAirfield,
   paintAirfieldGround,
+  paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
   paintBuilding,
@@ -80,6 +81,7 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
   for (const runway of layout.runways) {
     paintRunway(graphics, runway, palette, budget.surfaceWear);
   }
+  paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
 
 

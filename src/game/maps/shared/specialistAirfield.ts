@@ -2,7 +2,7 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintRunway, paintHelipad, paintBuilding, paintTree, tracePolygon, clearOfAirfield, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintRunway, paintHelipad, paintBuilding, paintTree, tracePolygon, clearOfAirfield, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
@@ -102,6 +102,7 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
     operational:({graphics:g}) => {
       paintAirfieldGround(g,layout,palette,detailLevel);
       for(const runway of layout.runways) paintRunway(g,runway,palette,0);
+      paintAirfieldGuides(g,layout,palette,detailLevel);
       for(const pad of layout.helipads) paintHelipad(g,pad,palette);
     },
     detail:({graphics:g}) => {

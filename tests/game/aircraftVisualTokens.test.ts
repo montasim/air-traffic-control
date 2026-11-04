@@ -1,3 +1,4 @@
+import { AIRCRAFT_COLORS } from '../../src/game/palette';
 import { describe, expect, it } from 'vitest';
 import {
   AIRCRAFT_TARGET_CSS_MAJOR_AXIS,
@@ -5,6 +6,7 @@ import {
   AIRCRAFT_SILHOUETTES,
   AIRCRAFT_VISUAL_TOKENS,
   aircraftPresentationScale,
+  aircraftLiveryPaint,
   contrastRatio
 } from '../../src/game/rendering/aircraft/visualTokens';
 import {
@@ -60,9 +62,21 @@ describe('aircraft visual system', () => {
     )).toBeCloseTo(76 / 68, 5);
   });
 
-  it('keeps class color subordinate to the neutral aircraft body', () => {
-    expect(AIRCRAFT_VISUAL_TOKENS.maximumAccentCoverage).toBeLessThanOrEqual(0.35);
-    expect(AIRCRAFT_VISUAL_TOKENS.maximumAccentCoverage).toBeGreaterThan(0);
+  it('distinguishes whole-body paint while keeping class signals and readable outlines', () => {
+    for (const type of ['liner', 'commuter', 'rotor'] as const) {
+      const classic = aircraftLiveryPaint('classic', type);
+      const signal = aircraftLiveryPaint('signal', type);
+      const midnight = aircraftLiveryPaint('midnight', type);
+      expect(new Set([classic.body, signal.body, midnight.body]).size).toBe(3);
+      expect(classic.panel).toBe(AIRCRAFT_COLORS[type]);
+      expect(signal.body).toBe(AIRCRAFT_COLORS[type]);
+      expect(midnight.panel).toBe(AIRCRAFT_COLORS[type]);
+      for (const paint of [classic, signal, midnight]) {
+        expect(contrastRatio(paint.body, paint.edge)).toBeGreaterThan(4.5);
+      }
+      expect(contrastRatio(midnight.body, midnight.panel)).toBeGreaterThan(4.5);
+      if (type === 'rotor') expect(midnight.panelWidth * midnight.panelHeight).toBeLessThan(classic.panelWidth * classic.panelHeight / 2);
+    }
   });
 
   it('uses a restrained southeast runtime shadow', () => {

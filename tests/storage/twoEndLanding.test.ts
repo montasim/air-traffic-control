@@ -29,7 +29,7 @@ it('serializes toggles, retains the setting through unrelated writes, reloads, a
   await store.selectMap('saltmarsh-gateway');
   await store.recordShift({ mapId: 'saltmarsh-gateway', orientation: 'landscape', score: 3, safeLandings: 3 });
   const reloaded = await createGameStore(persistence).load();
-  expect(reloaded.settings).toEqual({ twoEndLanding: true, audio: { enabled: true, volume: .2 } });
+  expect(reloaded.settings).toEqual({ livery: 'classic', twoEndLanding: true, audio: { enabled: true, volume: .2 } });
   expect(reloaded.selectedDifficulty).toBe('hard');
   expect(reloaded.career.totalSafeLandings).toBe(3);
   await store.setTwoEndLanding(false);

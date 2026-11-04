@@ -10,14 +10,15 @@ Air Traffic Control is a browser arcade game for short, increasingly busy air-tr
 
 **[Play in your browser](https://airtrafficcontrol.netlify.app/) · [How to play](#how-to-play) · [Run locally](#run-locally) · [Report a bug](https://github.com/montasim/air-traffic-control/issues)**
 
-### Get the desktop app
+### Get the app
 
+<a href="https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol"><img src="public/assets/stores/google-play.svg" alt="Get Air Traffic Control on Google Play for Android" height="48" /></a>
 <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM"><img src="public/assets/stores/microsoft-store.svg" alt="Download Air Traffic Control from the Microsoft Store for Windows" height="48" /></a>
 <a href="https://snapcraft.io/air-traffic-control"><img src="public/assets/stores/snap-store.svg" alt="Get Air Traffic Control from the Snap Store for Linux" height="48" /></a>
 
-Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
+Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol). Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
 
-[![Air Traffic Control start screen with airfield selection, difficulty controls, and desktop store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
+[![Air Traffic Control start screen with airfield selection, difficulty controls, and app store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
 
 *Start screen captured from the current local source. The published app may show an earlier version.*
 
@@ -68,9 +69,13 @@ Difficulty changes aircraft arrival frequency, speed, and traffic limits. Best s
 
 Seven career ranks and nine achievements reward safe landings, mixed aircraft handling, exploring airfields, and completing demanding shifts. Progress is recorded when a shift finishes. Restarting or abandoning an unfinished shift discards that shift's progress; practice flights do not affect records or achievements.
 
+### Aircraft liveries
+
+Choose a fleet livery in **Your career → Aircraft liveries**. Classic is available from the start; Signal unlocks at Tower Controller, and Midnight at Senior Controller. Unlocks never equip automatically. Your choice is saved on this device and applies on your next flight. Liveries preserve aircraft shapes, destination colors, speed, and collision behavior.
+
 ## Run locally
 
-Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`; no database or separate service is needed.
+Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`.
 
 ```bash
 git clone https://github.com/montasim/air-traffic-control.git
@@ -79,16 +84,26 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight. No API keys, accounts, backend, or environment variables are required.
+Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight.
 
 | Command | Purpose |
 | --- | --- |
-| `npm run dev` | Start the development server |
+| `npm run dev` | Start the Vite development server |
 | `npm test` | Run the Vitest suite once |
 | `npm run test:watch` | Watch tests during development |
 | `npm run typecheck` | Check TypeScript |
 | `npm run build` | Type-check and build production assets into `dist/` |
 | `npm run preview` | Serve the production build locally |
+
+## Android (Google Play)
+
+Install [Air Traffic Control from Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol).
+
+The Android app wraps the same build in Capacitor (`android/`). Run
+`npm run android:sync` to build and copy the game into the Android project,
+`npm run android:open` to open it in Android Studio, and `npm run package:android`
+for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
+for signing, icons, verification, and Play Console setup.
 
 ## Linux desktop
 
@@ -119,14 +134,6 @@ Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** with
 See [Microsoft Store release](docs/microsoft-store.md)
 for the exact commands, local test packaging, and submission checklist.
 
-## Android (Google Play)
-
-The Android app wraps the same build in Capacitor (`android/`). Run
-`npm run android:sync` to build and copy the game into the Android project,
-`npm run android:open` to open it in Android Studio, and `npm run package:android`
-for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
-for signing, icons, verification, and Play Console setup.
-
 ## Saves, sound, and offline use
 
 Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
@@ -152,9 +159,7 @@ npm run build
 npm run preview
 ```
 
-Publish the **contents of `dist/`** to a static HTTPS host. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`; it requires no server functions or history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
-
-[netlify.toml](netlify.toml) declares the build command, Node version, and publish directory. For a manual upload, build locally first and upload the fresh `dist/` contents. Site authentication and linking are deployment-operator responsibilities; local Netlify state is ignored by Git.
+Deploy the repository to Netlify. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`; it needs no history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
 
 The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not itself deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to either store.
 

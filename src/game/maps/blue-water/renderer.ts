@@ -4,6 +4,7 @@ import {
   clearOfAirfield,
   composeStaticMap,
   paintAirfieldGround,
+  paintAirfieldGuides,
   paintCarrierDeck,
   paintCarrierIsland,
   paintCarrierWake,
@@ -48,6 +49,7 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
     operational: ({ graphics, unit }) => {
       paintCarrierDeck(graphics, layout.carrier, unit);
       paintAirfieldGround(graphics, layout, BLUE_WATER_PALETTE, detailLevel);
+      paintAirfieldGuides(graphics, layout, BLUE_WATER_PALETTE, detailLevel);
       for (const pad of layout.helipads) paintHelipad(graphics, pad, BLUE_WATER_PALETTE);
     },
     detail: ({ graphics, unit }) => paintCarrierIsland(graphics, layout.carrier, unit),

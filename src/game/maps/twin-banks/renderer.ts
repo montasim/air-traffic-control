@@ -3,6 +3,7 @@ import {
   composeStaticMap,
   clearOfAirfield,
   paintAirfieldGround,
+  paintAirfieldGuides,
   paintBuilding,
   paintHelipad,
   paintRiver,
@@ -225,6 +226,7 @@ export function renderTwinBanksMap(
     for (const runway of layout.runways) {
       paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.fieldBands);
     }
+    paintAirfieldGuides(graphics, layout, CIVIL_PALETTE, detailLevel);
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
     paintFacilities(graphics, layout, unit);
     },
