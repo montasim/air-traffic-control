@@ -20,3 +20,6 @@ dist-android/
 *.jks
 *.keystore
 android/keystore.properties
+
+# Large marketing media stays outside version control.
+marketing/*.mp4
