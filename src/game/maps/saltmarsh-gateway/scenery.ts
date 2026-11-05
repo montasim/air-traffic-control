@@ -216,29 +216,47 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
   const base = { x: tip.x + axis.x * side * unit * 0.045, y: tip.y + axis.y * side * unit * 0.045 };
   const height = unit * 0.05;
   if (!clearOfAirfield(layout, base, unit * 0.02) || base.x < 0 || base.y < 0 || base.x > layout.width || base.y > layout.height) return;
+  // Drawn like the raised buildings: lifted straight up, walls shaded by facing, and the
+  // shadow cast from the whole tower to the south-east at the buildings' angle and strength.
   const lift = { x: 0, y: -height * 0.5 };
   const cab = { x: base.x + lift.x, y: base.y + lift.y };
-  // Long shadow to the south-east, shaft, cab with a glazed band, and a light roof cap.
-  // One filled hull (shaft shadow running into the cab's), so no overlap paints darker,
-  // cast the same way and at the same strength as the buildings' shadows.
-  const ring = (center: Vector2, radius: number) =>
-    Array.from({ length: 16 }, (_, i) => ({ x: center.x + Math.cos(i * Math.PI / 8) * radius, y: center.y + Math.sin(i * Math.PI / 8) * radius }));
-  const castTip = { x: base.x + height * 0.86, y: base.y + height * 0.68 };
+  const cast = { x: height * 0.86, y: height * 0.68 };
+  const angle = layout.runways[0].angle;
+  const polygon = (center: Vector2, radius: number, sides: number) =>
+    Array.from({ length: sides }, (_, i) => {
+      const turn = angle + Math.PI / sides + (i * Math.PI * 2) / sides;
+      return { x: center.x + Math.cos(turn) * radius, y: center.y + Math.sin(turn) * radius };
+    });
+  // Reversed to the same winding as rotatedRectangle, so walls shade like the terminal's.
+  const footprint = polygon(base, unit * 0.011, 4).reverse();
+  const top = footprint.map((point) => ({ x: point.x + lift.x, y: point.y + lift.y }));
+  const cabRadius = unit * 0.017;
   graphics.fillStyle(palette.shadow, 0.3);
-  tracePolygon(graphics, convexHull([...ring(base, unit * 0.006), ...ring(castTip, unit * 0.015)]));
+  tracePolygon(graphics, convexHull([
+    ...footprint,
+    ...polygon({ x: cab.x - lift.x + cast.x, y: cab.y - lift.y + cast.y }, cabRadius, 8)
+  ]));
   graphics.fillPath();
-  graphics.lineStyle(unit * 0.012, mixColor(palette.building, palette.shadow, 0.3), 1);
-  graphics.lineBetween(base.x, base.y, cab.x, cab.y);
-  graphics.fillStyle(mixColor(palette.building, palette.shadow, 0.2), 1);
-  graphics.fillCircle(base.x, base.y, unit * 0.009);
+  for (let i = 0; i < footprint.length; i += 1) {
+    const a = footprint[i], b = footprint[(i + 1) % footprint.length];
+    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const away = Math.max(0, ((b.y - a.y) / length) * 0.6 - ((b.x - a.x) / length) * 0.8);
+    graphics.fillStyle(mixColor(palette.building, palette.shadow, 0.25 + away * 0.35), 1);
+    tracePolygon(graphics, [a, b, top[(i + 1) % top.length], top[i]]);
+    graphics.fillPath();
+  }
+  // Octagonal cab: dark frame, a glazed band, and a light roof with an antenna.
   graphics.fillStyle(0x3f6f78, 1);
-  graphics.fillCircle(cab.x, cab.y, unit * 0.017);
-  graphics.fillStyle(0x9fd3dc, 0.85);
-  graphics.fillCircle(cab.x - unit * 0.004, cab.y - unit * 0.004, unit * 0.008);
+  tracePolygon(graphics, polygon(cab, cabRadius, 8));
+  graphics.fillPath();
+  graphics.fillStyle(0x9fd3dc, 0.9);
+  tracePolygon(graphics, polygon(cab, cabRadius * 0.8, 8));
+  graphics.fillPath();
   graphics.fillStyle(mixColor(palette.building, palette.buildingRoof, 0.5), 1);
-  graphics.fillCircle(cab.x, cab.y, unit * 0.01);
-  graphics.lineStyle(Math.max(1, unit * 0.002), palette.shadow, 0.8);
-  graphics.lineBetween(cab.x, cab.y, cab.x, cab.y - unit * 0.018);
+  tracePolygon(graphics, polygon(cab, cabRadius * 0.58, 8));
+  graphics.fillPath();
+  graphics.lineStyle(Math.max(1, unit * 0.0016), palette.buildingRoof, 0.85);
+  graphics.strokeCircle(cab.x, cab.y, unit * 0.0035);
   // Two fuel tanks set back from the tower.
   const across = { x: -axis.y, y: axis.x };
   for (const offset of [-1, 1]) {
