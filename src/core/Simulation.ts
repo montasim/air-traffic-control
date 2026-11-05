@@ -36,6 +36,8 @@ function turnToward(current: number, target: number, delta: number): number {
   return current + Math.max(-limit, Math.min(limit, difference));
 }
 const MAX_FRAME_DELTA = 0.1;
+/** Every type flies the same circle; one radius stays inside the 82-unit exit margin. */
+export const HOLD_RADIUS = 48;
 const MIN_SPAWN_SEPARATION = 180;
 const MIN_DESTINATION_DISTANCE = 480;
 const SAFE_SPAWN_HORIZON = 8;
@@ -47,8 +49,22 @@ interface SimulationBounds {
   height: number;
 }
 
+/** Everything needed to continue a shift exactly where it stopped. */
+export interface SimulationState {
+  randomState: number;
+  accumulator: number;
+  nextSpawnAt: number;
+  openingSpawnIndex: number;
+  nextAircraftId: number;
+  activeWarnings: string[];
+  elapsed: number;
+  score: number;
+  aircraft: Aircraft[];
+}
+
 class SeededRandom {
-  private state: number;
+  /** Exposed so a saved shift continues the same random sequence. */
+  state: number;
 
   constructor(seed: number) {
     this.state = seed >>> 0 || 1;
@@ -120,6 +136,38 @@ export class Simulation {
     if (this.phase === 'running') this.phase = 'paused';
   }
 
+  exportState(): SimulationState {
+    return structuredClone({
+      randomState: this.random.state,
+      accumulator: this.accumulator,
+      nextSpawnAt: this.nextSpawnAt,
+      openingSpawnIndex: this.openingSpawnIndex,
+      nextAircraftId: this.nextAircraftId,
+      activeWarnings: [...this.activeWarnings],
+      elapsed: this.elapsed,
+      score: this.score,
+      aircraft: this.aircraft,
+    });
+  }
+
+  /** Continues a saved shift, paused until the player resumes. */
+  restore(state: SimulationState): void {
+    const saved = structuredClone(state);
+    this.random = new SeededRandom(1);
+    this.random.state = saved.randomState;
+    this.accumulator = saved.accumulator;
+    // JSON turns Infinity into null; a missing next spawn means none is scheduled.
+    this.nextSpawnAt = saved.nextSpawnAt ?? Number.POSITIVE_INFINITY;
+    this.openingSpawnIndex = saved.openingSpawnIndex;
+    this.nextAircraftId = saved.nextAircraftId;
+    this.activeWarnings = new Set(saved.activeWarnings);
+    this.events = [];
+    this.phase = 'paused';
+    this.elapsed = saved.elapsed;
+    this.score = saved.score;
+    this.aircraft = saved.aircraft;
+  }
+
   resume(): void {
     if (this.phase === 'paused') this.phase = 'running';
   }
@@ -172,12 +220,27 @@ export class Simulation {
     }
 
     target.approachZoneId = destinationZoneId;
+    target.holding = undefined;
     target.route = {
       points: smoothPath(points, 2),
       segmentIndex: 1,
       destinationZoneId
     };
     return { accepted: true, aircraftId, destinationZoneId };
+  }
+
+  /** Drops any route and circles in place; this is also the go-around. */
+  holdAircraft(aircraftId: number): boolean {
+    const target = this.aircraft.find((item) => item.id === aircraftId);
+    if (this.phase !== 'running' || !target || target.state === 'landing' || !target.hasEntered) return false;
+    // Turning toward the airspace centre keeps the whole circle on the inside.
+    const toCentreX = this.bounds.width / 2 - target.position.x;
+    const toCentreY = this.bounds.height / 2 - target.position.y;
+    const cross = Math.cos(target.heading) * toCentreY - Math.sin(target.heading) * toCentreX;
+    target.route = undefined;
+    target.approachZoneId = undefined;
+    target.holding = cross < 0 ? -1 : 1;
+    return true;
   }
 
   snapshot(): SimulationSnapshot {
@@ -219,6 +282,13 @@ export class Simulation {
   private advanceAircraft(aircraft: Aircraft, delta: number): void {
     let remaining = aircraft.speed * delta;
     let routeHeading = aircraft.heading;
+
+    if (aircraft.holding && !aircraft.route) {
+      aircraft.heading += aircraft.holding * (aircraft.speed / HOLD_RADIUS) * delta;
+      aircraft.position.x += Math.cos(aircraft.heading) * remaining;
+      aircraft.position.y += Math.sin(aircraft.heading) * remaining;
+      return;
+    }
 
     while (remaining > 0 && aircraft.route) {
       const target = aircraft.route.points[aircraft.route.segmentIndex];

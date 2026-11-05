@@ -30,6 +30,8 @@ export interface Aircraft {
   hasEntered: boolean;
   landingZoneId?: string;
   landingProgress: number;
+  /** Circling in a hold; the sign is the turn direction. */
+  holding?: 1 | -1;
 }
 
 export interface LandingZone {
