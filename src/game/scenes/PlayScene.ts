@@ -672,14 +672,24 @@ export class PlayScene extends Phaser.Scene {
 
     for (const aircraft of snapshot.aircraft) {
       if (aircraft.holding && !aircraft.route && aircraft.state !== "landing") {
-        // The hold ring is centred a radius to the inside of the turn.
+        // The hold ring is centred a radius to the inside of the turn. It starts strong and fades
+        // as the loops are flown; on the last loop only the stretch still ahead is drawn, so the
+        // ring shrinks back to the point where the aircraft straightens out.
         const side = aircraft.heading + aircraft.holding * Math.PI / 2;
-        this.routeGraphics.lineStyle(2, AIRCRAFT_STYLE[aircraft.type].color, 0.55);
-        this.routeGraphics.strokeCircle(
-          aircraft.position.x + Math.cos(side) * HOLD_RADIUS,
-          aircraft.position.y + Math.sin(side) * HOLD_RADIUS,
-          HOLD_RADIUS,
-        );
+        const center = { x: aircraft.position.x + Math.cos(side) * HOLD_RADIUS, y: aircraft.position.y + Math.sin(side) * HOLD_RADIUS };
+        const total = this.simulation.holdLoops * Math.PI * 2;
+        const turned = Math.min(total, aircraft.holdTurned ?? 0);
+        const progress = turned / total;
+        this.routeGraphics.lineStyle(2.6 - progress, AIRCRAFT_STYLE[aircraft.type].color, 0.9 - progress * 0.65);
+        const ahead = total - turned;
+        if (ahead >= Math.PI * 2) {
+          this.routeGraphics.strokeCircle(center.x, center.y, HOLD_RADIUS);
+        } else {
+          const from = side + Math.PI;
+          this.routeGraphics.beginPath();
+          this.routeGraphics.arc(center.x, center.y, HOLD_RADIUS, from, from + aircraft.holding * ahead, aircraft.holding < 0);
+          this.routeGraphics.strokePath();
+        }
       }
       if (!aircraft.route || aircraft.state === "landing") continue;
       const style = AIRCRAFT_STYLE[aircraft.type];

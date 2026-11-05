@@ -233,6 +233,11 @@ export class Simulation {
     return { accepted: true, aircraftId, destinationZoneId };
   }
 
+  /** Full loops a hold lasts on this difficulty. */
+  get holdLoops(): number {
+    return this.trafficProfile.holdLoops;
+  }
+
   /** Aircraft circling in a hold right now. */
   holdingCount(): number {
     return this.aircraft.filter((item) => item.holding && !item.route).length;
