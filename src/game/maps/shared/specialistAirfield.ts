@@ -2,7 +2,7 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, addShoreSurf, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, addMovingWaves, addShoreSurf, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
@@ -182,12 +182,15 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
   const islands = rescueIslands(layout).map(outline => raggedOutline(outline, u));
   // Each island as three rings of the painted ground: pale shallows, a sandy beach, then grass.
   const rings = islands.flatMap(outline => [raggedOutline(scaledAbout(outline, 1.16), u), outline, raggedOutline(scaledAbout(outline, outline === islands[0] ? .94 : .8), u)]);
-  paintGroundTexture(scene, { width: w, height: h, fieldPolygons: rings }, {
-    base: sea,
+  // The open sea at the bottom, moving waves over it, then the islands as their own layer on top,
+  // so the waves only ever show on open water.
+  const shades = { base: sea, light: 0xc4dde0, dark: 0x3f6d78 };
+  paintGroundTexture(scene, { width: w, height: h, fieldPolygons: [] }, { ...shades, fields: [] });
+  addMovingWaves(scene, layout, -0.6);
+  paintGroundTexture(scene, { width: w, height: h, fieldPolygons: rings, clipTo: islands.map((_, i) => rings[i * 3]) }, {
+    ...shades,
     fields: islands.flatMap(() => [palette.waterShallow, 0xd9cfa2, palette.terrain]),
-    light: 0xc4dde0,
-    dark: 0x3f6d78
-  });
+  }, -20.4);
   const onLand = (point: Vector2) => islands.some(outline => pointInPolygon(point, scaledAbout(outline, 1.2)));
   const grass = islands.map((outline, i) => scaledAbout(outline, i ? .7 : .88));
   composeStaticMap(scene,layout,detailLevel,{

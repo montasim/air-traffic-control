@@ -234,6 +234,8 @@ export interface GroundLayout {
   readonly width: number;
   readonly height: number;
   readonly fieldPolygons: readonly (readonly Vector2[])[];
+  /** Paint only inside these shapes, leaving the rest transparent: a land layer laid over moving water. */
+  readonly clipTo?: readonly (readonly Vector2[])[];
 }
 
 /**
@@ -255,6 +257,11 @@ export function paintGroundTexture(
   canvas.height = Math.ceil(height * scale);
   const context = canvas.getContext("2d")!;
   context.scale(scale, scale);
+  if (ground.clipTo) {
+    context.beginPath();
+    for (const shape of ground.clipTo) shape.forEach((point, i) => (i ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+    context.clip();
+  }
   context.fillStyle = css(shades.base);
   context.fillRect(0, 0, width, height);
   // Flat fields with crisp edges, drawn like the paved shapes so the ground is as sharp as they are.
