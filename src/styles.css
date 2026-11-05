@@ -30,7 +30,7 @@
   --button-height: 48px;
   --button-font: 1.125rem;
   --button-pad-x: 20px;
-  /* Two corner sizes: controls (buttons, chips, the difficulty track) and small parts (tags, segments inside a track). */
+  /* Two corner sizes: controls (buttons, chips, the difficulty control) and small parts (tags). */
   --radius-control: 10px;
   --radius-small: 6px;
   --icon-gap: 8px;
@@ -1605,11 +1605,16 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Difficulty is one segmented control: a single track, the chosen level filled. The track and the setting
    chips share one height, a step under the action buttons, so they read as one family. */
 :root { --chip-height: calc(var(--button-height) - 8px); }
-#start-panel .difficulty-choices { gap: 4px; padding: 4px; border-radius: var(--radius-control); background: #e5e6d3; }
-/* The whole track is one chip tall, so it sits level with the setting chips instead of matching the action buttons. */
-#start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 8px); border: 0; border-radius: var(--radius-small); background: transparent; font-size: 0.8125rem; }
+/* Built like the setting chips: the same outline, height, corners and label, and the chosen level fills its
+   segment edge to edge, exactly as a chip fills when on. Thin dividers separate the levels. */
+#start-panel .difficulty-choices { gap: 0; padding: 0; overflow: hidden; border: 1px solid #b9bea6; border-radius: var(--radius-control); background: transparent; }
+#start-panel .difficulty-choices label + label span { border-left: 1px solid #b9bea6; }
+#start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 2px); border: 0; border-radius: 0; background: transparent; font-size: 0.875rem; font-weight: 600; }
 #start-panel .difficulty-choices label:hover input:not(:checked) + span { background: #203d3914; }
-#start-panel .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); box-shadow: 0 2px 6px #203d3933; }
+#start-panel .difficulty-choices input:checked + span { background: var(--ink); color: var(--paper); }
+/* The rounded clip would cut a ring off a segment, so focus rings the whole control, like a chip. */
+#start-panel .difficulty-choices input:focus-visible + span { outline: 0; }
+#start-panel .difficulty-choices:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 3px; }
 /* One palette for every choice on the card: dark ink with light text means chosen or on (difficulty, chips),
    the light neutral #e5e6d3 is the resting fill (tags included), and every focus ring is cyan.
    On/off settings are toggle chips: outlined when off, filled with ink when on. The real switch
