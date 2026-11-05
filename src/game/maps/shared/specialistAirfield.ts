@@ -2,11 +2,12 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, paintBuilding, tracePolygon, clearOfAirfield, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, paintControlTower, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, paintControlTower, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
 import { createAirfieldGuidanceSurfaces } from './guidance';
+import { pointInPolygon } from './apronLayout';
 
 export type SpecialistKind = 'military' | 'business' | 'passenger' | 'cargo' | 'rescue';
 /** Authored coordinates are fractions of viewport; runway lengths use the shorter side. */
@@ -151,28 +152,60 @@ function paintFixtures(g: Phaser.GameObjects.Graphics, layout: SpecialistLayout)
   }
 }
 
+/** The rescue field's main island and one islet per offshore pad, as outlines. */
+function rescueIslands(layout: SpecialistLayout): Vector2[][] {
+  const u = Math.min(layout.width, layout.height);
+  const [r0, r1] = layout.runways;
+  const minX = Math.min(...[r0, r1].map(r => r.center.x - r.length / 2)) - .055 * u;
+  const maxX = Math.max(...[r0, r1].map(r => r.center.x + r.length / 2)) + .055 * u;
+  const top = Math.min(r0.center.y, r1.center.y) - .08 * u;
+  const bottom = Math.max(r0.center.y, r1.center.y) + .08 * u;
+  const coast = [[minX-u*.035,top+u*.1],[minX+u*.02,top-u*.02],[minX+(maxX-minX)*.36,top-u*.045],[maxX-u*.12,top-u*.018],[maxX+u*.025,top+u*.06],[maxX+u*.04,bottom-u*.12],[maxX-u*.045,bottom+u*.035],[minX+(maxX-minX)*.52,bottom+u*.015],[minX+u*.04,bottom+u*.05],[minX-u*.04,bottom-u*.06]].map(([x, y]) => ({ x, y }));
+  const islets = layout.helipads.map(pad => Array.from({ length: 9 }, (_, i) => {
+    const a = i * Math.PI * 2 / 9, r = 1 + .08 * Math.sin(i * 3);
+    return { x: pad.center.x + Math.cos(a) * u * .095 * r, y: pad.center.y + Math.sin(a) * u * .078 * r };
+  }));
+  return [coast, ...islets];
+}
+
+const scaledAbout = (outline: readonly Vector2[], factor: number) => {
+  const c = outline.reduce((sum, p) => ({ x: sum.x + p.x / outline.length, y: sum.y + p.y / outline.length }), { x: 0, y: 0 });
+  return outline.map(p => ({ x: c.x + (p.x - c.x) * factor, y: c.y + (p.y - c.y) * factor }));
+};
+
 function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
   const { width:w, height:h } = layout;
   const u = Math.min(w,h);
-  const palette = {...RIVER_BEND_PALETTE, terrain:0x719fa4};
+  const sea = 0x5e93a2;
+  const palette = { ...RIVER_BEND_PALETTE, terrain: 0x8fa87b, water: sea, waterEdge: 0xd9cfa2, waterShallow: 0x8cbcc4, vegetation: 0x4a7448, vegetationLight: 0x86aa6c };
+  const islands = rescueIslands(layout);
+  // Each island as three rings of the painted ground: pale shallows, a sandy beach, then grass.
+  const rings = islands.flatMap(outline => [scaledAbout(outline, 1.16), outline, scaledAbout(outline, outline === islands[0] ? .94 : .8)]);
+  paintGroundTexture(scene, { width: w, height: h, fieldPolygons: rings }, {
+    base: sea,
+    fields: islands.flatMap(() => [palette.waterShallow, 0xd9cfa2, palette.terrain]),
+    light: 0xc4dde0,
+    dark: 0x3f6d78
+  });
+  const onLand = (point: Vector2) => islands.some(outline => pointInPolygon(point, scaledAbout(outline, 1.2)));
+  const grass = islands.map((outline, i) => scaledAbout(outline, i ? .7 : .88));
   composeStaticMap(scene,layout,detailLevel,{
     scenery:({graphics:g}) => {
-      g.fillStyle(palette.terrain);g.fillRect(0,0,w,h);
-      // Main island under the fixed-wing field; offshore pads sit on distinct islets.
-      const r0=layout.runways[0], r1=layout.runways[1];
-      const minX=Math.min(...[r0,r1].map(r=>r.center.x-r.length/2))-.055*u;
-      const maxX=Math.max(...[r0,r1].map(r=>r.center.x+r.length/2))+.055*u;
-      const top=Math.min(r0.center.y,r1.center.y)-.08*u;
-      const bottom=Math.max(r0.center.y,r1.center.y)+.08*u;
-      const coast = [[minX-u*.035,top+u*.1],[minX+u*.02,top-u*.02],[minX+(maxX-minX)*.36,top-u*.045],[maxX-u*.12,top-u*.018],[maxX+u*.025,top+u*.06],[maxX+u*.04,bottom-u*.12],[maxX-u*.045,bottom+u*.035],[minX+(maxX-minX)*.52,bottom+u*.015],[minX+u*.04,bottom+u*.05],[minX-u*.04,bottom-u*.06]].map(([x,y])=>({x,y}));
-      g.fillStyle(0xc9c6a0);tracePolygon(g,coast);g.fillPath();
-      const cx=(minX+maxX)/2,cy=(top+bottom)/2;
-      g.fillStyle(0x8fa87b);tracePolygon(g,coast.map(p=>({x:cx+(p.x-cx)*.96,y:cy+(p.y-cy)*.92})));g.fillPath();
-      for(const pad of layout.helipads) {
-        const island=Array.from({length:9},(_,i)=>{const a=i*Math.PI*2/9,r=1+.08*Math.sin(i*3);return {x:pad.center.x+Math.cos(a)*u*.095*r,y:pad.center.y+Math.sin(a)*u*.078*r};});
-        g.fillStyle(0xc9c6a0);tracePolygon(g,island);g.fillPath();
-        g.fillStyle(0x93a77c);tracePolygon(g,island.map(p=>({x:pad.center.x+(p.x-pad.center.x)*.82,y:pad.center.y+(p.y-pad.center.y)*.82})));g.fillPath();
+      // The sea and islands are painted underneath by paintGroundTexture; this layer adds whitecaps and palms.
+      paintWhitecaps(g, layout, detailLevel === 'mobile' ? 40 : 90, u, point => !onLand(point));
+      const crowns: { x: number; y: number; r: number }[] = [];
+      for (let i = 0; i < MAP_DETAIL_BUDGETS[detailLevel].trees * 6; i++) {
+        const island = grass[i % grass.length];
+        const xs = island.map(p => p.x), ys = island.map(p => p.y);
+        const point = { x: Math.min(...xs) + deterministicUnit(i, 711) * (Math.max(...xs) - Math.min(...xs)), y: Math.min(...ys) + deterministicUnit(i, 719) * (Math.max(...ys) - Math.min(...ys)) };
+        const r = u * (.007 + deterministicUnit(i, 727) * .007);
+        // A small clump of crowns around each spot, so trees read as groves rather than dots.
+        for (let k = 0; k < 5; k++) {
+          const crown = { x: point.x + (deterministicUnit(i * 5 + k, 733) - .5) * r * 4, y: point.y + (deterministicUnit(i * 5 + k, 739) - .5) * r * 4 };
+          if (pointInPolygon(crown, island) && clearOfAirfield(layout, crown, r + u * .02)) crowns.push({ ...crown, r });
+        }
       }
+      paintCanopy(g, crowns, palette);
     },
     operational:({graphics:g}) => {
       paintAirfieldGround(g,layout,palette,detailLevel);
@@ -181,11 +214,12 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
       for(const pad of layout.helipads) paintHelipad(g,pad,palette);
     },
     detail:({graphics:g}) => {
-      for(const building of layout.buildings) paintBuilding(g,building,palette,layout.runways);
+      for(const building of layout.buildings) paintRaisedBuilding(g,building,palette,u,layout.runways);
+      paintControlTower(g,layout,palette);
       paintFixtures(g,layout);
       for(const pad of layout.helipads) {g.fillStyle(0xfff5df);g.fillRect(pad.center.x+u*.052,pad.center.y-u*.012,u*.022,u*.024);g.fillStyle(0xb86d55);g.fillRect(pad.center.x+u*.061,pad.center.y-u*.008,u*.004,u*.016);g.fillRect(pad.center.x+u*.055,pad.center.y-u*.002,u*.016,u*.004);}
     }
-  },{materialTextureKey:'terrain:arcade:meadow'});
-  paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures });
+  });
+  paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
   layout.helipads.forEach((pad,i) => scene.add.text(pad.center.x, pad.center.y+pad.radius+u*.008, `H${i+1}`, { ...PHASER_TEXT_STYLES.airfieldMarking, fontSize: `${Math.max(10,u*.021)}px`, color: '#203d39', backgroundColor: '#fff5df', padding: { x: 3, y: 1 } }).setOrigin(.5,0).setDepth(-19));
 }
