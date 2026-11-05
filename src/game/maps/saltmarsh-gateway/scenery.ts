@@ -12,13 +12,13 @@ import {
 } from '../../rendering/shared-map';
 import type { SaltmarshGatewayLayout } from './layout';
 
-const HAZARD = 0xf2c230;
-const HAZARD_DARK = 0x2b2f30;
+const CHEVRON = 0xe9c04a;
 
 /**
- * A runway in plain grey asphalt with a thin shoulder and edge lines, yellow-and-black hazard
- * stripes on the blast pads at both ends, the class-coloured threshold bar players match, a
- * white centreline, and arrows ahead of each landing end showing which way aircraft land.
+ * A runway marked like a real one: a pale paved shoulder, a worn darker centre lane, edge lines,
+ * blast pads with yellow chevrons, the class-coloured threshold bar players match, white
+ * "piano key" threshold stripes, aiming-point blocks, a centreline, and arrows ahead of each
+ * landing end showing which way aircraft land.
  */
 export function paintMarkedRunway(
   graphics: Phaser.GameObjects.Graphics,
@@ -38,41 +38,55 @@ export function paintMarkedRunway(
     ]);
     graphics.fillPath();
   };
-  box(-halfLength - 3, halfLength + 3, -halfWidth - 3, halfWidth + 3, mixColor(palette.asphalt, palette.shadow, 0.45));
+  const line = (fromAlong: number, fromAcross: number, toAlong: number, toAcross: number) => {
+    const a = localRunwayPoint(runway, fromAlong, fromAcross);
+    const b = localRunwayPoint(runway, toAlong, toAcross);
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  };
+  const w = runway.width;
+  const pad = Math.min(18, runway.length * 0.04);
+  const shoulder = Math.max(2, w * 0.08);
+  // Pale paved shoulder instead of a dark outline, then the runway asphalt.
+  box(-halfLength - shoulder, halfLength + shoulder, -halfWidth - shoulder, halfWidth + shoulder, mixColor(palette.asphalt, palette.apron, 0.55));
   box(-halfLength, halfLength, -halfWidth, halfWidth, palette.asphalt);
-  // Thin white edge lines along the usable length.
-  const pad = Math.min(16, runway.length * 0.035);
-  box(-halfLength + pad, halfLength - pad, -halfWidth + 2, -halfWidth + 3.5, palette.marking, 0.9);
-  box(-halfLength + pad, halfLength - pad, halfWidth - 3.5, halfWidth - 2, palette.marking, 0.9);
+  // Tyres wear the middle lane a little darker than the edges.
+  box(-halfLength + pad, halfLength - pad, -w * 0.2, w * 0.2, mixColor(palette.asphalt, palette.shadow, 0.5), 0.14);
+  // Continuous white edge lines along the usable length.
+  const edge = Math.max(1, w * 0.03);
+  const inset = w * 0.06;
+  box(-halfLength + pad, halfLength - pad, -halfWidth + inset, -halfWidth + inset + edge, palette.marking, 0.6);
+  box(-halfLength + pad, halfLength - pad, halfWidth - inset - edge, halfWidth - inset, palette.marking, 0.6);
+  const keyLength = Math.min(20, runway.length * 0.04);
   for (const end of [-1, 1] as const) {
-    // Blast pad: hazard yellow with dark diagonal bands.
-    const outer = end * halfLength;
-    const inner = end * (halfLength - pad);
-    box(Math.min(outer, inner), Math.max(outer, inner), -halfWidth, halfWidth, HAZARD);
-    const stripe = runway.width / 5;
-    for (let across = -halfWidth; across < halfWidth - stripe * 0.5; across += stripe * 1.6) {
-      const top = Math.min(halfWidth, across + stripe * 0.8);
-      graphics.fillStyle(HAZARD_DARK, 1);
-      tracePolygon(graphics, [
-        localRunwayPoint(runway, outer, across),
-        localRunwayPoint(runway, outer, top),
-        localRunwayPoint(runway, inner, Math.min(halfWidth, top + stripe * 0.6)),
-        localRunwayPoint(runway, inner, Math.min(halfWidth, across + stripe * 0.6))
-      ]);
-      graphics.fillPath();
+    // Along-runway position measured inward from this end.
+    const at = (fromEnd: number) => end * (halfLength - fromEnd);
+    // Blast pad: darker, unused surface with yellow chevrons pointing toward the runway.
+    box(Math.min(at(0), at(pad)), Math.max(at(0), at(pad)), -halfWidth, halfWidth, mixColor(palette.asphalt, palette.shadow, 0.3));
+    graphics.lineStyle(Math.max(1.5, w * 0.05), CHEVRON, 0.9);
+    for (const step of [0.3, 0.75]) {
+      line(at(pad * (step - 0.25)), -halfWidth + inset, at(pad * step), 0);
+      line(at(pad * step), 0, at(pad * (step - 0.25)), halfWidth - inset);
     }
     // The class-coloured threshold bar stays the main landing cue.
-    const bar = end * (halfLength - pad - 6);
-    const a = localRunwayPoint(runway, bar, -halfWidth + 4);
-    const b = localRunwayPoint(runway, bar, halfWidth - 4);
-    graphics.lineStyle(8, AIRCRAFT_COLORS[runway.accepts], 1);
-    graphics.lineBetween(a.x, a.y, b.x, b.y);
+    graphics.lineStyle(Math.max(4, w * 0.15), AIRCRAFT_COLORS[runway.accepts], 1);
+    line(at(pad + w * 0.075), -halfWidth + inset, at(pad + w * 0.075), halfWidth - inset);
+    // Piano keys: a few short, slightly worn stripes either side of the centreline. No aiming-point
+    // blocks: they clashed with the landing arrows and made the runway noisy.
+    const keys = Math.max(2, Math.round(w / 24));
+    const keyWidth = (halfWidth - inset * 2) / (keys * 2);
+    const keyStart = pad + w * 0.25;
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < keys; k += 1) {
+        const from = side * (w * 0.1 + k * keyWidth * 2);
+        box(at(keyStart), at(keyStart + keyLength), from, from + side * keyWidth, palette.marking, 0.7);
+      }
+    }
   }
-  // White centreline dashes.
-  const usable = runway.length - pad * 2 - 40;
-  const count = Math.max(3, Math.floor(usable / 48));
+  // White centreline dashes between the piano keys at each end.
+  const usable = runway.length - (pad + w * 0.25 + keyLength + 14) * 2;
+  const count = Math.max(3, Math.floor(usable / 44));
   const spacing = usable / count;
-  graphics.lineStyle(3, palette.marking, 0.95);
+  graphics.lineStyle(Math.max(1.5, w * 0.05), palette.marking, 0.7);
   for (let index = 0; index < count; index += 1) {
     const center = -usable / 2 + spacing * (index + 0.5);
     const a = localRunwayPoint(runway, center - spacing * 0.22);
@@ -89,7 +103,7 @@ export function paintMarkedRunway(
   graphics.lineBetween(sign.x - 4, sign.y + 6, sign.x + 5, sign.y + 6);
   if (runway.accepts === "commuter") graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
   // Landing-direction arrows just past each landing threshold.
-  graphics.fillStyle(palette.marking, 0.95);
+  graphics.fillStyle(palette.marking, 0.85);
   for (const zone of landingZones) {
     if (zone.approach?.runwayId !== runway.id) continue;
     const forward = { x: Math.cos(zone.angle), y: Math.sin(zone.angle) };

@@ -78,8 +78,17 @@ function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: Can
   const context = canvas.getContext("2d")!;
   context.scale(scale, scale);
   paint(context);
+  // Draw every mask shape first and cut once: cutting shape by shape with destination-in
+  // would keep only the last shape (one taxiway), leaving the runways bare.
+  const stencil = document.createElement("canvas");
+  stencil.width = canvas.width;
+  stencil.height = canvas.height;
+  const stencilContext = stencil.getContext("2d")!;
+  stencilContext.scale(scale, scale);
+  mask(stencilContext);
+  context.setTransform(1, 0, 0, 1, 0, 0);
   context.globalCompositeOperation = keep === "inside" ? "destination-in" : "destination-out";
-  mask(context);
+  context.drawImage(stencil, 0, 0);
   return canvas;
 }
 
@@ -96,8 +105,30 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
   const angle = layout.runways[0]?.angle ?? 0;
   const grain = noiseTile(96, 0.07);
 
-  // No grain on asphalt: runways and taxiways stay as clean as the vector paint under them.
   const asphalt = surfaceLayer(layout, scale, (context) => {
+    // The same fine grain as the apron, without the blotchy mottling that read as dirt.
+    fillWith(context, grain, 1, width, height);
+    // Slab joints like the apron's, square to each runway: lanes along it, joints across it.
+    for (const runway of layout.runways) {
+      context.save();
+      context.translate(runway.center.x, runway.center.y);
+      context.rotate(runway.angle);
+      context.beginPath();
+      context.rect(-runway.length / 2, -runway.width / 2, runway.length, runway.width);
+      context.clip();
+      context.strokeStyle = "rgba(20,24,26,0.28)";
+      context.lineWidth = Math.max(1, unit * 0.0015);
+      const slab = unit * 0.035;
+      context.beginPath();
+      for (let along = -runway.length / 2 + slab; along < runway.length / 2; along += slab) {
+        context.moveTo(along, -runway.width / 2); context.lineTo(along, runway.width / 2);
+      }
+      for (let across = -runway.width / 2 + runway.width / 4; across < runway.width / 2 - 1; across += runway.width / 4) {
+        context.moveTo(-runway.length / 2, across); context.lineTo(runway.length / 2, across);
+      }
+      context.stroke();
+      context.restore();
+    }
     // Rubber left by main gear where aircraft touch down, fading along the landing direction.
     for (const zone of layout.landingZones) {
       if (!zone.approach) continue;
