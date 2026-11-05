@@ -239,3 +239,49 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
   scene.events.on("update", step);
   scene.events.once("shutdown", () => scene.events.off("update", step));
 }
+
+/** An outline pushed `distance` outward along each vertex's normal (away from its middle), so the offset stays even all round. */
+function outlineOffset(outline: readonly Vector2[], distance: number): Vector2[] {
+  const middle = centroid(outline);
+  return outline.map((point, i) => {
+    const [before, after] = [outline[(i + outline.length - 1) % outline.length], outline[(i + 1) % outline.length]];
+    const tangent = { x: after.x - before.x, y: after.y - before.y };
+    const length = Math.hypot(tangent.x, tangent.y) || 1;
+    let normal = { x: tangent.y / length, y: -tangent.x / length };
+    if (normal.x * (point.x - middle.x) + normal.y * (point.y - middle.y) < 0) normal = { x: -normal.x, y: -normal.y };
+    return { x: point.x + normal.x * distance, y: point.y + normal.y * distance };
+  });
+}
+
+/**
+ * Surf rolling in on islands: lines of white water that form offshore, roll in toward each beach,
+ * brighten as they break and fade on the sand, three waves apart. Redrawn every frame above the
+ * scenery and below the operational layer; drawn once, still, when the player prefers reduced motion.
+ */
+export function addShoreSurf(scene: Phaser.Scene, outlines: readonly (readonly Vector2[])[], unit: number, depth = -19.95): void {
+  if (!scene.add?.graphics || !outlines.length) return;
+  const graphics = scene.add.graphics().setDepth(depth);
+  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const draw = (seconds: number) => {
+    graphics.clear();
+    for (const outline of outlines) {
+      for (let wave = 0; wave < 3; wave += 1) {
+        // 0 when the wave forms offshore, 1 when it washes up the beach.
+        const phase = (seconds * 0.18 + wave / 3) % 1;
+        const swell = outlineOffset(outline, unit * 0.05 * (1 - phase));
+        graphics.lineStyle(Math.max(1, unit * (0.002 + phase * 0.004)), 0xf6fbfb, 0.7 * Math.sin(phase * Math.PI));
+        tracePolygon(graphics, swell);
+        graphics.strokePath();
+      }
+    }
+  };
+  draw(1);
+  if (still) return;
+  let clock = 1;
+  const step = (_time: number, delta: number) => {
+    clock += delta / 1000;
+    draw(clock);
+  };
+  scene.events.on("update", step);
+  scene.events.once("shutdown", () => scene.events.off("update", step));
+}
