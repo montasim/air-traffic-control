@@ -30,6 +30,8 @@
   --button-height: 48px;
   --button-font: 1.125rem;
   --button-pad-x: 20px;
+  --switch-width: 44px;
+  --switch-height: 26px;
   --icon-gap: 8px;
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
@@ -450,11 +452,6 @@ h3 {
 .resume-shift {
   width: 100%;
   margin-bottom: 10px;
-}
-.resume-shift small {
-  display: block;
-  font-size: max(11px, 0.75rem);
-  font-weight: 400;
 }
 /* Mirrors pause in the bottom-left corner, which every map keeps clear as its speed zone. */
 #speed-button {
@@ -1436,24 +1433,26 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .difficulty-options { margin: 0; }
 #start-panel .difficulty-choices { gap: 20px; }
 #start-panel .difficulty-options legend { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; font-size: 0.875rem; margin-bottom: 12px; }
-#start-panel .flight-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
-#start-panel .runway-option { margin: 0; gap: 12px; min-height: 44px; }
+/* The two switches stack as settings rows (label left, switch right) so neither label wraps into the other. */
+#start-panel .flight-switches { display: grid; grid-template-columns: 1fr; gap: 0; padding-top: 8px; border-top: 1px solid var(--line); }
+#start-panel .runway-option { margin: 0; gap: 12px; min-height: 44px; padding-block: 4px; }
+#start-panel .runway-option + .runway-option { border-top: 1px solid var(--line); }
 #start-panel .runway-option small { color: var(--muted); }
 #start-panel #start-button { margin: 0; }
 /* Resume and Start share one row; Start fills it when there is no shift to resume. */
-#start-panel .flight-actions { display: flex; gap: 12px; }
+#start-panel .flight-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; }
 #start-panel .flight-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
-/* The shift details stay on one line beside Start; the full text is on hover. */
-#start-panel .resume-shift { padding-block: 4px; }
-#start-panel .resume-shift .button-label { display: block; min-width: 0; }
-#start-panel .resume-shift small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* The saved shift's details sit on their own line above the buttons, so Resume reads as one line. */
+#start-panel .resume-details { order: -1; flex: 0 0 100%; margin: 0; font-size: 13px; line-height: 1.4; text-wrap: pretty; color: var(--muted); }
+#start-panel .resume-details span:first-child { font-weight: 700; color: var(--ink); }
+#start-panel .flight-actions:has(#resume-shift-button[hidden]) .resume-details { display: none; }
 #start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 1rem; color: var(--paper); }
 #start-panel .store-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 #start-panel .store-links a { display: inline-flex; align-items: center; border-radius: 4px; scroll-margin-block: 24px; }
 #start-panel .store-links img { display: block; width: auto; height: 48px; }
 #start-panel .store-links a:hover { opacity: .85; }
-#start-panel .store-toggle, #choose-airfield .label-short { display: none; }
+#start-panel .store-toggle { display: none; }
 @media (max-width: 900px) {
   #start-panel .intro-content { padding: 32px 24px; gap: 24px; }
   #start-panel .home-header { flex-wrap: wrap; gap: 12px; }
@@ -1480,8 +1479,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #home-map-preview { object-fit: cover; }
   #start-panel .home-assignment { margin: 0; align-items: center; }
   #start-panel #choose-airfield { min-height: 44px; font-size: 13px; }
-  #choose-airfield .label-long { display: none; }
-  #choose-airfield .label-short { display: inline; }
   #start-panel #field-title { font-size: 1.375rem; }
   #start-panel #field-record { font-size: 13px; }
   #start-panel #field-description { display: none; }
@@ -1489,7 +1486,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
   #start-panel .difficulty-choices { gap: 8px; }
   #start-panel .difficulty-choices label span { min-height: 36px; font-size: 13px; }
-  #start-panel .flight-switches { gap: 16px; padding: 0; border: 0; }
+  #start-panel .flight-switches { padding: 0; border: 0; }
   #start-panel .home-stores { order: 3; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0; }
   #start-panel .home-stores p { font-size: 0.875rem; }
   /* The store badges fold behind a tap so the launch screen stays short. */
@@ -1533,7 +1530,9 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .flight-settings { gap: 4px; padding: 0; border: 0; }
   #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
-  #start-panel .flight-switches { gap: 16px; padding: 0; border: 0; }
+  /* Short landscape windows have width to spare and no height, so the switches share one row there. */
+  #start-panel .flight-switches { grid-template-columns: 1fr 1fr; gap: 16px; padding: 0; border: 0; }
+  #start-panel .runway-option + .runway-option { border-top: 0; }
   #start-panel .flight-actions { justify-content: flex-end; }
   #start-panel .flight-actions > button { flex: 0 1 240px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
@@ -1606,10 +1605,10 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 .runway-option { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; margin: 10px 0 16px; cursor: pointer; text-align: left; }
 .runway-option > span { flex: 1; min-width: 0; }
 .runway-option small { display: block; margin-top: 3px; font-size: 0.8rem; line-height: 1.4; }
-.runway-option input { appearance: none; position: relative; flex: 0 0 44px; width: 44px; height: 26px; margin: 0; border: 2px solid #647870; border-radius: 20px; background: #d9decf; cursor: pointer; }
-.runway-option input::before { content: ''; position: absolute; width: 18px; height: 18px; top: 2px; left: 2px; border-radius: 50%; background: #344e46; }
+.runway-option input { appearance: none; position: relative; flex: 0 0 var(--switch-width); width: var(--switch-width); height: var(--switch-height); margin: 0; border: 2px solid #647870; border-radius: 20px; background: #d9decf; cursor: pointer; }
+.runway-option input::before { content: ''; position: absolute; width: calc(var(--switch-height) - 8px); height: calc(var(--switch-height) - 8px); top: 2px; left: 2px; border-radius: 50%; background: #344e46; }
 .runway-option input:checked { background: #28766d; border-color: #28766d; }
-.runway-option input:checked::before { transform: translateX(18px); background: #fff5df; }
+.runway-option input:checked::before { transform: translateX(calc(var(--switch-width) - var(--switch-height))); background: #fff5df; }
 .runway-option input:disabled { cursor: wait; opacity: .55; }
 .runway-option input:focus-visible { outline: 3px solid #28766d; outline-offset: 3px; }
 @media (forced-colors: active) {
@@ -1651,15 +1650,13 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Type and action buttons step down with the screen. Text from 14px up is in rem, so the root size scales
    it: large 100%, medium 93.75%, small 87.5% (respecting the reader's browser setting); tiny rem
-   labels keep an 11px floor and 13px-or-smaller px labels stay put. Buttons go 48px, 44px, 40px, so every button on one screen is the same size.
-   Resume shift's two lines are trimmed on small screens to stay within the same height. */
+   labels keep an 11px floor and 13px-or-smaller px labels stay put. Buttons go 48px, 44px, 40px and switches 44, 40, 36px wide, so every control on one screen matches. */
 html { font-size: 100%; }
 @media (max-width: 900px) {
   html { font-size: 93.75%; }
-  :root { --button-height: 44px; --button-pad-x: 18px; }
+  :root { --button-height: 44px; --button-pad-x: 18px; --switch-width: 40px; --switch-height: 24px; }
 }
 @media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
   html { font-size: 87.5%; }
-  :root { --button-height: 40px; --button-pad-x: 16px; }
-  #start-panel .resume-shift { padding-block: 2px; }
+  :root { --button-height: 40px; --button-pad-x: 16px; --switch-width: 36px; --switch-height: 20px; }
 }

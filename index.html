@@ -201,7 +201,7 @@
                   <h2 id="field-title">Saltmarsh Gateway</h2>
                   <span id="field-difficulty">Beginner</span>
                 </div>
-                <button id="choose-airfield" type="button" class="text-button" data-screen="airfields"><span class="label-long">Change airfield</span><span class="label-short">Change map</span><span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
+                <button id="choose-airfield" type="button" class="text-button" data-screen="airfields">Change map<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
               </div>
               <p id="field-description"></p>
               <p id="field-lock" hidden></p>
@@ -225,8 +225,8 @@
               </label>
               </div>
               <div class="flight-actions">
-              <button id="resume-shift-button" class="secondary-button resume-shift" type="button" hidden>
-                <span class="button-label">Resume shift<small id="resume-shift-context"></small></span>
+              <button id="resume-shift-button" class="secondary-button resume-shift" type="button" aria-describedby="resume-shift-details" hidden>
+                <span class="button-label">Resume shift</span>
               </button>
               <button
                 id="start-button"
@@ -243,6 +243,8 @@
                   <span id="selected-map-name" class="visually-hidden">Saltmarsh Gateway</span></span
                 >
               </button>
+              <!-- Shown above the buttons while there is a shift to resume, so the button itself stays one line. -->
+              <p class="resume-details" id="resume-shift-details"><span>Saved shift:</span> <span id="resume-shift-context"></span></p>
               </div>
               </section>
             </section>
