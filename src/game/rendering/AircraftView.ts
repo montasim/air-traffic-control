@@ -56,6 +56,35 @@ export interface AircraftViewOptions {
   military?: boolean;
 }
 
+/**
+ * The landing lights' beam, in the aircraft's own coordinates: a cone spreading ahead of the nose and
+ * ending in a pool of light, built from faint layers so it is brightest along its middle and fades
+ * out at its edges and far end. Drawn with additive blending, it lights the ground it falls on.
+ */
+function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number): void {
+  const reach = 110;
+  const color = 0xfff4d6;
+  for (let layer = 0; layer < 6; layer += 1) {
+    const share = 1 - layer * 0.14;
+    const spread = Math.tan(0.3 * share);
+    const far = nose + reach * share;
+    const points = [new Phaser.Math.Vector2(nose - 2, -2.5)];
+    // The far edge is a gentle arc rather than a straight cut.
+    for (let i = 0; i <= 8; i += 1) {
+      const t = i / 8 - 0.5;
+      points.push(new Phaser.Math.Vector2(far - Math.abs(t) * reach * 0.12 * share, t * 2 * reach * spread));
+    }
+    points.push(new Phaser.Math.Vector2(nose - 2, 2.5));
+    graphics.fillStyle(color, 0.05);
+    graphics.fillPoints(points, true);
+  }
+  // A brighter pool where the beam meets the ground.
+  for (let layer = 0; layer < 3; layer += 1) {
+    graphics.fillStyle(color, 0.05);
+    graphics.fillEllipse(nose + reach * 0.72, 0, reach * (0.5 - layer * 0.12), reach * (0.36 - layer * 0.09));
+  }
+}
+
 /** Retained vector artwork: no cropped atlas, resampling or changing sprite pivots. */
 export class AircraftView {
   readonly container: Phaser.GameObjects.Container;
@@ -75,9 +104,10 @@ export class AircraftView {
   private landedBlend = -1;
   /** Scale on the ground, at most GROUND_SCALE and small enough to fit this type's stand. */
   private groundScale = GROUND_SCALE;
-  /** Night navigation lights: red port, green starboard, white tail strobe. */
-  private readonly navLights: Phaser.GameObjects.Arc[];
-  private readonly strobe: Phaser.GameObjects.Arc;
+  /** Night lights: landing lights at the nose throwing a beam ahead, and a red beacon that flashes. */
+  private readonly headlight: Phaser.GameObjects.Graphics;
+  private readonly noseLight: Phaser.GameObjects.Arc;
+  private readonly beacon: Phaser.GameObjects.Arc[];
   private night = false;
   private grounded = false;
   private strobeClock = 0;
@@ -120,7 +150,11 @@ export class AircraftView {
     const shadow = (this.shadow = scene.add.graphics().setPosition(3, 4));
     const body = (this.body = scene.add.graphics());
     this.paint(0);
-    const children: Phaser.GameObjects.GameObject[] = [shadow, this.ring, this.innerRing, body];
+    // The landing lights' beam lies on the ground ahead, under the airframe, glowing where it falls.
+    const nose = Math.max(...outline.map(([x]) => x));
+    this.headlight = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
+    paintHeadlightBeam(this.headlight, nose);
+    const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body];
     if (aircraft.type === "rotor") {
       // A centered, symmetric rotor avoids the lopsided atlas wobble.
       this.rotorAssembly = scene.add.graphics().setPosition(5, 0);
@@ -134,19 +168,14 @@ export class AircraftView {
       const hub = scene.add.circle(5, 0, 3, INK.bodyHighlight).setStrokeStyle(1.5, INK.keyline);
       children.push(hub);
     }
-    // Each light sits on the wing, set in from the tip edge so none of it hangs off the airframe:
-    // mid-tip on a wing, the forward edge point on a helicopter so it lands on the cabin, not the tail.
-    const span = Math.max(...outline.map(([, y]) => y));
-    const tipXs = outline.filter(([, y]) => y === span).map(([x]) => x);
-    const tipX = aircraft.type === "rotor" ? Math.max(...tipXs) : tipXs.reduce((sum, x) => sum + x, 0) / tipXs.length;
-    const tipY = span - 3.5;
-    const tail = outline.filter(([, y]) => y === 0).reduce((best, point) => point[0] < best[0] ? point : best);
-    this.navLights = [
-      scene.add.circle(tipX, -tipY, 2.6, 0xff3b30),
-      scene.add.circle(tipX, tipY, 2.6, 0x34e36a),
+    // The lamps themselves sit just inside the nose; the red beacon at the tail, with a soft glow.
+    this.noseLight = scene.add.circle(nose - 3, 0, 2.4, 0xfffbe8);
+    const beaconX = outline.filter(([, y]) => y === 0).reduce((best, [x]) => Math.min(best, x), Infinity);
+    this.beacon = [
+      scene.add.circle(beaconX, 0, 6.5, 0xff2a1f, 0.35).setBlendMode(Phaser.BlendModes.ADD),
+      scene.add.circle(beaconX, 0, 2.6, 0xff3b30),
     ];
-    this.strobe = scene.add.circle(tail[0], 0, 2.6, 0xffffff);
-    children.push(...this.navLights, this.strobe);
+    children.push(this.noseLight, ...this.beacon);
     this.updateLights();
     this.container = scene.add
       .container(aircraft.position.x, aircraft.position.y, children)
@@ -304,11 +333,13 @@ export class AircraftView {
     this.night = night;
     this.updateLights();
   }
-  /** Lights show in flight at night; the strobe flashes briefly once a second, or stays on with reduced motion. */
+  /** Lights show in flight at night; the beacon flashes briefly once a second, or stays on with reduced motion. */
   private updateLights(): void {
     const on = this.night && !this.grounded;
-    for (const light of this.navLights) light.setVisible(on);
-    this.strobe.setVisible(on && (this.reducedMotion || this.strobeClock < 120));
+    this.headlight.setVisible(on);
+    this.noseLight.setVisible(on);
+    const flash = on && (this.reducedMotion || this.strobeClock < 150);
+    for (const light of this.beacon) light.setVisible(flash);
   }
   destroy(): void {
     this.container.destroy(true);
