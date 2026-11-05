@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FADE_SECONDS, GroundTraffic, SETTLE_SECONDS } from '../../src/game/ground/groundTraffic';
 import type { GroundRoute, GroundStand } from '../../src/game/maps/types';
+import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
 
 // A straight runway rollout (0→400) then a taxiway north to an apron with two liner stands.
 const STANDS: GroundStand[] = [
@@ -176,5 +177,29 @@ describe('ground traffic', () => {
     let pivoted = false;
     run(ground, 15, () => { const plane = state(ground, 9); if (plane?.phase === 'pivoting') { pivoted = true; expect(plane.position.x).toBeCloseTo(400); } });
     expect(pivoted).toBe(true);
+  });
+
+
+  // Both runway ends in use: two aircraft landing from opposite ends can meet at the same turn-off,
+  // each just ahead of the other. They used to wait for each other for ever, jamming everyone behind.
+  it.each(MAP_DEFINITIONS.flatMap((map) => [[map.id, 900, 1600], [map.id, 1600, 900]] as const))('never jams opposite-end landings on %s at %ix%i', (mapId, width, height) => {
+    const layout = MAP_DEFINITIONS.find((map) => map.id === mapId)!.prepare({ width, height, detailLevel: 'mobile', twoEndLanding: true }).layout;
+    const routes = layout.groundRoutes ?? {};
+    const zones = layout.landingZones.filter((zone) => routes[zone.id]);
+    const unit = Math.min(width, height);
+    for (const first of zones) for (const second of zones) {
+      if (first.id >= second.id || first.accepts !== second.accepts) continue;
+      for (const delay of [0, 0.2, 0.4, 0.6, 0.8, 1, 1.3, 1.6]) {
+        const ground = new GroundTraffic(routes, { unit, gap: 60 });
+        const land = (id: number, zone: typeof first) => ground.add({ id, type: zone.accepts, position: zone.position, heading: zone.angle, speed: unit * 0.2 }, zone.id);
+        land(1, first);
+        for (let t = 0; t < 40; t += 1 / 60) {
+          if (t >= delay && !ground.has(2)) land(2, second);
+          ground.update(1 / 60);
+        }
+        const moving = ground.aircraft.filter((plane) => plane.phase === 'rolling' || plane.phase === 'taxiing' || plane.phase === 'pivoting');
+        expect(moving.map((plane) => `${first.id}+${second.id} after ${delay}s: ${plane.id} still taxiing`)).toEqual([]);
+      }
+    }
   });
 });

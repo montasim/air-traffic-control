@@ -63,7 +63,17 @@ interface Mover {
   timer: number;
   alpha: number;
   parkedAt: number;
+  /** When it landed: the earlier of two aircraft blocking each other goes first. */
+  landedAt: number;
+  /** Seconds it has been held up without moving. */
+  heldFor: number;
+  /** Until this time it ignores the aircraft around it, to break a jam no right of way resolves. */
+  pushUntil: number;
 }
+
+/** A taxiing aircraft held up this long goes anyway, briefly overlapping, rather than wait for ever. */
+const MAX_HOLD_SECONDS = 4;
+const PUSH_SECONDS = 1.5;
 
 const wrap = (angle: number) => Math.atan2(Math.sin(angle), Math.cos(angle));
 const turnToward = (from: number, to: number, maxStep: number) => {
@@ -77,7 +87,7 @@ function stationary(id: number, type: AircraftType, at: Vector2, heading: number
   return {
     id, type, position: { ...at }, heading, parkedAt: clock, pivotTarget: 0,
     points: [at], cumulative: [0], pivots: [], rolloutLength: 0, routeLength: 0, decel: 0,
-    finalHeading: heading, distance: 0, speed: 0,
+    finalHeading: heading, distance: 0, speed: 0, landedAt: clock, heldFor: 0, pushUntil: 0,
   };
 }
 
@@ -170,6 +180,9 @@ export class GroundTraffic {
       heading: arrival.heading,
       alpha: 1,
       parkedAt: this.clock,
+      landedAt: this.clock,
+      heldFor: 0,
+      pushUntil: 0,
       pivotTarget: 0,
       points,
       cumulative,
@@ -222,8 +235,14 @@ export class GroundTraffic {
     if (mover.standId && total - mover.distance < this.options.gap * 2) this.vacate(mover.standId, mover.id);
     if (this.isBlocked(mover)) {
       mover.speed = 0;
+      mover.heldFor += dt;
+      if (mover.heldFor >= MAX_HOLD_SECONDS) {
+        mover.pushUntil = this.clock + PUSH_SECONDS;
+        mover.heldFor = 0;
+      }
       return;
     }
+    mover.heldFor = 0;
     if (mover.distance < mover.rolloutLength) mover.speed = Math.max(taxi, mover.speed - mover.decel * dt);
     else {
       mover.phase = 'taxiing';
@@ -264,28 +283,40 @@ export class GroundTraffic {
   }
 
   /**
-   * A follower waits when another aircraft is just ahead. On the same route the gap
-   * is measured along the path, so it holds around bends; otherwise (other routes,
-   * stand legs) it waits for anything just ahead of its nose going the same way.
+   * A follower waits when another aircraft is just ahead. When two aircraft are each just ahead of the
+   * other (landing from opposite ends and meeting at the same turn-off), the one that landed first goes,
+   * so they can never wait for each other for ever.
    */
   private isBlocked(mover: Mover): boolean {
-    const forward = { x: Math.cos(mover.heading), y: Math.sin(mover.heading) };
+    if (this.clock < mover.pushUntil) return false;
     for (const other of this.movers.values()) {
-      // Parked aircraft sit on stands beside the lanes (and leave as a newcomer claims theirs), so they never block.
-      if (other === mover || other.phase === 'fading' || other.phase === 'appearing' || other.phase === 'parked') continue;
-      if (mover.routeKey && other.routeKey === mover.routeKey && other.distance <= other.routeLength) {
-        const ahead = other.distance - mover.distance;
-        if (ahead > 0 && ahead < this.options.gap) return true;
-        continue;
-      }
-      const dx = other.position.x - mover.position.x;
-      const dy = other.position.y - mover.position.y;
-      const along = dx * forward.x + dy * forward.y;
-      const lateral = Math.abs(dx * forward.y - dy * forward.x);
-      if (along <= 0 || along >= this.options.gap || lateral >= this.options.gap * 0.35) continue;
-      if (Math.cos(other.heading - mover.heading) > 0.2) return true;
+      if (!this.isAhead(mover, other)) continue;
+      const goesFirst = mover.landedAt < other.landedAt || (mover.landedAt === other.landedAt && mover.id < other.id);
+      if (goesFirst && this.isAhead(other, mover)) continue;
+      return true;
     }
     return false;
+  }
+
+  /**
+   * Whether `other` is just ahead of `mover`. On the same route the gap is measured along the path, so it
+   * holds around bends; otherwise (other routes, stand legs) anything just ahead of its nose going the
+   * same way counts.
+   */
+  private isAhead(mover: Mover, other: Mover): boolean {
+    // Parked aircraft sit on stands beside the lanes (and leave as a newcomer claims theirs), so they never block.
+    if (other === mover || other.phase === 'fading' || other.phase === 'appearing' || other.phase === 'parked') return false;
+    if (mover.routeKey && other.routeKey === mover.routeKey && other.distance <= other.routeLength) {
+      const ahead = other.distance - mover.distance;
+      return ahead > 0 && ahead < this.options.gap;
+    }
+    const forward = { x: Math.cos(mover.heading), y: Math.sin(mover.heading) };
+    const dx = other.position.x - mover.position.x;
+    const dy = other.position.y - mover.position.y;
+    const along = dx * forward.x + dy * forward.y;
+    const lateral = Math.abs(dx * forward.y - dy * forward.x);
+    if (along <= 0 || along >= this.options.gap || lateral >= this.options.gap * 0.35) return false;
+    return Math.cos(other.heading - mover.heading) > 0.2;
   }
 
   /** Stop at the stand; any other parked aircraft of the same type then fades, keeping one per type. */
