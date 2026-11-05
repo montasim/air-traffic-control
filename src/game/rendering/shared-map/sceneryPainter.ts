@@ -1,7 +1,7 @@
 import type Phaser from "phaser";
 import type { Vector2 } from "../../../core/types";
 import { tracePolygon } from "./geometry";
-import { removeCanvasTexture } from "./surfaceTexture";
+import { addCanvasTexture, removeCanvasTexture } from "./surfaceTexture";
 
 const centroid = (points: readonly Vector2[]): Vector2 =>
   points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, y: sum.y + p.y / points.length }), { x: 0, y: 0 });
@@ -144,7 +144,7 @@ function waveTile(scene: Phaser.Scene, size: number, crests: number, seed: numbe
       context.stroke();
     }
   }
-  scene.textures.addCanvas(key, canvas);
+  addCanvasTexture(scene, key, canvas);
   return key;
 }
 
@@ -300,7 +300,7 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
   for (const { x, y, r } of billows) puff(x - r * 0.06, y - r * 0.08, r * 0.92, "rgba(250,252,253,0.97)", "rgba(250,252,253,0)", 0.62);
   // Sunlit caps on the larger billows.
   for (const { x, y, r } of billows.slice(0, 14)) puff(x - r * 0.28, y - r * 0.32, r * 0.45, "rgba(255,255,255,0.9)", "rgba(255,255,255,0)", 0.3);
-  scene.textures.addCanvas(key, canvas);
+  addCanvasTexture(scene, key, canvas);
   return key;
 }
 

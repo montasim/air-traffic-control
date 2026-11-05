@@ -36,7 +36,17 @@ export function releaseCanvas(canvas: HTMLCanvasElement): void {
   canvas.width = canvas.height = 0;
 }
 
-/** Removes a texture made with `addCanvas` and frees its canvas with it. */
+/**
+ * Registers a finished, never-edited canvas as a texture. Unlike `addCanvas`, which reads back every
+ * pixel into a second editable copy (over half a second for a full map on a slow phone), this only
+ * uploads it.
+ */
+export function addCanvasTexture(scene: Phaser.Scene, key: string, canvas: HTMLCanvasElement): void {
+  // The whole-canvas frame Phaser's image loader would add, so the key works like any other texture.
+  scene.textures.create(key, canvas, canvas.width, canvas.height)?.add("__BASE", 0, 0, 0, canvas.width, canvas.height);
+}
+
+/** Removes a texture made with `addCanvasTexture` and frees its canvas with it. */
 export function removeCanvasTexture(scene: Phaser.Scene, key: string): void {
   if (!scene.textures?.exists(key)) return;
   const source = scene.textures.get(key).getSourceImage();
@@ -241,7 +251,7 @@ export function paintSurfaceTexture(
   }
 
   const key = `surface-texture-${serial += 1}`;
-  scene.textures.addCanvas(key, canvas);
+  addCanvasTexture(scene, key, canvas);
   const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
   image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
@@ -303,7 +313,7 @@ export function paintGroundTexture(
   context.fillStyle = light;
   context.fillRect(0, 0, width, height);
   const key = `ground-texture-${serial += 1}`;
-  scene.textures.addCanvas(key, canvas);
+  addCanvasTexture(scene, key, canvas);
   const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
   image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
