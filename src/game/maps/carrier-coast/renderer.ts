@@ -17,8 +17,9 @@ import {
   paintRaisedBuilding,
   paintShadedTree,
   paintSurfaceTexture,
+  paintBrokenShore,
   paintWhitecaps,
-  strokePolyline,
+  tracePolygon,
   type CivilMapPalette,
 } from '../../rendering/shared-map';
 import { pointInPolygon } from '../shared/apronLayout';
@@ -66,41 +67,38 @@ const scaledAbout = (outline: readonly Vector2[], factor: number) => {
   return outline.map((p) => ({ x: c.x + (p.x - c.x) * factor, y: c.y + (p.y - c.y) * factor }));
 };
 
-/**
- * The sea, beach and land as painted-ground polygons, in order: a pale shelf off the shore, the
- * beach, dune grass behind it and the sand inland; then shallows, beach and grass on every islet.
- */
-function coastGround(layout: CarrierCoastLayout, unit: number): { polygons: Vector2[][]; colors: number[] } {
+/** The land as painted-ground polygons, in order: the beach, dune grass behind it, then the sand inland. */
+function coastGround(layout: CarrierCoastLayout, unit: number): Vector2[][] {
   const tail = layout.land.slice(layout.coastline.length);
   const band = (distance: number) => [...offsetCoast(layout, distance), ...tail];
-  const palette = CARRIER_COAST_PALETTE;
-  const polygons = [band(unit * 0.07), band(0), band(-unit * 0.03), band(-unit * 0.07)];
-  const colors = [palette.waterShallow, BEACH, DUNE_GRASS, palette.terrain];
-  for (const islet of layout.islets) {
-    polygons.push(scaledAbout(islet, 1.25), [...islet], scaledAbout(islet, 0.6));
-    colors.push(palette.waterShallow, BEACH, DUNE_GRASS);
+  return [band(unit * 0.02), band(-unit * 0.03), band(-unit * 0.07)];
+}
+
+/** An islet ringed like the shore: pale shallows, a sandy beach, then grass. */
+function paintRingedIslet(graphics: Phaser.GameObjects.Graphics, islet: readonly Vector2[]): void {
+  for (const [outline, color] of [[scaledAbout(islet, 1.25), CARRIER_COAST_PALETTE.waterShallow], [islet, BEACH], [scaledAbout(islet, 0.6), DUNE_GRASS]] as const) {
+    graphics.fillStyle(color, 1);
+    tracePolygon(graphics, outline);
+    graphics.fillPath();
   }
-  return { polygons, colors };
 }
 
 export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastLayout, detailLevel: WorldDetailLevel): void {
   const unit = Math.min(layout.width, layout.height);
-  const ground = coastGround(layout, unit);
-  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: ground.polygons }, {
-    base: CARRIER_COAST_PALETTE.water,
+  // The land underneath; the sea is painted over it in the scenery layer, along a broken shore.
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: coastGround(layout, unit) }, {
+    base: CARRIER_COAST_PALETTE.terrain,
     // One colour per polygon, in coastGround's order.
-    fields: ground.colors,
+    fields: [BEACH, DUNE_GRASS, CARRIER_COAST_PALETTE.terrain],
     light: 0xf6f1df,
-    dark: 0x4f7470,
+    dark: 0x9c8a62,
   });
-  const ashore = (point: Vector2) => pointInPolygon(point, ground.polygons[0]) || layout.islets.some((islet) => pointInPolygon(point, scaledAbout(islet, 1.3)));
+  const ashore = (point: Vector2) => !pointInPolygon(point, layout.sea) || layout.islets.some((islet) => pointInPolygon(point, scaledAbout(islet, 1.3)));
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics, unit }) => {
-      // The sea, beach and sand are painted underneath by paintGroundTexture; this layer adds surf, whitecaps and trees.
-      graphics.lineStyle(unit * 0.008, 0xffffff, 0.55);
-      strokePolyline(graphics, offsetCoast(layout, unit * 0.012));
-      graphics.lineStyle(unit * 0.004, 0xffffff, 0.35);
-      strokePolyline(graphics, offsetCoast(layout, unit * 0.04));
+      // The same ragged shore and drifting floes as Frost Crossing, then the islets on top of the sea.
+      paintBrokenShore(graphics, layout, [layout.sea], CARRIER_COAST_PALETTE, detailLevel === 'mobile' ? 120 : 240);
+      for (const islet of layout.islets) paintRingedIslet(graphics, islet);
       paintWhitecaps(graphics, layout, detailLevel === 'mobile' ? 40 : 90, unit, (point) => !ashore(point) && clearOfAirfield(layout, point, unit * 0.04));
       paintCarrierWake(graphics, layout.carrier);
       const budget = detailLevel === 'mobile' ? 30 : 60;

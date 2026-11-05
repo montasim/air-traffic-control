@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Vector2 } from "../../../core/types";
 import type { PlayableMapLayout } from "../../maps/types";
 import type { MapRunway } from "../../maps/shared/airfield";
+import { pointInPolygon } from "../../maps/shared/apronLayout";
 import { convexHull, type MapBuilding } from "./airfieldPainter";
 import { clearOfAirfield, mixColor } from "./apronPainter";
 import { deterministicUnit, tracePolygon } from "./geometry";
@@ -110,6 +111,74 @@ export function fieldPatchwork(width: number, height: number, cell: number): Vec
     for (let j = -1; j * cell < height + cell; j += 1) fields.push([corner(i, j), corner(i + 1, j), corner(i + 1, j + 1), corner(i, j + 1)]);
   }
   return fields;
+}
+
+/** Breaks a smooth outline into a ragged one: each edge cut into short steps nudged in and out. */
+function jagged(outline: readonly Vector2[], unit: number): Vector2[] {
+  const step = unit * 0.025;
+  return outline.flatMap((a, i) => {
+    const b = outline[(i + 1) % outline.length];
+    const length = Math.hypot(b.x - a.x, b.y - a.y);
+    const normal = { x: -(b.y - a.y) / length, y: (b.x - a.x) / length };
+    const count = Math.max(1, Math.round(length / step));
+    return Array.from({ length: count }, (_, k) => {
+      const t = k / count;
+      const nudge = k === 0 ? 0 : (deterministicUnit(i * 97 + k, 831) - 0.5) * unit * 0.024;
+      return { x: a.x + (b.x - a.x) * t + normal.x * nudge, y: a.y + (b.y - a.y) * t + normal.y * nudge };
+    });
+  });
+}
+
+/**
+ * Open sea along a ragged shore, first made for Frost Crossing: a pale shelf over the land, deep
+ * water, a lighter band just off the shore, and broken floes drifting thickest near it.
+ */
+export function paintBrokenShore(
+  graphics: Phaser.GameObjects.Graphics,
+  bounds: { readonly width: number; readonly height: number },
+  waters: readonly (readonly Vector2[])[],
+  palette: CivilMapPalette,
+  floes: number,
+): void {
+  const unit = Math.min(bounds.width, bounds.height);
+  waters.forEach((water, w) => {
+    const shore = jagged(water, unit);
+    const closed = [...shore, shore[0]];
+    const strokeShore = (width: number, color: number, alpha: number) => {
+      graphics.lineStyle(width, color, alpha);
+      tracePolygon(graphics, shore);
+      graphics.strokePath();
+    };
+    strokeShore(unit * 0.07, palette.waterEdge, 0.7);
+    graphics.fillStyle(palette.water, 1);
+    tracePolygon(graphics, shore);
+    graphics.fillPath();
+    strokeShore(unit * 0.05, palette.waterShallow, 0.85);
+    strokeShore(unit * 0.012, palette.terrainLight, 0.9);
+    const xs = water.map((p) => p.x), ys = water.map((p) => p.y);
+    const [left, right] = [Math.max(0, Math.min(...xs)), Math.min(bounds.width, Math.max(...xs))];
+    const [top, bottom] = [Math.max(0, Math.min(...ys)), Math.min(bounds.height, Math.max(...ys))];
+    for (let i = 0; i < floes; i += 1) {
+      const seed = w * 1000 + i;
+      const point = { x: left + deterministicUnit(seed, 841) * (right - left), y: top + deterministicUnit(seed, 853) * (bottom - top) };
+      if (!pointInPolygon(point, shore)) continue;
+      // Floes crowd the shore and thin out toward open water.
+      const nearShore = nearRiver(closed, 0, point, unit * 0.14);
+      if (!nearShore && deterministicUnit(seed, 857) > 0.15) continue;
+      const size = unit * (nearShore ? 0.01 + deterministicUnit(seed, 859) * 0.022 : 0.006 + deterministicUnit(seed, 859) * 0.01);
+      const floe = Array.from({ length: 6 }, (_, k) => {
+        const turn = (k / 6) * Math.PI * 2 + deterministicUnit(seed, 863);
+        const reach = size * (0.6 + deterministicUnit(seed * 6 + k, 867) * 0.6);
+        return { x: point.x + Math.cos(turn) * reach, y: point.y + Math.sin(turn) * reach * 0.8 };
+      });
+      graphics.fillStyle(palette.waterShallow, 0.9);
+      tracePolygon(graphics, floe.map((p) => ({ x: p.x + size * 0.2, y: p.y + size * 0.25 })));
+      graphics.fillPath();
+      graphics.fillStyle(0xf2fbfe, 0.95);
+      tracePolygon(graphics, floe);
+      graphics.fillPath();
+    }
+  });
 }
 
 /** Whether a circle comes within the banks of a river of the given width along `river`. */

@@ -23,6 +23,8 @@ export interface CarrierCoastLayout extends PlayableMapLayout {
   readonly deckRunwayIds: readonly string[];
   readonly fixedObstacles: readonly Carrier['island'][];
   readonly land: readonly Vector2[];
+  /** The open sea on the far side of the coastline from the land. */
+  readonly sea: readonly Vector2[];
   readonly coastline: readonly Vector2[];
   readonly islets: readonly (readonly Vector2[])[];
   readonly scrub: readonly { readonly center: Vector2; readonly radius: number }[];
@@ -97,6 +99,7 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
 
   const coastline = COAST.map(point);
   const land = [...coastline, frame.point(1.4, 0.95), frame.point(1.4, -0.9)];
+  const sea = [...coastline, frame.point(-1.4, 0.95), frame.point(-1.4, -0.9)];
   const islets = ISLETS.map(([x, y, r], index) => Array.from({ length: 8 }, (_, i) => {
     const a = (i / 8) * Math.PI * 2;
     const wobble = 0.8 + unitNoise(i, index) * 0.35;
@@ -126,6 +129,7 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     deckRunwayIds: carrier.runways.map((runway) => runway.id),
     fixedObstacles: [carrier.island],
     land,
+    sea,
     coastline,
     islets,
     scrub,
