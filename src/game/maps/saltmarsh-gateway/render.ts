@@ -94,9 +94,8 @@ export function renderSaltmarshGateway(
   const palette = SALTMARSH_GATEWAY_PALETTE;
   paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons, angle: layout.runways[0].angle }, {
     base: palette.terrain,
-    fields: [palette.terrainLight, palette.terrain, 0xb3c463, palette.terrainDark, 0x9cba58],
-    light: 0xd8eb8c,
-    dark: 0x3c6624
+    // Close shades only: with crisp edges a dark field would read as a shadow.
+    fields: [palette.terrainLight, 0x97b456, 0xb3c463, 0x8fae50, 0x9cba58]
   });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics}) => paintSaltmarshGateway(graphics, layout, detailLevel),

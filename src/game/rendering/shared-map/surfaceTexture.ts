@@ -20,14 +20,14 @@ export interface SurfaceLayout {
 
 let serial = 0;
 
-/** A square of random grey pixels with random alpha: drawn small it is grain, scaled up it is soft mottling. */
-function noiseTile(size: number, strength: number, light = [255, 255, 255], dark = [0, 0, 0]): HTMLCanvasElement {
+/** A square of random black and white pixels with random alpha: fine grain. */
+function noiseTile(size: number, strength: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const context = canvas.getContext("2d")!;
   const image = context.createImageData(size, size);
   for (let i = 0; i < image.data.length; i += 4) {
-    const [r, g, b] = Math.random() < 0.5 ? light : dark;
+    const [r, g, b] = Math.random() < 0.5 ? [255, 255, 255] : [0, 0, 0];
     image.data[i] = r;
     image.data[i + 1] = g;
     image.data[i + 2] = b;
@@ -35,24 +35,6 @@ function noiseTile(size: number, strength: number, light = [255, 255, 255], dark
   }
   context.putImageData(image, 0, 0);
   return canvas;
-}
-
-/**
- * Soft, seamless mottling: a small noise tile repeated 3×3, scaled up smoothly, and the middle
- * cut out, so blobs blend across the tile edges instead of showing a grid.
- */
-function smoothTile(cells: number, size: number, strength: number, light?: number[], dark?: number[]): HTMLCanvasElement {
-  const noise = noiseTile(cells, strength, light, dark);
-  const wide = document.createElement("canvas");
-  wide.width = wide.height = size * 3;
-  const context = wide.getContext("2d")!;
-  context.imageSmoothingEnabled = true;
-  context.imageSmoothingQuality = "high";
-  for (let x = 0; x < 3; x += 1) for (let y = 0; y < 3; y += 1) context.drawImage(noise, x * size, y * size, size, size);
-  const tile = document.createElement("canvas");
-  tile.width = tile.height = size;
-  tile.getContext("2d")!.drawImage(wide, size, size, size, size, 0, 0, size, size);
-  return tile;
 }
 
 function fillWith(context: CanvasRenderingContext2D, tile: HTMLCanvasElement, scale: number, width: number, height: number): void {
@@ -114,9 +96,8 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
   const angle = layout.runways[0]?.angle ?? 0;
   const grain = noiseTile(96, 0.07);
 
+  // No grain on asphalt: runways and taxiways stay as clean as the vector paint under them.
   const asphalt = surfaceLayer(layout, scale, (context) => {
-    fillWith(context, grain, 1, width, height);
-    fillWith(context, smoothTile(10, Math.max(48, Math.round(unit * 0.25)), 0.06), 1, width, height);
     // Rubber left by main gear where aircraft touch down, fading along the landing direction.
     for (const zone of layout.landingZones) {
       if (!zone.approach) continue;
@@ -202,13 +183,12 @@ export interface GroundLayout {
 
 /**
  * The ground under all map scenery, painted once at the render scale: a base colour, a
- * patchwork of fields in a few crop shades with softly blurred edges, broad green-tinted
- * mottling (never grey speckle), and mowing stripes along the runways.
+ * patchwork of flat fields in a few close crop shades, and faint mowing stripes along the runways.
  */
 export function paintGroundTexture(
   scene: Phaser.Scene,
   ground: GroundLayout,
-  shades: { readonly base: number; readonly fields: readonly number[]; readonly light: number; readonly dark: number },
+  shades: { readonly base: number; readonly fields: readonly number[] },
   depth = -21,
 ): Phaser.GameObjects.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
@@ -222,20 +202,14 @@ export function paintGroundTexture(
   context.scale(scale, scale);
   context.fillStyle = css(shades.base);
   context.fillRect(0, 0, width, height);
-  // Fields with soft edges, as if painted rather than cut out.
-  context.filter = `blur(${Math.max(1, unit * 0.004)}px)`;
+  // Flat fields with crisp edges, drawn like the paved shapes so the ground is as sharp as they are.
   ground.fieldPolygons.forEach((field, index) => {
     context.fillStyle = css(shades.fields[index % shades.fields.length]);
-    context.globalAlpha = 0.85;
     context.beginPath();
     field.forEach((point, i) => (i ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
     context.closePath();
     context.fill();
   });
-  context.filter = "none";
-  context.globalAlpha = 1;
-  fillWith(context, smoothTile(10, Math.max(96, Math.round(unit * 0.6)), 0.18, rgb(shades.light), rgb(shades.dark)), 1, width, height);
-  fillWith(context, smoothTile(14, Math.max(48, Math.round(unit * 0.2)), 0.1, rgb(shades.light), rgb(shades.dark)), 1, width, height);
   context.save();
   context.translate(width / 2, height / 2);
   context.rotate(ground.angle);
