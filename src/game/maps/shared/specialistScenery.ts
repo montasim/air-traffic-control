@@ -14,6 +14,7 @@ import {
   type MapBuilding,
 } from '../../rendering/shared-map';
 import type { SpecialistLayout } from './specialistAirfield';
+import { animateDrawing } from '../../rendering/shared-map/motion';
 
 /**
  * The signature landscape of each specialist field, so no two of them look alike: an open-pit
@@ -39,19 +40,6 @@ const box = (center: Vector2, length: number, width: number, angle: number): Vec
 const freeAt = (layout: SpecialistLayout, point: Vector2, radius: number) =>
   point.x > radius * 0.3 && point.y > radius * 0.3 && point.x < layout.width - radius * 0.3 && point.y < layout.height - radius * 0.3 && clearOfAirfield(layout, point, radius);
 
-/** Runs `step` each frame until the graphics are cleared away (as between map previews or a new shift). */
-function animate(scene: Phaser.Scene, graphics: Graphics, draw: (seconds: number) => void): void {
-  draw(4);
-  if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let clock = 4;
-  const step = (_time: number, delta: number) => {
-    if (!graphics.scene) return void scene.events.off('update', step);
-    clock += delta / 1000;
-    draw(clock);
-  };
-  scene.events.on('update', step);
-  scene.events.once('shutdown', () => scene.events.off('update', step));
-}
 
 // ─── Freight Junction: a quarry and a wind farm ─────────────────────────────────────────────
 
@@ -151,7 +139,7 @@ export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: Spe
   }
   if (!scene.add?.graphics) return () => false;
   const rotors = scene.add.graphics().setDepth(depth);
-  animate(scene, rotors, (seconds) => {
+  animateDrawing(scene, rotors, (seconds) => {
     rotors.clear();
     turbines.forEach((at, i) => {
       const nacelle = box(at, unit * 0.016, unit * 0.006, facing);
@@ -169,7 +157,7 @@ export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: Spe
       rotors.fillStyle(0xcfd3cd, 1);
       rotors.fillCircle(hub.x, hub.y, unit * 0.004);
     });
-  });
+  }, 4);
   return (point, r) => turbines.some((at) => Math.hypot(at.x - point.x, at.y - point.y) < blade * 1.2 + r);
 }
 
@@ -484,5 +472,5 @@ export function addRadarStation(scene: Phaser.Scene, graphics: Graphics, layout:
   antenna.fillRect(-unit * 0.016 + unit * 0.003, -unit * 0.003 + unit * 0.004, unit * 0.032, unit * 0.006);
   antenna.fillStyle(0xd6d9d2, 1);
   antenna.fillRect(-unit * 0.016, -unit * 0.003, unit * 0.032, unit * 0.006);
-  animate(scene, antenna, (seconds) => antenna.setRotation(seconds * 1.4));
+  animateDrawing(scene, antenna, (seconds) => antenna.setRotation(seconds * 1.4), 4);
 }

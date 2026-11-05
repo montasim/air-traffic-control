@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Vector2 } from "../../../core/types";
 import { tracePolygon } from "./geometry";
 import { addCanvasTexture, removeCanvasTexture } from "./surfaceTexture";
+import { animateDrawing, animateWhileAlive, prefersStillMotion } from "./motion";
 
 const centroid = (points: readonly Vector2[]): Vector2 =>
   points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, y: sum.y + p.y / points.length }), { x: 0, y: 0 });
@@ -156,7 +157,7 @@ function waveTile(scene: Phaser.Scene, size: number, crests: number, seed: numbe
 export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: number; readonly height: number }, angle: number, depth = -20.5): void {
   if (typeof document === "undefined" || !scene.textures || !scene.add?.tileSprite) return;
   const reach = Math.hypot(bounds.width, bounds.height);
-  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = prefersStillMotion();
   const layers = [
     { size: 240, crests: 18, seed: 3, alpha: 0.34, speed: 9, scale: 1 },
     { size: 320, crests: 10, seed: 7, alpha: 0.22, speed: 4.5, scale: 1.7 },
@@ -169,18 +170,14 @@ export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: nu
   });
   if (still) return;
   let clock = 0;
-  const step = (_time: number, delta: number) => {
-    // Stop once the sprites are cleared away, as between map previews.
-    if (!layers[0].sprite.scene) return void scene.events.off("update", step);
+  animateWhileAlive(scene, () => !!layers[0].sprite.scene, (delta) => {
     clock += delta / 1000;
     for (const [index, { sprite, layer }] of layers.entries()) {
       sprite.tilePositionX = -clock * layer.speed;
       // A slow rise and fall in strength, out of step between the layers, like passing swells.
       sprite.setAlpha(layer.alpha * (0.75 + 0.25 * Math.sin(clock * 0.6 + index * 2)));
     }
-  };
-  scene.events.on("update", step);
-  scene.events.once("shutdown", () => scene.events.off("update", step));
+  });
 }
 
 /** A ship the moving wash follows: its centre, heading from stern to bow, length, and half its beam at the waterline. */
@@ -200,7 +197,7 @@ export interface WashingShip {
 export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], depth = -19.95): void {
   if (!scene.add?.graphics || !ships.length) return;
   const graphics = scene.add.graphics().setDepth(depth);
-  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = prefersStillMotion();
   const noise = (index: number, salt: number) => {
     const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
     return value - Math.floor(value);
@@ -232,17 +229,7 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
       }
     }
   };
-  draw(2.5);
-  if (still) return;
-  let clock = 2.5;
-  const step = (_time: number, delta: number) => {
-    // Stop once the graphics are cleared away, as between map previews.
-    if (!graphics.scene) return void scene.events.off("update", step);
-    clock += delta / 1000;
-    draw(clock);
-  };
-  scene.events.on("update", step);
-  scene.events.once("shutdown", () => scene.events.off("update", step));
+  animateDrawing(scene, graphics, draw, 2.5);
 }
 
 
@@ -322,7 +309,7 @@ export function addDriftingClouds(
 ): void {
   if (typeof document === "undefined" || !scene.textures || !scene.add?.image) return;
   const unit = Math.min(bounds.width, bounds.height);
-  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const still = prefersStillMotion();
   const along = { x: Math.cos(wind), y: Math.sin(wind) };
   const across = { x: -along.y, y: along.x };
   const centre = { x: bounds.width / 2, y: bounds.height / 2 };
@@ -394,7 +381,6 @@ export function addDriftingClouds(
   const unhook = () => {
     scene.events.off("night-mode", onNight);
     scene.events.off("weather-mode", onWeather);
-    scene.events.off("update", step);
   };
   scene.events.once("shutdown", unhook);
   const place = () => {
@@ -412,8 +398,7 @@ export function addDriftingClouds(
   };
   place();
   if (still) return;
-  function step(_time: number, delta: number): void {
-    if (!clouds[0]?.cloud.scene) return unhook();
+  animateWhileAlive(scene, () => !!clouds[0]?.cloud.scene, (delta) => {
     for (const item of clouds) {
       item.distance += speed * item.pace * (delta / 1000);
       if (item.distance > reach) {
@@ -423,7 +408,5 @@ export function addDriftingClouds(
       }
     }
     place();
-  }
-  scene.events.on("update", step);
-  scene.events.once("shutdown", () => scene.events.off("update", step));
+  }, unhook);
 }
