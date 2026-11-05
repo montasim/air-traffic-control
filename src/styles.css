@@ -1598,11 +1598,12 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #gameover-panel .result-actions { padding: 12px 20px 16px; }
 }
 
-/* Difficulty is one segmented control: a single track, the chosen level filled. Segments and the setting
-   chips share one height, a step under the action buttons, so the row reads as one family. */
+/* Difficulty is one segmented control: a single track, the chosen level filled. The track and the setting
+   chips share one height, a step under the action buttons, so they read as one family. */
 :root { --chip-height: calc(var(--button-height) - 8px); }
 #start-panel .difficulty-choices { gap: 4px; padding: 4px; border-radius: 12px; background: #e5e6d3; }
-#start-panel .difficulty-choices span { min-height: var(--chip-height); border: 0; background: transparent; font-size: 0.875rem; }
+/* The whole track is one chip tall, so it sits level with the setting chips instead of matching the action buttons. */
+#start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 8px); border: 0; border-radius: 8px; background: transparent; font-size: 0.8125rem; }
 #start-panel .difficulty-choices label:hover input:not(:checked) + span { background: #203d3914; }
 #start-panel .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); box-shadow: 0 2px 6px #203d3933; }
 /* On/off settings are toggle chips: outlined when off, filled teal with light text when on. The real switch
