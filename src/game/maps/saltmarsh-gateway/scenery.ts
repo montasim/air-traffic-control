@@ -201,8 +201,8 @@ export function paintHedgerows(graphics: Phaser.GameObjects.Graphics, layout: Sa
 }
 
 /**
- * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a long cast
- * shadow, a square base, and a glazed cab lifted above it.
+ * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a square
+ * shaft with shaded walls, an octagonal glazed cab on top, and one shadow cast from both.
  */
 export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette): void {
   const unit = Math.min(layout.width, layout.height);
