@@ -332,6 +332,10 @@ export class PlayScene extends Phaser.Scene {
     return this.simulation.snapshot().phase;
   }
 
+  getLayout(): PlayableMapLayout {
+    return this.layout;
+  }
+
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
     if (
       this.simulation.snapshot().phase !== "running" ||
