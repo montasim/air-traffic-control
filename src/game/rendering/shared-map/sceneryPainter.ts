@@ -1,6 +1,7 @@
 import type Phaser from "phaser";
 import type { Vector2 } from "../../../core/types";
 import { tracePolygon } from "./geometry";
+import { removeCanvasTexture } from "./surfaceTexture";
 
 const centroid = (points: readonly Vector2[]): Vector2 =>
   points.reduce((sum, p) => ({ x: sum.x + p.x / points.length, y: sum.y + p.y / points.length }), { x: 0, y: 0 });
@@ -163,7 +164,7 @@ export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: nu
     const key = waveTile(scene, layer.size, layer.crests, layer.seed);
     const sprite = scene.add.tileSprite(bounds.width / 2, bounds.height / 2, reach / layer.scale, reach / layer.scale, key)
       .setScale(layer.scale).setRotation(angle).setAlpha(layer.alpha).setDepth(depth);
-    sprite.once("destroy", () => scene.textures.remove(key));
+    sprite.once("destroy", () => removeCanvasTexture(scene, key));
     return { sprite, layer };
   });
   if (still) return;
@@ -245,8 +246,6 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
 }
 
 
-let cloudSerial = 0;
-
 /** Cloud texture size; clouds are scaled from this. */
 const CLOUD_SIZE = { width: 512, height: 320 };
 
@@ -256,7 +255,9 @@ const CLOUD_SIZE = { width: 512, height: 320 };
  * toward the north-west sun, so the cloud has volume and soft cauliflower edges.
  */
 function cloudTexture(scene: Phaser.Scene, seed: number): string {
-  const key = `cloud-${(cloudSerial += 1)}`;
+  // A seed always draws the same cloud, so each game builds a texture once and every map reuses it.
+  const key = `cloud-${seed}`;
+  if (scene.textures.exists(key)) return key;
   const { width, height } = CLOUD_SIZE;
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -410,7 +411,6 @@ export function addDriftingClouds(
     }
   };
   place();
-  for (const key of keys) scene.events.once("shutdown", () => scene.textures.remove(key));
   if (still) return;
   function step(_time: number, delta: number): void {
     if (!clouds[0]?.cloud.scene) return unhook();

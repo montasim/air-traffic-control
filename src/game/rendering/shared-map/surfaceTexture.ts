@@ -27,6 +27,23 @@ export interface SurfaceLayout {
 
 let serial = 0;
 
+/**
+ * Empties a canvas so its pixels are freed now. iOS Safari holds a canvas's memory until garbage
+ * collection, and the full-size layers built for each map would otherwise pile up past its limit
+ * and crash the page.
+ */
+export function releaseCanvas(canvas: HTMLCanvasElement): void {
+  canvas.width = canvas.height = 0;
+}
+
+/** Removes a texture made with `addCanvas` and frees its canvas with it. */
+export function removeCanvasTexture(scene: Phaser.Scene, key: string): void {
+  if (!scene.textures?.exists(key)) return;
+  const source = scene.textures.get(key).getSourceImage();
+  scene.textures.remove(key);
+  if (source instanceof HTMLCanvasElement) releaseCanvas(source);
+}
+
 /** The polygon with its points in clockwise (screen) order. */
 function clockwise(polygon: readonly Vector2[]): readonly Vector2[] {
   const area = polygon.reduce((sum, a, i) => { const b = polygon[(i + 1) % polygon.length]; return sum + a.x * b.y - b.x * a.y; }, 0);
@@ -104,6 +121,7 @@ function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: Can
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.globalCompositeOperation = keep === "inside" ? "destination-in" : "destination-out";
   context.drawImage(stencil, 0, 0);
+  releaseCanvas(stencil);
   // Back to world units, so later cut-outs (buildings, helipad) land where they are drawn.
   context.setTransform(scale, 0, 0, scale, 0, 0);
   context.globalCompositeOperation = "source-over";
@@ -217,12 +235,15 @@ export function paintSurfaceTexture(
   canvas.width = Math.ceil(width * scale);
   canvas.height = Math.ceil(height * scale);
   const context = canvas.getContext("2d")!;
-  for (const layer of [asphalt, concrete]) context.drawImage(layer, 0, 0);
+  for (const layer of [asphalt, concrete]) {
+    context.drawImage(layer, 0, 0);
+    releaseCanvas(layer);
+  }
 
   const key = `surface-texture-${serial += 1}`;
   scene.textures.addCanvas(key, canvas);
   const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
-  image.once("destroy", () => scene.textures.remove(key));
+  image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
 }
 
@@ -284,6 +305,6 @@ export function paintGroundTexture(
   const key = `ground-texture-${serial += 1}`;
   scene.textures.addCanvas(key, canvas);
   const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
-  image.once("destroy", () => scene.textures.remove(key));
+  image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
 }
