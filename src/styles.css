@@ -497,7 +497,8 @@ dialog h2 {
 }
 /* Pause and result: the airfield name, then the shift settings as small tags. */
 .shift-context { margin: 8px 0 0; }
-.shift-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+/* 8px between tags in both directions, the same as between a label and its tags. */
+.shift-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
 .shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #e8e6d4; font-size: 0.8rem; line-height: 1.4; }
 .compact-panel p {
   font-size: 0.95rem;
