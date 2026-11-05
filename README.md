@@ -26,7 +26,7 @@ Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasi
 
 - Draw and revise routes with a mouse, touch, or pen across twelve airfields.
 - Match airliners, commuters, and helicopters to their landing destinations.
-- Hold an aircraft in a circle while the way clears, and switch between normal, double, and half speed.
+- Hold an aircraft in a circle while the way clears, and switch between normal, one and a half, double, and half speed.
 - Choose Easy, Medium, or Hard, and optionally allow landings at either end of a runway.
 - Fly a night shift with runway and aircraft lights, with or without drifting clouds.
 - Learn in a practice flight with no timer or effect on your career.
@@ -56,7 +56,7 @@ Each safe landing earns one point. A collision or an aircraft leaving the sector
 | Control | What it does |
 | --- | --- |
 | **Hold** | Tap an aircraft to make it circle where it is: 5 loops on Easy, 3 on Medium, 2 on Hard. Its ring fades as the loops run out, then it flies on the way it was heading. Only two aircraft can hold at once. |
-| **Speed** | The bottom-left button switches between normal (1×), double (2×), and half (½×) speed. |
+| **Speed** | The bottom-left button steps through normal (1×), one and a half (1½×), double (2×), and half (½×) speed. |
 | **Pause** | Use the on-screen control or **Escape**. |
 | **Both side landing** | Lets aircraft land at either end of a runway instead of only the highlighted end. Choose it before a flight; it stays fixed during a shift. |
 | **Night shift** | A darker map with runway lights, aircraft headlights, and red tail beacons. Same rules and records as day. |

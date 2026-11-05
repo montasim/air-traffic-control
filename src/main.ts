@@ -256,9 +256,10 @@ let routeCoachDismissed = false;
 try { routeCoachDismissed = sessionStorage.getItem("vector-approach:route-coach-dismissed") === "1"; } catch { /* Session-only fallback. */ }
 let routeCoachTimer = 0;
 let scorePulseTimer = 0;
-// Session-only: the next shift keeps the player's last choice.
+// Session-only: the next shift keeps the player's last choice. Each tap steps up, then wraps to half.
 const GAME_SPEEDS = [
   { scale: 1, label: "1×", name: "normal" },
+  { scale: 1.5, label: "1½×", name: "one and a half times" },
   { scale: 2, label: "2×", name: "double" },
   { scale: 0.5, label: "½×", name: "half" },
 ] as const;
