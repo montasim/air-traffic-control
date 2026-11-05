@@ -1,0 +1,232 @@
+import type Phaser from 'phaser';
+import type { LandingZone, Vector2 } from '../../../core/types';
+import { AIRCRAFT_COLORS } from '../../palette';
+import type { MapRunway } from '../shared/airfield';
+import {
+  clearOfAirfield,
+  deterministicUnit,
+  localRunwayPoint,
+  mixColor,
+  tracePolygon,
+  type CivilMapPalette
+} from '../../rendering/shared-map';
+import type { SaltmarshGatewayLayout } from './layout';
+
+const HAZARD = 0xf2c230;
+const HAZARD_DARK = 0x2b2f30;
+
+/**
+ * A runway in plain grey asphalt with a thin shoulder and edge lines, yellow-and-black hazard
+ * stripes on the blast pads at both ends, the class-coloured threshold bar players match, a
+ * white centreline, and arrows ahead of each landing end showing which way aircraft land.
+ */
+export function paintMarkedRunway(
+  graphics: Phaser.GameObjects.Graphics,
+  runway: MapRunway,
+  palette: CivilMapPalette,
+  landingZones: readonly LandingZone[]
+): void {
+  const halfLength = runway.length / 2;
+  const halfWidth = runway.width / 2;
+  const box = (fromAlong: number, toAlong: number, fromAcross: number, toAcross: number, color: number, alpha = 1) => {
+    graphics.fillStyle(color, alpha);
+    tracePolygon(graphics, [
+      localRunwayPoint(runway, fromAlong, fromAcross),
+      localRunwayPoint(runway, toAlong, fromAcross),
+      localRunwayPoint(runway, toAlong, toAcross),
+      localRunwayPoint(runway, fromAlong, toAcross)
+    ]);
+    graphics.fillPath();
+  };
+  box(-halfLength - 3, halfLength + 3, -halfWidth - 3, halfWidth + 3, mixColor(palette.asphalt, palette.shadow, 0.45));
+  box(-halfLength, halfLength, -halfWidth, halfWidth, palette.asphalt);
+  // Thin white edge lines along the usable length.
+  const pad = Math.min(16, runway.length * 0.035);
+  box(-halfLength + pad, halfLength - pad, -halfWidth + 2, -halfWidth + 3.5, palette.marking, 0.9);
+  box(-halfLength + pad, halfLength - pad, halfWidth - 3.5, halfWidth - 2, palette.marking, 0.9);
+  for (const end of [-1, 1] as const) {
+    // Blast pad: hazard yellow with dark diagonal bands.
+    const outer = end * halfLength;
+    const inner = end * (halfLength - pad);
+    box(Math.min(outer, inner), Math.max(outer, inner), -halfWidth, halfWidth, HAZARD);
+    const stripe = runway.width / 5;
+    for (let across = -halfWidth; across < halfWidth - stripe * 0.5; across += stripe * 1.6) {
+      const top = Math.min(halfWidth, across + stripe * 0.8);
+      graphics.fillStyle(HAZARD_DARK, 1);
+      tracePolygon(graphics, [
+        localRunwayPoint(runway, outer, across),
+        localRunwayPoint(runway, outer, top),
+        localRunwayPoint(runway, inner, Math.min(halfWidth, top + stripe * 0.6)),
+        localRunwayPoint(runway, inner, Math.min(halfWidth, across + stripe * 0.6))
+      ]);
+      graphics.fillPath();
+    }
+    // The class-coloured threshold bar stays the main landing cue.
+    const bar = end * (halfLength - pad - 6);
+    const a = localRunwayPoint(runway, bar, -halfWidth + 4);
+    const b = localRunwayPoint(runway, bar, halfWidth - 4);
+    graphics.lineStyle(8, AIRCRAFT_COLORS[runway.accepts], 1);
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  }
+  // White centreline dashes.
+  const usable = runway.length - pad * 2 - 40;
+  const count = Math.max(3, Math.floor(usable / 48));
+  const spacing = usable / count;
+  graphics.lineStyle(3, palette.marking, 0.95);
+  for (let index = 0; index < count; index += 1) {
+    const center = -usable / 2 + spacing * (index + 0.5);
+    const a = localRunwayPoint(runway, center - spacing * 0.22);
+    const b = localRunwayPoint(runway, center + spacing * 0.22);
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  }
+  // The class letter sign beside the runway, as on every other map.
+  const sign = localRunwayPoint(runway, -halfLength + 34, halfWidth + 23);
+  graphics.fillStyle(palette.marking, 1);
+  graphics.fillRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+  graphics.lineStyle(3, 0x294b46, 1);
+  graphics.strokeRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+  graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x - 4, sign.y + 6);
+  graphics.lineBetween(sign.x - 4, sign.y + 6, sign.x + 5, sign.y + 6);
+  if (runway.accepts === "commuter") graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
+  // Landing-direction arrows just past each landing threshold.
+  graphics.fillStyle(palette.marking, 0.95);
+  for (const zone of landingZones) {
+    if (zone.approach?.runwayId !== runway.id) continue;
+    const forward = { x: Math.cos(zone.angle), y: Math.sin(zone.angle) };
+    const side = { x: -forward.y, y: forward.x };
+    const size = Math.min(halfWidth * 0.55, 9);
+    for (const step of [0.1, 0.16]) {
+      const tip = { x: zone.position.x + forward.x * runway.length * step, y: zone.position.y + forward.y * runway.length * step };
+      graphics.fillTriangle(
+        tip.x + forward.x * size, tip.y + forward.y * size,
+        tip.x - forward.x * size + side.x * size * 0.7, tip.y - forward.y * size + side.y * size * 0.7,
+        tip.x - forward.x * size - side.x * size * 0.7, tip.y - forward.y * size - side.y * size * 0.7
+      );
+    }
+  }
+}
+
+/** A pond with a sandy shore, a pale shallow band and a deeper centre. */
+export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: readonly Vector2[], palette: CivilMapPalette): void {
+  const center = points.reduce((sum, point) => ({ x: sum.x + point.x / points.length, y: sum.y + point.y / points.length }), { x: 0, y: 0 });
+  const scaled = (factor: number) => points.map((point) => ({ x: center.x + (point.x - center.x) * factor, y: center.y + (point.y - center.y) * factor }));
+  for (const [factor, color] of [[1.16, palette.waterEdge], [1, palette.waterShallow], [0.8, palette.water], [0.5, mixColor(palette.water, palette.shadow, 0.25)]] as const) {
+    graphics.fillStyle(color, 1);
+    tracePolygon(graphics, scaled(factor));
+    graphics.fillPath();
+  }
+}
+
+/** Overlapping crowns painted in passes (shadows, dark base, crown, highlight) so a clump reads as one canopy. */
+function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
+  graphics.fillStyle(palette.shadow, 0.3);
+  for (const c of crowns) graphics.fillCircle(c.x + c.r * 0.6, c.y + c.r * 0.5, c.r);
+  graphics.fillStyle(mixColor(palette.vegetation, palette.shadow, 0.35), 1);
+  for (const c of crowns) graphics.fillCircle(c.x, c.y, c.r);
+  graphics.fillStyle(palette.vegetation, 1);
+  for (const c of crowns) graphics.fillCircle(c.x - c.r * 0.18, c.y - c.r * 0.18, c.r * 0.78);
+  graphics.fillStyle(palette.vegetationLight, 0.9);
+  for (const c of crowns) graphics.fillCircle(c.x - c.r * 0.38, c.y - c.r * 0.38, c.r * 0.36);
+}
+
+/** Forest clumps in the band along the map edges, wherever they stay clear of the airfield and ponds. */
+export function paintForests(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette, clumps: number): void {
+  const unit = Math.min(layout.width, layout.height);
+  const band = unit * 0.16;
+  const ponds = layout.tidalPools.map((pool) => pool.reduce((sum, point) => ({ x: sum.x + point.x / pool.length, y: sum.y + point.y / pool.length }), { x: 0, y: 0 }));
+  const crowns: { x: number; y: number; r: number }[] = [];
+  for (let i = 0, placed = 0; i < clumps * 6 && placed < clumps; i += 1) {
+    // Walk the perimeter, then step inward by up to the band width.
+    const around = deterministicUnit(i, 401) * 2 * (layout.width + layout.height);
+    const inward = deterministicUnit(i, 409) * band;
+    const edge = around < layout.width ? { x: around, y: inward }
+      : around < layout.width + layout.height ? { x: layout.width - inward, y: around - layout.width }
+      : around < 2 * layout.width + layout.height ? { x: around - layout.width - layout.height, y: layout.height - inward }
+      : { x: inward, y: around - 2 * layout.width - layout.height };
+    const radius = unit * (0.035 + deterministicUnit(i, 419) * 0.035);
+    if (!clearOfAirfield(layout, edge, radius + unit * 0.04)) continue;
+    if (ponds.some((pond) => Math.hypot(pond.x - edge.x, pond.y - edge.y) < radius + unit * 0.08)) continue;
+    placed += 1;
+    for (let k = 0; k < 9; k += 1) {
+      const angle = deterministicUnit(i * 13 + k, 431) * Math.PI * 2;
+      const distance = Math.sqrt(deterministicUnit(i * 13 + k, 433)) * radius;
+      crowns.push({ x: edge.x + Math.cos(angle) * distance, y: edge.y + Math.sin(angle) * distance, r: unit * (0.012 + deterministicUnit(i * 13 + k, 439) * 0.01) });
+    }
+  }
+  paintCanopy(graphics, crowns, palette);
+}
+
+/** Loose hedgerows along some field edges: uneven bushes with gaps, nudged off the line, off the airfield. */
+export function paintHedgerows(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette): void {
+  const unit = Math.min(layout.width, layout.height);
+  const bushes: { x: number; y: number; r: number }[] = [];
+  layout.fieldPolygons.forEach((field, f) => {
+    field.forEach((a, i) => {
+      if ((i + f) % 3) return;
+      const b = field[(i + 1) % field.length];
+      const length = Math.hypot(b.x - a.x, b.y - a.y);
+      const step = unit * 0.016;
+      const normal = { x: -(b.y - a.y) / length, y: (b.x - a.x) / length };
+      for (let s = step, k = 0; s < length - step; s += step, k += 1) {
+        const seed = f * 97 + i * 31 + k;
+        // Gaps of a few bushes break the line up.
+        if (deterministicUnit(Math.floor(k / 3) + seed * 7, 461) < 0.4) continue;
+        const nudge = (deterministicUnit(seed, 463) - 0.5) * unit * 0.008;
+        const point = { x: a.x + ((b.x - a.x) * s) / length + normal.x * nudge, y: a.y + ((b.y - a.y) * s) / length + normal.y * nudge };
+        if (point.x < 0 || point.y < 0 || point.x > layout.width || point.y > layout.height) continue;
+        const r = unit * (0.005 + deterministicUnit(seed, 457) * 0.006);
+        if (clearOfAirfield(layout, point, r + unit * 0.03)) bushes.push({ ...point, r });
+      }
+    });
+  });
+  paintCanopy(graphics, bushes, palette);
+}
+
+/**
+ * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a long cast
+ * shadow, a square base, and a glazed cab lifted above it.
+ */
+export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette): void {
+  const unit = Math.min(layout.width, layout.height);
+  const terminal = layout.buildings.find((building) => building.kind === 'terminal');
+  if (!terminal || !layout.apron.length) return;
+  const axis = { x: Math.cos(layout.runways[0].angle), y: Math.sin(layout.runways[0].angle) };
+  const middle = layout.apron.reduce((sum, point) => ({ x: sum.x + point.x / layout.apron.length, y: sum.y + point.y / layout.apron.length }), { x: 0, y: 0 });
+  const side = Math.sign((terminal.center.x - middle.x) * axis.x + (terminal.center.y - middle.y) * axis.y) || 1;
+  const tip = layout.apron.reduce((best, point) =>
+    ((point.x - middle.x) * axis.x + (point.y - middle.y) * axis.y) * side > ((best.x - middle.x) * axis.x + (best.y - middle.y) * axis.y) * side ? point : best);
+  const base = { x: tip.x + axis.x * side * unit * 0.045, y: tip.y + axis.y * side * unit * 0.045 };
+  const height = unit * 0.05;
+  if (!clearOfAirfield(layout, base, unit * 0.02) || base.x < 0 || base.y < 0 || base.x > layout.width || base.y > layout.height) return;
+  const lift = { x: 0, y: -height * 0.5 };
+  const cab = { x: base.x + lift.x, y: base.y + lift.y };
+  // Long shadow to the south-east, shaft, cab with a glazed band, and a light roof cap.
+  graphics.lineStyle(unit * 0.014, palette.shadow, 0.3);
+  graphics.lineBetween(base.x, base.y, base.x + height * 0.9, base.y + height * 0.7);
+  graphics.fillStyle(palette.shadow, 0.3);
+  graphics.fillCircle(base.x + height * 0.9, base.y + height * 0.7, unit * 0.016);
+  graphics.lineStyle(unit * 0.012, mixColor(palette.building, palette.shadow, 0.3), 1);
+  graphics.lineBetween(base.x, base.y, cab.x, cab.y);
+  graphics.fillStyle(mixColor(palette.building, palette.shadow, 0.2), 1);
+  graphics.fillCircle(base.x, base.y, unit * 0.009);
+  graphics.fillStyle(0x3f6f78, 1);
+  graphics.fillCircle(cab.x, cab.y, unit * 0.017);
+  graphics.fillStyle(0x9fd3dc, 0.85);
+  graphics.fillCircle(cab.x - unit * 0.004, cab.y - unit * 0.004, unit * 0.008);
+  graphics.fillStyle(mixColor(palette.building, palette.buildingRoof, 0.5), 1);
+  graphics.fillCircle(cab.x, cab.y, unit * 0.01);
+  graphics.lineStyle(Math.max(1, unit * 0.002), palette.shadow, 0.8);
+  graphics.lineBetween(cab.x, cab.y, cab.x, cab.y - unit * 0.018);
+  // Two fuel tanks set back from the tower.
+  const across = { x: -axis.y, y: axis.x };
+  for (const offset of [-1, 1]) {
+    const tank = { x: base.x + across.x * offset * unit * 0.03 + axis.x * side * unit * 0.012, y: base.y + across.y * offset * unit * 0.03 + axis.y * side * unit * 0.012 };
+    if (!clearOfAirfield(layout, tank, unit * 0.012)) continue;
+    graphics.fillStyle(palette.shadow, 0.28);
+    graphics.fillCircle(tank.x + unit * 0.006, tank.y + unit * 0.005, unit * 0.011);
+    graphics.fillStyle(0xd9dcd4, 1);
+    graphics.fillCircle(tank.x, tank.y, unit * 0.011);
+    graphics.lineStyle(Math.max(1, unit * 0.0015), 0x8b918d, 1);
+    graphics.strokeCircle(tank.x, tank.y, unit * 0.007);
+  }
+}

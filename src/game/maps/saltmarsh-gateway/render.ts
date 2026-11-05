@@ -18,33 +18,33 @@ import {
   paintSurfaceTexture,
   paintFieldPolygon,
   paintHelipad,
-  paintRunway,
-  paintWaterPolygon,
   strokePolyline,
   type CivilMapPalette
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import type { SaltmarshGatewayLayout } from './layout';
+import { paintControlTower, paintForests, paintHedgerows, paintMarkedRunway, paintShoredPool } from './scenery';
 
+/** Brighter, warmer greens with clear field contrast, blue water and plain grey asphalt. */
 export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
-  terrain: 0x819667,
-  terrainLight: 0xa3b680,
-  terrainDark: 0x6b835c,
-  fieldLine: 0xbec5a1,
-  water: 0x719fa4,
-  waterEdge: 0xc0c6a2,
-  waterShallow: 0xa5bfc0,
-  airportGround: 0xa1ac8b,
-  asphalt: 0x505e60,
-  asphaltEdge: 0xb0baa6,
-  apron: 0x89938a,
-  marking: 0xf4efda,
-  taxiwayMarking: 0xd4c29b,
-  building: 0xb8b9a3,
-  buildingRoof: 0xeee4c9,
-  shadow: 0x3b5049,
-  vegetation: 0x637e55,
-  vegetationLight: 0x9db27a
+  terrain: 0x86a84f,
+  terrainLight: 0xa9c25f,
+  terrainDark: 0x6a8c3d,
+  fieldLine: 0xc9d39a,
+  water: 0x3f93b8,
+  waterEdge: 0xe2dcae,
+  waterShallow: 0x7cc4d6,
+  airportGround: 0xa7b384,
+  asphalt: 0x666d70,
+  asphaltEdge: 0xc8ccc2,
+  apron: 0x9aa09d,
+  marking: 0xfbf8ee,
+  taxiwayMarking: 0xf0c64a,
+  building: 0xa99f8a,
+  buildingRoof: 0xece1c6,
+  shadow: 0x2d4433,
+  vegetation: 0x4d7a30,
+  vegetationLight: 0x93bb4c
 };
 
 function paintSaltmarshGateway(
@@ -63,7 +63,8 @@ function paintSaltmarshGateway(
   layout.fieldPolygons.forEach((field, index) => {
     paintFieldPolygon(graphics, field, palette, index % 2 === 0);
   });
-  for (const pool of layout.tidalPools) paintWaterPolygon(graphics, pool, palette);
+  for (const pool of layout.tidalPools) paintShoredPool(graphics, pool, palette);
+  paintHedgerows(graphics, layout, palette);
 
   graphics.lineStyle(Math.max(2, Math.min(layout.width, layout.height) * 0.006), palette.fieldLine, 0.18);
   for (const road of layout.serviceRoads) strokePolyline(graphics, road);
@@ -72,6 +73,7 @@ function paintSaltmarshGateway(
     const tree = layout.treeBelt[index];
     if (clearOfAirfield(layout, tree.center, tree.radius)) paintShadedTree(graphics, tree.center, tree.radius, palette, index);
   }
+  paintForests(graphics, layout, palette, Math.round(budget.trees / 3));
 
  }
 
@@ -80,7 +82,7 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
   paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
-    paintRunway(graphics, runway, palette, budget.surfaceWear);
+    paintMarkedRunway(graphics, runway, palette, layout.landingZones);
   }
   paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
@@ -88,6 +90,7 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
 
   const unit = Math.min(layout.width, layout.height);
   for (const building of layout.buildings) paintRaisedBuilding(graphics, building, palette, unit, layout.runways);
+  paintControlTower(graphics, layout, palette);
 }
 
 export function renderSaltmarshGateway(
