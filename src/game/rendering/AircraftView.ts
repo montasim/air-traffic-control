@@ -133,6 +133,8 @@ export class AircraftView {
     this.container
       .setPosition(aircraft.position.x, aircraft.position.y)
       .setRotation(aircraft.heading);
+    // Airborne shadows fall far from the aircraft and close in through the landing.
+    this.placeShadow(aircraft.heading, aircraft.state === "landing" ? 1 - aircraft.landingProgress : 1);
     if (this.rotorAssembly && !this.reducedMotion) {
       this.rotorAngle = rotorMotion(
         this.rotorAngle,
@@ -149,6 +151,16 @@ export class AircraftView {
     this.container
       .setScale(this.presentationScale * (1 - progress * (1 - this.groundScale)))
       .setAlpha(1);
+  }
+  /**
+   * The shadow keeps one world direction, down and right from a north-west light, whatever the
+   * heading: the offset is turned back by the container's rotation. Altitude 1 is cruising, 0 on the ground.
+   */
+  private placeShadow(heading: number, altitude: number): void {
+    const x = 3 + altitude * 9;
+    const y = 4 + altitude * 12;
+    const cos = Math.cos(heading), sin = Math.sin(heading);
+    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(1 - altitude * 0.3);
   }
   setGroundScale(scale: number): void {
     this.groundScale = scale;
@@ -171,11 +183,16 @@ export class AircraftView {
     const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
     const edge = mixColor(paint.edge, LANDED.keyline, landed);
     this.shadow.clear();
-    this.shadow.fillStyle(INK.shadow, 0.16 + (LANDED.shadowAlpha - 0.16) * landed);
+    this.shadow.fillStyle(INK.shadow, 0.22 + (LANDED.shadowAlpha - 0.22) * landed);
     this.shadow.fillPoints(this.outline, true);
     const body = this.body.clear();
     body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
     body.fillPoints(this.outline, true);
+    // Wings and tailplanes sit lower than the fuselage, so they read a shade darker.
+    if (this.type !== "rotor") {
+      body.fillStyle(INK.keyline, 0.14);
+      for (const [from, to] of [[2, 5], [13, 16], [6, 9], [9, 12]]) body.fillPoints(this.outline.slice(from, to + 1), true);
+    }
     // Midnight needs a pale edge on dark scenery, backed by dark ink on snow.
     if (this.livery === 'midnight') {
       body.lineStyle(4.4, keyline, 1);
@@ -192,6 +209,15 @@ export class AircraftView {
       body.lineBetween(wingX, -19, wingX + 3, -9);
       body.lineBetween(wingX, 19, wingX + 3, 9);
     }
+    // Engines under the wings and a light catching the spine give the airframe some depth.
+    if (this.type !== "rotor") {
+      body.fillStyle(mixColor(INK.keyline, LANDED.keyline, landed), 0.85);
+      const engineX = this.type === "liner" ? 0 : 2;
+      body.fillEllipse(engineX, -13, 8, 4);
+      body.fillEllipse(engineX, 13, 8, 4);
+    }
+    body.fillStyle(0xffffff, 0.28 * (1 - landed));
+    body.fillRoundedRect(this.type === "rotor" ? -14 : -22, -1, this.type === "rotor" ? 26 : 42, 2, 1);
     body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
     body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
   }
@@ -210,6 +236,7 @@ export class AircraftView {
       .setRotation(state.heading)
       .setScale(this.presentationScale * this.groundScale)
       .setAlpha(state.alpha);
+    this.placeShadow(state.heading, 0);
     if (this.rotorAssembly && !this.reducedMotion) {
       this.rotorAngle = rotorMotion(this.rotorAngle, deltaMilliseconds, rotorRunning);
       this.rotorAssembly.setRotation(this.rotorAngle);
