@@ -1,6 +1,6 @@
 import { crossesCapture } from './runwayApproach';
 import { aircraftWarningDistance, airframesOverlap, DEFAULT_COLLISION_SCALES, type AircraftCollisionScales } from './aircraftCollision';
-import { distance, simplifyPoints, smoothPath } from './geometry';
+import { distance, lerpPoint, simplifyPoints, smoothPath } from './geometry';
 import {
   aircraftTypeAt,
   aircraftSpeed,
@@ -84,6 +84,31 @@ class SeededRandom {
   pick<T>(values: readonly T[]): T {
     return values[Math.floor(this.next() * values.length)];
   }
+}
+
+/**
+ * Joins a drawn route from where the aircraft is now. The route was drawn from where it was pressed, so an
+ * aircraft that flew on while the player drew would otherwise turn back to that start. It cuts across to
+ * the point that leaves the shortest trip (to the point, then along the rest of the line), looking only as
+ * far along the line as it can have flown (`reach`), so a loop drawn later past the aircraft is kept.
+ */
+export function pickUpRoute(drawn: readonly Vector2[], position: Vector2, reach: number): Vector2[] {
+  const SAMPLES = 8;
+  let best = { cost: Infinity, segment: 1, point: drawn[0] };
+  let travelled = 0;
+  for (let i = 1; i < drawn.length && travelled <= reach; i += 1) {
+    const length = distance(drawn[i - 1], drawn[i]);
+    for (let k = 0; k <= SAMPLES; k += 1) {
+      const t = k / SAMPLES;
+      if (travelled + t * length > reach) break;
+      const point = lerpPoint(drawn[i - 1], drawn[i], t);
+      // Getting there, minus how far along the line it is: the rest of the line is the same from any start.
+      const cost = distance(position, point) - (travelled + t * length);
+      if (cost < best.cost - 1e-6) best = { cost, segment: i, point };
+    }
+    travelled += length;
+  }
+  return [{ ...position }, best.point, ...drawn.slice(best.segment)];
 }
 
 export class Simulation {
@@ -216,7 +241,8 @@ export class Simulation {
     const routePoints = drawnPoints.map((point) => ({ ...point }));
     if (destination) routePoints[routePoints.length - 1] = { ...destination.position };
 
-    const points = simplifyPoints([{ ...target.position }, ...routePoints.slice(1)], 10);
+    // The line is drawn from where the aircraft was when pressed, and it flew on meanwhile.
+    const points = simplifyPoints(pickUpRoute(routePoints, target.position, distance(routePoints[0], target.position) + target.collisionRadius), 10);
     if (points.length < 2 || distance(points[0], points[points.length - 1]) < 24) {
       return { accepted: false, aircraftId, reason: 'route-too-short', destinationZoneId };
     }

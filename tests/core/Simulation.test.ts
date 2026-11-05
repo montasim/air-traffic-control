@@ -79,6 +79,35 @@ describe('Simulation', () => {
     expect(simulation.snapshot().aircraft[0].route?.points.length).toBeGreaterThan(3);
   });
 
+  it('picks up a route drawn while the aircraft flew on, instead of turning back for its start', () => {
+    // The route is drawn from where the aircraft was pressed; holding for a moment while it flies on
+    // used to make it turn back to that spot before following the line.
+    const simulation = new Simulation(LANDING_ZONES);
+    simulation.start(11);
+    const aircraft = simulation.snapshot().aircraft[0];
+    Object.assign(aircraft, { position: { x: 450, y: 400 }, heading: 0, hasEntered: true, state: 'flying' });
+    const pressedAt = { x: 370, y: 400 };
+    const drawn = [pressedAt, { x: 372, y: 402 }, ...Array.from({ length: 10 }, (_, i) => ({ x: 372, y: 450 + i * 50 }))];
+
+    expect(simulation.assignRoute(aircraft.id, drawn).accepted).toBe(true);
+    const route = simulation.snapshot().aircraft[0].route!.points;
+    // Nothing on the route lies back where the aircraft was pressed, and it heads down the line, not west to its start.
+    expect(route.every((point) => Math.hypot(point.x - pressedAt.x, point.y - pressedAt.y) > 40)).toBe(true);
+    expect(route[1].y).toBeGreaterThan(400);
+  });
+
+  it('keeps a quickly drawn route as drawn', () => {
+    const simulation = new Simulation(LANDING_ZONES);
+    simulation.start(11);
+    const aircraft = simulation.snapshot().aircraft[0];
+    Object.assign(aircraft, { position: { x: 450, y: 400 }, heading: 0, hasEntered: true, state: 'flying' });
+    // Pressed where it is now, then a loop back past it: the loop stays.
+    const drawn = [{ x: 450, y: 400 }, { x: 452, y: 400 }, { x: 560, y: 400 }, { x: 560, y: 520 }, { x: 440, y: 520 }, { x: 440, y: 420 }, { x: 300, y: 420 }];
+    expect(simulation.assignRoute(aircraft.id, drawn).accepted).toBe(true);
+    const route = simulation.snapshot().aircraft[0].route!.points;
+    expect(Math.max(...route.map((point) => point.x))).toBeGreaterThan(540);
+  });
+
   it('snaps an accepted destination route to the exact zone center after smoothing', () => {
     const simulation = new Simulation(LANDING_ZONES);
     simulation.start(11);
