@@ -18,6 +18,7 @@ import {
   paintForests,
   paintGroundTexture,
   paintHedgerows,
+  nearRiver,
   paintHelipad,
   paintRaisedBuilding,
   paintRiver,
@@ -68,17 +69,6 @@ function paintScenery(
   const byRiver = (point: Vector2, radius: number) => nearRiver(river, layout.riverWidth, point, radius + unit * 0.02);
   paintHedgerows(graphics, layout, layout.fieldPolygons, palette, byRiver);
   paintForests(graphics, layout, palette, Math.round(budget.trees / 3), byRiver);
-}
-
-/** Whether a circle comes within the river's banks. */
-function nearRiver(river: readonly Vector2[], width: number, point: Vector2, radius: number): boolean {
-  return river.some((a, i) => {
-    if (i === 0) return false;
-    const b = river[i - 1];
-    const length = (b.x - a.x) ** 2 + (b.y - a.y) ** 2 || 1;
-    const t = Math.max(0, Math.min(1, ((point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y)) / length));
-    return Math.hypot(point.x - (a.x + (b.x - a.x) * t), point.y - (a.y + (b.y - a.y) * t)) < width * 0.67 + radius;
-  });
 }
 
 function paintOperational(

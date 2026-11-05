@@ -101,6 +101,17 @@ export function paintHedgerows(
   paintCanopy(graphics, bushes, palette);
 }
 
+/** Whether a circle comes within the banks of a river of the given width along `river`. */
+export function nearRiver(river: readonly Vector2[], width: number, point: Vector2, radius: number): boolean {
+  return river.some((a, i) => {
+    if (i === 0) return false;
+    const b = river[i - 1];
+    const length = (b.x - a.x) ** 2 + (b.y - a.y) ** 2 || 1;
+    const t = Math.max(0, Math.min(1, ((point.x - a.x) * (b.x - a.x) + (point.y - a.y) * (b.y - a.y)) / length));
+    return Math.hypot(point.x - (a.x + (b.x - a.x) * t), point.y - (a.y + (b.y - a.y) * t)) < width * 0.67 + radius;
+  });
+}
+
 /**
  * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a square
  * shaft with shaded walls, an octagonal glazed cab on top, and one shadow cast from both.

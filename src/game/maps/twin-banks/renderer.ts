@@ -3,25 +3,34 @@ import {
   composeStaticMap,
   clearOfAirfield,
   paintAirfieldGround,
+  deterministicUnit,
+  MAP_DETAIL_BUDGETS,
+  nearRiver,
   paintAirfieldGuides,
-  paintBuilding,
+  paintControlTower,
+  paintForests,
+  paintGroundTexture,
+  paintHedgerows,
   paintHelipad,
+  paintRaisedBuilding,
   paintRiver,
   paintMarkedRunway,
+  paintShadedTree,
   paintSurfaceTexture,
-  paintTree,
   runwayCorners,
   smoothPath,
   tracePolygon,
   type CivilMapPalette,
   type MapBuilding
 } from '../../rendering/shared-map';
+import type { Vector2 } from '../../../core/types';
 import type { WorldDetailLevel } from '../../palette';
 import {
   TWIN_BANKS_PALETTE,
   type TwinBanksLayout
 } from './layout';
 import type { AirfieldSign } from '../shared/airfield';
+import { pointInPolygon } from '../shared/apronLayout';
 
 const CIVIL_PALETTE: CivilMapPalette = {
   terrain: TWIN_BANKS_PALETTE.eastGround,
@@ -99,38 +108,58 @@ function paintVectorLabel(
   }
 }
 
+const riverPathOf = (layout: TwinBanksLayout) => smoothPath(layout.river.centerline, Math.max(4, layout.detailBudget.riverMarks));
+
+/** Golden stubble on the dry west bank, greener meadow on the east, in close shades so no field reads as a shadow. */
+const WEST_FIELDS = [0xb8aa7d, 0xaa9c6f, 0xbfb184, 0xa89a6c];
+const EAST_FIELDS = [0x8aa275, 0x7c956a, 0x93a97c, 0x86a070];
+
+/**
+ * A loose patchwork of fields on both banks: a jittered grid, each cell coloured for the bank
+ * it lies on, with cells by the river left out so no field crosses to the other bank.
+ */
+function bankFields(layout: TwinBanksLayout): { polygons: Vector2[][]; colors: number[] } {
+  const unit = Math.min(layout.width, layout.height);
+  const cell = unit * 0.24;
+  const river = riverPathOf(layout);
+  const east = eastBankPolygon(layout);
+  const polygons: Vector2[][] = [];
+  const colors: number[] = [];
+  const jitter = (x: number, y: number, salt: number) => (deterministicUnit(x * 31 + y, salt) - 0.5) * cell * 0.3;
+  const corner = (i: number, j: number) => ({ x: i * cell + jitter(i, j, 601), y: j * cell + jitter(i, j, 607) });
+  for (let i = -1; i * cell < layout.width + cell; i += 1) {
+    for (let j = -1; j * cell < layout.height + cell; j += 1) {
+      const quad = [corner(i, j), corner(i + 1, j), corner(i + 1, j + 1), corner(i, j + 1)];
+      const middle = { x: (i + 0.5) * cell, y: (j + 0.5) * cell };
+      if (nearRiver(river, layout.river.width, middle, cell * 0.75)) continue;
+      const shades = pointInPolygon(middle, east) ? EAST_FIELDS : WEST_FIELDS;
+      polygons.push(quad);
+      colors.push(shades[Math.floor(deterministicUnit(i * 17 + j, 613) * shades.length)]);
+    }
+  }
+  return { polygons, colors };
+}
+
 function paintTerrain(
   graphics: Phaser.GameObjects.Graphics,
   layout: TwinBanksLayout,
-  unit: number
+  unit: number,
+  detailLevel: WorldDetailLevel
 ): void {
-  graphics.fillStyle(TWIN_BANKS_PALETTE.westGround, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  graphics.fillStyle(TWIN_BANKS_PALETTE.eastGround, 1);
-  tracePolygon(graphics, eastBankPolygon(layout));
-  graphics.fillPath();
-
-  for (const [index, decoration] of layout.decorations.entries()) {
-    if (decoration.kind === 'river-mark') continue;
-    const size = unit * 0.009 * decoration.scale;
-    if (!clearOfAirfield(layout, decoration.position, size)) continue;
-    if (decoration.kind === 'tree') {
-      paintTree(graphics, decoration.position, size, CIVIL_PALETTE, index);
-      continue;
-    }
-    graphics.lineStyle(Math.max(1, unit * 0.0014), TWIN_BANKS_PALETTE.fieldLine, 0.2);
-    const dx = Math.cos(decoration.angle) * size * 3.8;
-    const dy = Math.sin(decoration.angle) * size * 3.8;
-    graphics.lineBetween(
-      decoration.position.x - dx,
-      decoration.position.y - dy,
-      decoration.position.x + dx,
-      decoration.position.y + dy
-    );
-  }
-
-  const riverPath = smoothPath(layout.river.centerline, Math.max(4, layout.detailBudget.riverMarks));
+  // Both banks and their fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
+  const budget = MAP_DETAIL_BUDGETS[detailLevel];
+  const riverPath = riverPathOf(layout);
   paintRiver(graphics, riverPath, layout.river.width, CIVIL_PALETTE);
+  const byRiver = (point: Vector2, radius: number) => nearRiver(riverPath, layout.river.width, point, radius + unit * 0.02);
+  paintHedgerows(graphics, layout, bankFields(layout).polygons, CIVIL_PALETTE, byRiver);
+  paintForests(graphics, layout, CIVIL_PALETTE, Math.round(budget.trees / 3), byRiver);
+  for (const [index, decoration] of layout.decorations.entries()) {
+    if (decoration.kind !== 'tree') continue;
+    const size = unit * 0.009 * decoration.scale;
+    if (clearOfAirfield(layout, decoration.position, size) && !byRiver(decoration.position, size)) {
+      paintShadedTree(graphics, decoration.position, size, CIVIL_PALETTE, index);
+    }
+  }
   for (const decoration of layout.decorations) {
     if (decoration.kind !== 'river-mark') continue;
     graphics.lineStyle(Math.max(1, unit * 0.0015), TWIN_BANKS_PALETTE.riverMid, 0.32);
@@ -186,7 +215,8 @@ const propBuilding = (prop: TwinBanksLayout['propAnchors'][number]): MapBuilding
   width: prop.size,
   height: prop.size * (prop.kind === 'hangar' ? 0.52 : 0.68),
   angle: prop.angle,
-  kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
+  // East ops is the field's main building, so the control tower stands beside it.
+  kind: prop.kind === 'hangar' ? 'hangar' : prop.id === 'east-ops' ? 'terminal' : 'operations'
 });
 /** Every building paintFacilities draws, so the surface texture can keep off them. */
 const facilityBuildings = (layout: TwinBanksLayout): MapBuilding[] =>
@@ -197,13 +227,13 @@ function paintFacilities(
   layout: TwinBanksLayout,
   unit: number
 ): void {
+  const buildings = facilityBuildings(layout);
+  for (const building of buildings) paintRaisedBuilding(graphics, building, CIVIL_PALETTE, unit, layout.runways);
+  paintControlTower(graphics, { ...layout, buildings }, CIVIL_PALETTE);
   for (const prop of layout.propAnchors) {
-    if (prop.kind === 'windsock') {
-      graphics.lineStyle(Math.max(1.4, unit * 0.002), TWIN_BANKS_PALETTE.runwayMarking, 0.6);
-      graphics.lineBetween(prop.position.x, prop.position.y, prop.position.x, prop.position.y - prop.size);
-      continue;
-    }
-    paintBuilding(graphics, propBuilding(prop), CIVIL_PALETTE, layout.runways);
+    if (prop.kind !== 'windsock') continue;
+    graphics.lineStyle(Math.max(1.4, unit * 0.002), TWIN_BANKS_PALETTE.runwayMarking, 0.6);
+    graphics.lineBetween(prop.position.x, prop.position.y, prop.position.x, prop.position.y - prop.size);
   }
 
   for (const sign of visibleTwinBanksLabels(layout)) {
@@ -225,8 +255,16 @@ export function renderTwinBanksMap(
   layout: TwinBanksLayout,
   detailLevel: WorldDetailLevel
 ): void {
+  const fields = bankFields(layout);
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [eastBankPolygon(layout), ...fields.polygons] }, {
+    base: TWIN_BANKS_PALETTE.westGround,
+    // One colour per polygon: the east bank first, then each field's own shade.
+    fields: [TWIN_BANKS_PALETTE.eastGround, ...fields.colors],
+    light: 0xdfe0b4,
+    dark: 0x5d6a48
+  });
   composeStaticMap(scene, layout, detailLevel, {
-    scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit),
+    scenery: ({graphics, unit}) => paintTerrain(graphics, layout, unit, detailLevel),
     operational: ({graphics, unit, detailLevel}) => {
     paintScenicRunways(graphics, layout);
     paintAirfieldGround(graphics, layout, CIVIL_PALETTE, detailLevel);
@@ -238,6 +276,6 @@ export function renderTwinBanksMap(
     paintFacilities(graphics, layout, unit);
     },
     detail: () => {}
-  }, {materialTextureKey: 'terrain:arcade:meadow'});
-  paintSurfaceTexture(scene, { ...layout, extraAprons: [layout.westApron], buildings: facilityBuildings(layout) });
+  });
+  paintSurfaceTexture(scene, { ...layout, extraAprons: [layout.westApron], buildings: facilityBuildings(layout) }, { raisedBuildings: true });
 }
