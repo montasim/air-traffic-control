@@ -1102,6 +1102,8 @@ dialog::backdrop {
 /* One dialog on screen at a time: the pause menu steps aside while a leave or restart is confirmed. */
 body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 #pause-panel .panel-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
+/* Main menu takes its own full row under Restart and Resume; Settings and How to play share one row in More options. */
+#pause-panel .panel-actions > #pause-map { flex-basis: 100%; }
 #pause-panel .panel-actions > .menu-more, #gameover-panel .result-actions > .menu-more { flex-basis: 100%; }
 :is(#pause-panel, #gameover-panel) .menu-more summary { text-align: center; background: transparent; }
 /* Restart and Settings share one row; How to play takes the row below. */
