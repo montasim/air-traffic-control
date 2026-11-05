@@ -55,6 +55,10 @@ export class WebAudioBackend implements AudioBackend {
     return this.unlockPromise;
   }
 
+  isPlaying(): boolean {
+    return this.context?.state === 'running';
+  }
+
   setVolume(volume: number): void {
     this.targetVolume = clampVolume(volume);
     this.rampMasterVolume();

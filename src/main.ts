@@ -187,6 +187,11 @@ if (
 
 const audio = new GameAudio(new WebAudioBackend(), currentSave.settings.audio);
 await audio.prepare();
+// iPhone Safari starts audio only while it handles the end of a tap, so each tap and key press unlocks it
+// right there (free once it is running), before any await in a handler lets that permission lapse.
+for (const type of ["touchend", "pointerup", "click", "keydown"] as const) {
+  document.addEventListener(type, () => void audio.unlock(), { capture: true, passive: true });
+}
 
 let activeProfile = profileForViewport();
 let createdViewport = { width: window.innerWidth, height: window.innerHeight };
@@ -267,6 +272,9 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
+    // All sound goes through GameAudio; Phaser's own sound system would open a second AudioContext
+    // per game (iOS Safari caps them) and add its own tap-unlock handling beside ours.
+    audio: { noAudio: true },
     scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale)],
   });
 

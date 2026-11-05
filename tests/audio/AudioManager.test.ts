@@ -16,6 +16,20 @@ function fakeBackend(unlock: () => Promise<void> = async () => undefined) {
 }
 
 describe('GameAudio', () => {
+  it('unlocks again after the platform stops the sound by itself', async () => {
+    const { backend } = fakeBackend();
+    let playing = true;
+    backend.isPlaying = () => playing;
+    const audio = new GameAudio(backend);
+    await audio.unlock();
+    await audio.unlock();
+    expect(backend.unlock).toHaveBeenCalledTimes(1);
+    // iOS interrupts the context (a call, Siri); the next tap must restart it.
+    playing = false;
+    await audio.unlock();
+    expect(backend.unlock).toHaveBeenCalledTimes(2);
+  });
+
   it('stays silent before the user unlocks audio', () => {
     const { backend, played } = fakeBackend();
     const audio = new GameAudio(backend);

@@ -48,6 +48,8 @@ export class GameAudio {
   }
 
   async unlock(): Promise<void> {
+    // iOS can stop a running context on its own, so a later tap must be able to start it again.
+    if (this.unlocked && this.backend.isPlaying?.() === false) this.unlocked = false;
     if (this.unlocked || this.destroyed) return;
     if (!this.unlockPromise) {
       const lifecycle = this.lifecycle;

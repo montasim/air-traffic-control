@@ -16,5 +16,7 @@ export interface AudioBackend {
   play(cue: AudioCue, priority: number): void;
   suspend(): Promise<void>;
   destroy(): Promise<void>;
+  /** False once the platform has stopped the sound by itself (iOS does for calls, Siri and alarms). */
+  isPlaying?(): boolean;
 }
 
