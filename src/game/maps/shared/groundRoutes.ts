@@ -71,8 +71,11 @@ const BUILDING_PROPS = new Set(['hangar', 'service', 'fuel', 'utility']);
 export const isAnchorOf = (position: Vector2, centers: readonly Vector2[]): boolean =>
   centers.some((center) => Math.hypot(center.x - position.x, center.y - position.y) < 0.5);
 const STANDS_PER_ROUTE = 3;
-/** A rollout shorter than this share of the runway looks abrupt, so the aircraft rolls on and back-taxis. */
-const MIN_ROLLOUT_SHARE = 0.18;
+/**
+ * The shortest rollout before turning off, as a share of the runway. Kept short so an aircraft
+ * leaves by the exit on its own side of the field instead of rolling to the far end and back.
+ */
+const MIN_ROLLOUT_SHARE = 0.08;
 
 const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y });
 const sub = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x - b.x, y: a.y - b.y });
@@ -277,9 +280,9 @@ export function createGroundRoutes(
       raw = [zone.position, junction, ...link.path];
       rolloutLength = link.along;
     } else {
-      // No exit ahead: roll most of the remaining runway, pivot, and taxi back to the exit.
-      const farEnd = dot(sub(add(runway.center, scale(direction, runway.length / 2)), zone.position), direction);
-      const stopAlong = Math.max(minimumRoll, farEnd - runway.length * 0.06);
+      // The only exit is behind: stop after a short roll, pivot, and taxi straight back to it,
+      // rather than rolling on to the far end first.
+      const stopAlong = Math.max(minimumRoll, link.along + runway.length * 0.08);
       raw = [zone.position, add(zone.position, scale(direction, stopAlong)), junction, ...link.path];
       rolloutLength = stopAlong;
     }

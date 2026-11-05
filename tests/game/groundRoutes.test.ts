@@ -184,11 +184,12 @@ describe('ground route geometry', () => {
     expect(route.stands.map((stand) => stand.id)).toEqual(['stand-1']);
   });
 
-  it('rolls on, pivots, and back-taxis when the exit is behind the touchdown point', () => {
+  it('stops after a short roll and back-taxis when the exit is behind the touchdown point', () => {
     const route = createGroundRoutes([zone('east', 700, Math.PI)], network(760), 900).east;
-    // Rolls west past the exit, stops near the far end, then reverses toward x=760.
+    // Rolls a short way west, stops well short of the far end, then reverses toward x=760.
     const stop = route.points.find((point, index) => index > 0 && point.x < 700);
-    expect(stop!.x).toBeLessThan(300);
+    expect(stop!.x).toBeGreaterThan(500);
+    expect(Math.min(...route.points.map((point) => point.x))).toBeGreaterThan(500);
     expect(route.points.some((point) => Math.abs(point.x - 760) < 1)).toBe(true);
   });
 
@@ -229,4 +230,22 @@ describe('ground route geometry', () => {
       expect(new Set(starts).size, `${id} ${width}x${height}`).toBe(starts.length);
     }
   });
+});
+
+describe('runway exits on the landing side', () => {
+  // An aircraft leaves by the exit on its own side of the field: it never rolls on past
+  // its exit toward the far end and then taxis back along the runway.
+  for (const map of MAP_DEFINITIONS) for (const [width, height] of SHAPES) {
+    it(`${map.id} ${width}x${height}: no route rolls past its exit and back`, () => {
+      const layout = map.prepare({ width, height, detailLevel: 'desktop', twoEndLanding: true }).layout as unknown as GroundNetwork & { landingZones: LandingZone[]; groundRoutes?: Record<string, { points: Vector2[] }> };
+      for (const zone of layout.landingZones) {
+        const route = layout.groundRoutes?.[zone.id];
+        const runway = layout.runways.find((item) => item.id === zone.approach?.runwayId);
+        if (!route || !runway) continue;
+        const along = route.points.map((point) => (point.x - zone.position.x) * Math.cos(zone.angle) + (point.y - zone.position.y) * Math.sin(zone.angle));
+        const backTaxi = Math.max(...along) - along[along.length - 1];
+        expect(backTaxi, zone.id).toBeLessThan(runway.length * 0.15);
+      }
+    });
+  }
 });
