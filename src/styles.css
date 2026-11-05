@@ -1094,7 +1094,8 @@ dialog::backdrop {
 /* Result card: a header (label, reason, airfield tags), one score panel, one rank panel, then actions. */
 .result-eyebrow { margin: 0 0 4px; color: var(--muted); font-size: max(11px, 0.75rem); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 #gameover-panel .shift-context { margin: 12px 0 0; }
-.shift-tags .shift-tag-name { background: #203d39; color: var(--paper); font-weight: 700; }
+/* The airfield leads the tags by weight only: dark fill means chosen or on, and this is information. */
+.shift-tags .shift-tag-name { font-weight: 700; }
 #gameover-panel .result-grid { gap: 0; margin: 20px 0 0; border-radius: 12px; background: #e8e6d4; }
 #gameover-panel .result-grid > div { border-radius: 0; background: transparent; }
 #gameover-panel .result-grid > div + div { border-left: 1px solid #203d3920; }
@@ -1609,8 +1610,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 8px); border: 0; border-radius: var(--radius-small); background: transparent; font-size: 0.8125rem; }
 #start-panel .difficulty-choices label:hover input:not(:checked) + span { background: #203d3914; }
 #start-panel .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); box-shadow: 0 2px 6px #203d3933; }
-/* One palette for every choice on the card: dark ink with light text means chosen or on (difficulty, chips,
-   the airfield tag), the light neutral #e5e6d3 is the resting fill, and every focus ring is cyan.
+/* One palette for every choice on the card: dark ink with light text means chosen or on (difficulty, chips),
+   the light neutral #e5e6d3 is the resting fill (tags included), and every focus ring is cyan.
    On/off settings are toggle chips: outlined when off, filled with ink when on. The real switch
    covers each chip invisibly, so clicks, keys and screen readers work as before. */
 #start-panel .flight-switches { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
