@@ -110,15 +110,27 @@ export function createCarrier(spec: CarrierSpec): Carrier {
 
   // A short taxi line straight up from the lane to the parking row along the starboard edge, between
   // the island and the aft helicopter spot.
-  const parking = world(-0.2 * length, 0.3 * beam);
-  const taxiways: MapTaxiway[] = [{ id: `${runways[0].id}-taxi`, path: [world(-0.2 * length, laneStart.y), parking], width: spec.taxiwayWidth, connects: [runways[0].id, `${spec.id}-deck`] }];
+  const parking = world(-0.18 * length, 0.3 * beam);
+  const taxiways: MapTaxiway[] = [{ id: `${runways[0].id}-taxi`, path: [world(-0.18 * length, laneStart.y), parking], width: spec.taxiwayWidth, connects: [runways[0].id, `${spec.id}-deck`] }];
 
   // Helicopter spots well apart: one at the bow, a second at the aft starboard corner.
   const padSpots = spec.pads === 2 ? [[0.4, 0.04], [-0.4, 0.3]] : [[0.4, 0.04]];
   const helipads: MapHelipad[] = padSpots.map(([x, y], index) => ({ center: at(x, y), radius: spec.padRadius, zoneId: `${spec.id}-pad-${index + 1}` }));
 
-  // The island stands on the starboard edge toward the bow.
-  const island = { center: at(0.17, 0.5), width: length * 0.14, height: beam * 0.12, angle: spec.angle };
+  // The island lies flush along the forward starboard deck edge, turned to follow it.
+  const [edgeA, edgeB] = [localDeck[2], localDeck[3]];
+  const edge = { x: edgeB.x - edgeA.x, y: edgeB.y - edgeA.y };
+  const edgeLength = Math.hypot(edge.x, edge.y);
+  const islandHeight = beam * 0.12;
+  // Inward normal of the edge, towards the deck's centre line.
+  const inward = { x: edge.y / edgeLength, y: -edge.x / edgeLength };
+  const inset = islandHeight / 2 + length * 0.01;
+  const island = {
+    center: world((edgeA.x + edgeB.x) / 2 + inward.x * inset, (edgeA.y + edgeB.y) / 2 + inward.y * inset),
+    width: edgeLength * 0.75,
+    height: islandHeight,
+    angle: spec.angle + Math.atan2(edge.y, edge.x),
+  };
 
   // Two wake trails spreading from the stern, and a faint broad wash between them.
   const stern = (y: number) => at(-0.5, y);
