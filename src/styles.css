@@ -1425,14 +1425,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { #home-map-preview[src] { animation: none; } }
 #start-panel .airfield-details { display: flex; flex-direction: column; gap: 4px; }
 #start-panel .home-assignment { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 0; }
-/* The airfield name opens the map picker. The negative margin keeps the text aligned with the card while the
-   hover and press background extends a little around it. */
-#start-panel .departure-heading h2 { margin: 0; min-width: 0; }
-#start-panel .field-picker { display: inline-flex; align-items: center; gap: var(--icon-gap); max-width: calc(100% + 16px); margin: -4px -8px; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color 120ms ease; }
-#start-panel .field-picker:hover { background: #203d391f; }
-#start-panel .field-picker:active { background: #203d392e; }
-#start-panel .field-picker:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
-#start-panel .field-picker .button-icon { flex: 0 0 auto; }
+#start-panel #choose-airfield { font-size: 0.875rem; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: var(--icon-gap); background: transparent; border-color: transparent; color: var(--ink); }
+#start-panel #choose-airfield:hover { text-decoration: underline; text-underline-offset: 4px; }
 #start-panel .home-preview[data-screen] { cursor: pointer; }
 #start-panel .home-preview[data-screen]:hover #home-map-preview { filter: brightness(1.04); }
 #start-panel .departure-heading { display: block; min-width: 0; color: var(--ink); }
