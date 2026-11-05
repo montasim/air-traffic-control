@@ -1,6 +1,14 @@
 import { AIRCRAFT_OUTLINES } from '../core/aircraftCollision';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
+type Lesson = 'land' | 'hold';
+const LESSON_TITLE: Record<Lesson, string> = { land: 'Land an aircraft', hold: 'Hold, then land' };
+const LESSON_COPY: Record<Lesson, string> = {
+  land: 'Draw the aircraft to its runway.',
+  hold: 'Tap the drifting aircraft to make it circle, then draw it to the runway before its loops run out.',
+};
+/** Loops a held practice aircraft flies, as on Medium. */
+const PRACTICE_LOOPS = 3;
 type Point = { x: number; y: number };
 function paintPlane(group: Element): void {
   const body = document.createElementNS(SVG_NS, 'polygon');
@@ -28,12 +36,84 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
   const reverseTarget = document.querySelector<SVGCircleElement>('#practice-target-reverse')!;
   function selectedEnd(p: Point): number { return ends.findIndex((end, index) => (index === 0 || twoEndLanding()) && Math.hypot(p.x-end.x,p.y-end.y) <= 32); }
   let points: Point[] = [], pointer: number | undefined, frame = 0, flying = false;
+  // Two lessons, chosen on the page: draw an aircraft to its runway, or hold a drifting one and then draw it in.
+  let lesson: Lesson = 'land', origin = { ...start }, holding = false, holdTurn = 0, idle = 0, demoTimers: number[] = [];
+  const lessonCopy = document.querySelector<HTMLElement>('#practice-lesson-copy')!;
+  // The faint ring a held aircraft flies around, as in a shift.
+  const holdRing = document.querySelector<SVGCircleElement>('#practice-hold')!;
+  const holdRadius = Number(holdRing.getAttribute('r'));
+  const lessonTitle = document.querySelector<HTMLElement>('#practice-lesson-title')!;
   paintPlane(plane);
-  const position = (p: Point, angle = -18) => plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${angle})`);
+  const position = (p: Point, angle = -18) => { origin = { ...p }; plane.setAttribute('transform', `translate(${p.x} ${p.y}) rotate(${angle})`); };
   const draw = () => route.setAttribute('points', points.map(p => `${p.x},${p.y}`).join(' '));
   const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+  /**
+   * Shows the hold ring as in a shift: strong at first and fading as the loops are flown, and on the
+   * last loop only the stretch still ahead of the aircraft, so it shrinks back to where it leaves.
+   */
+  function paintHoldRing(centre: Point): void {
+    const total = PRACTICE_LOOPS * Math.PI * 2;
+    const progress = Math.min(1, holdTurn / total);
+    holdRing.setAttribute('cx', String(centre.x));
+    holdRing.setAttribute('cy', String(centre.y));
+    holdRing.setAttribute('stroke-opacity', String(0.9 - progress * 0.65));
+    holdRing.setAttribute('stroke-width', String(3 - progress));
+    const ahead = total - holdTurn;
+    if (ahead >= Math.PI * 2) {
+      holdRing.removeAttribute('stroke-dasharray');
+      holdRing.removeAttribute('stroke-dashoffset');
+    } else {
+      // The aircraft sits at angle π/2 − turn and circles anticlockwise; dashes run clockwise from 3 o'clock.
+      const circumference = Math.PI * 2 * holdRadius;
+      const from = (((Math.PI / 2 - holdTurn - ahead) % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+      holdRing.setAttribute('stroke-dasharray', `${ahead * holdRadius} ${circumference}`);
+      holdRing.setAttribute('stroke-dashoffset', String(-from * holdRadius));
+    }
+    holdRing.removeAttribute('display');
+  }
+  /** Drifts the aircraft toward the edge until tapped, circles it for its loops, then lets it fly on. */
+  function startHoldLesson(message = 'Tap the aircraft to make it circle.'): void {
+    holding = false;
+    holdTurn = 0;
+    flying = false;
+    plane.style.opacity = '1';
+    status.textContent = message;
+    const drift = { x: 60, y: 250 };
+    let last = performance.now(), centre = drift, ranOut = false;
+    position(drift, 0);
+    const tick = (now: number) => {
+      // Stops while the practice page is hidden, so nothing animates in the background.
+      if (field.closest('[hidden]')) return;
+      const step = Math.max(0, now - last) / 1000;
+      last = now;
+      if (holding) {
+        if (holdTurn === 0) centre = { x: origin.x, y: origin.y - holdRadius };
+        holdTurn = Math.min(PRACTICE_LOOPS * Math.PI * 2, holdTurn + step * 1.6);
+        position({ x: centre.x + Math.sin(holdTurn) * holdRadius, y: centre.y + Math.cos(holdTurn) * holdRadius }, -holdTurn * 180 / Math.PI);
+        paintHoldRing(centre);
+        if (holdTurn >= PRACTICE_LOOPS * Math.PI * 2) {
+          // The loops are flown: it straightens out and drifts on the way it was heading.
+          holding = false;
+          ranOut = true;
+          holdTurn = 0;
+          holdRing.setAttribute('display', 'none');
+          status.textContent = 'Its loops ran out, so it flies on. Tap it again or draw it in.';
+        }
+      } else {
+        position({ x: origin.x + step * 38, y: origin.y }, 0);
+        if (origin.x > 580) { startHoldLesson(ranOut ? 'Its loops ran out and it left the field. Draw it in while it circles.' : 'It left the field. Tap the aircraft sooner.'); return; }
+      }
+      idle = requestAnimationFrame(tick);
+    };
+    idle = requestAnimationFrame(tick);
+  }
   function reset(): void {
     cancelAnimationFrame(frame);
+    cancelAnimationFrame(idle);
+    demoTimers.forEach(clearTimeout);
+    demoTimers = [];
+    holding = false;
+    holdRing.setAttribute('display', 'none');
     if (pointer !== undefined && field.hasPointerCapture(pointer)) field.releasePointerCapture(pointer);
     pointer = undefined;
     flying = false;
@@ -45,8 +125,13 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
     reverseTarget.setAttribute('stroke', '#f0bd66');
     reverseTarget.style.display = twoEndLanding() ? '' : 'none';
     status.textContent = twoEndLanding() ? 'Draw to either runway end.' : 'Draw to the highlighted runway end.';
+    lessonTitle.textContent = LESSON_TITLE[lesson];
+    lessonCopy.textContent = LESSON_COPY[lesson];
+    if (lesson === 'hold') startHoldLesson();
   }
   function fly(): void {
+    cancelAnimationFrame(idle);
+    holdRing.setAttribute('display', 'none');
     flying = true;
     status.textContent = 'Route set. Watch your aircraft follow the line.';
     let segment = 1, last = performance.now();
@@ -66,7 +151,11 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
         plane.style.opacity = '0';
         points = [];
         draw();
-        status.textContent = 'Safe landing! You’re ready to guide traffic. Try again, or go back.';
+        if (lesson === 'land') {
+          status.textContent = 'Safe landing! Try the Hold lesson next, or go back.';
+        } else {
+          status.textContent = 'Held and landed. You’re ready to guide traffic. Try again, or go back.';
+        }
       }
     }
     frame = requestAnimationFrame(tick);
@@ -79,10 +168,10 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
     return { x: transformed.x, y: transformed.y };
   }
   field.addEventListener('pointerdown', event => {
-    if (flying || pointer !== undefined || distance(point(event), start) > 46) return;
+    if (flying || pointer !== undefined || distance(point(event), origin) > 46) return;
     pointer = event.pointerId;
     field.setPointerCapture(pointer);
-    points = [{ ...start }];
+    points = [{ ...origin }];
     draw();
   });
   field.addEventListener('pointermove', event => {
@@ -101,13 +190,32 @@ export function mountPractice(twoEndLanding: () => boolean = () => false): () =>
     field.releasePointerCapture(pointer);
     pointer = undefined;
     const index = selectedEnd(p);
-    if (index >= 0) { points.push(ends[index]); draw(); fly(); }
-    else { reset(); status.textContent = 'Finish your route in a highlighted landing circle. Try again.'; }
+    if (index >= 0) { points.push(ends[index]); draw(); fly(); return; }
+    points = [];
+    draw();
+    // A tap, not a drag, holds the drifting aircraft, as in a shift.
+    if (lesson === 'hold' && !holding && distance(p, origin) <= 46) {
+      holding = true;
+      holdTurn = 0;
+      status.textContent = `Holding for ${PRACTICE_LOOPS} loops. Draw it to the runway before the ring fades away.`;
+    } else if (lesson === 'hold') {
+      status.textContent = holding ? 'Draw from the circling aircraft to a landing circle.' : 'Tap the aircraft to make it circle.';
+    } else { reset(); status.textContent = 'Finish your route in a highlighted landing circle. Try again.'; }
   });
+  const choices = document.querySelectorAll<HTMLInputElement>('input[name="practice-lesson"]');
+  const choose = (next: Lesson) => {
+    lesson = next;
+    choices.forEach(input => { input.checked = input.value === next; });
+    reset();
+  };
+  choices.forEach(input => input.addEventListener('change', () => choose(input.value as Lesson)));
   field.addEventListener('pointercancel', reset);
   document.querySelector('#practice-reset')!.addEventListener('click', reset);
   document.querySelector('#practice-demo')!.addEventListener('click', () => {
-    reset(); points = [start, { x: 200, y: 215 }, { x: 280, y: 110 }, ends[0]]; draw(); fly();
+    reset();
+    if (lesson === 'land') { points = [start, { x: 200, y: 215 }, { x: 280, y: 110 }, ends[0]]; draw(); fly(); return; }
+    // Hold shows only the new skill, a tap that starts the circle; the landing is left to the player.
+    demoTimers.push(window.setTimeout(() => { holding = true; status.textContent = 'That’s a hold. Now draw it to the runway yourself.'; }, 900));
   });
   reset();
   return reset;

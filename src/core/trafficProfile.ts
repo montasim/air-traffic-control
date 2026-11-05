@@ -47,6 +47,8 @@ export interface TrafficProfile {
   speedMultipliers: Readonly<Record<AircraftType, number>>;
   spawnCorridors?: readonly NormalizedSpawnCorridor[];
   inwardTargetRegion?: NormalizedRegion;
+  /** Full loops a held aircraft flies before resuming its heading; three when absent. */
+  holdLoops?: number;
 }
 
 export interface ResolvedSpawnCorridor {
@@ -64,6 +66,7 @@ export interface ResolvedTrafficProfile {
   readonly speedMultipliers: Readonly<Record<AircraftType, number>>;
   readonly spawnCorridors?: readonly ResolvedSpawnCorridor[];
   readonly inwardTargetRegion?: Readonly<NormalizedRegion>;
+  readonly holdLoops: number;
 }
 
 const finiteNonNegative = (value: number, label: string): number => {
@@ -195,6 +198,7 @@ export function resolveTrafficProfile(profile: TrafficProfile): ResolvedTrafficP
     spawnIntervalStages: freezeList(spawnIntervalStages) as ResolvedTrafficProfile['spawnIntervalStages'],
     trafficLimitStages: freezeList(trafficLimitStages),
     speedMultipliers,
+    holdLoops: finitePositive(profile.holdLoops ?? 3, 'holdLoops'),
     spawnCorridors,
     inwardTargetRegion: profile.inwardTargetRegion
       ? resolveRegion(profile.inwardTargetRegion, 'inwardTargetRegion')

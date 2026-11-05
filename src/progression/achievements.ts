@@ -6,9 +6,21 @@ export interface ShiftEvidence {
   landedTypes: Record<AircraftType, number>;
   initialSafeLandings: number;
 }
+export interface ShiftTrackerState {
+  evidence: ShiftEvidence;
+  warned: boolean;
+}
 export class ShiftTracker {
   private warned = false;
   readonly evidence: ShiftEvidence = { landedTypes: { liner: 0, commuter: 0, rotor: 0 }, initialSafeLandings: 0 };
+  exportState(): ShiftTrackerState {
+    return structuredClone({ evidence: this.evidence, warned: this.warned });
+  }
+  restore(state: ShiftTrackerState): void {
+    Object.assign(this.evidence.landedTypes, state.evidence.landedTypes);
+    this.evidence.initialSafeLandings = state.evidence.initialSafeLandings;
+    this.warned = state.warned;
+  }
   accept(event: SimulationEvent): void {
     if (event.type === 'warning') this.warned = true;
     if (event.type === 'landed') {

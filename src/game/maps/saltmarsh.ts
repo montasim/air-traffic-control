@@ -474,7 +474,9 @@ function hudZones(width: number, height: number): HudExclusionZone[] {
       y: height - verticalPad - pauseSize,
       width: horizontalPad + pauseSize,
       height: verticalPad + pauseSize
-    }
+    },
+    // The speed button mirrors pause in the bottom-left corner.
+    { id: 'speed', x: 0, y: height - verticalPad - pauseSize, width: horizontalPad + pauseSize, height: verticalPad + pauseSize }
   ];
 }
 

@@ -7,6 +7,7 @@ import {
   type WorldDetailLevel
 } from '../palette';
 import { DISPLAY_FONT_STACK } from '../typography';
+import { renderScaleOf, sceneRenderTexture } from './shared-map/composer';
 import {
   paintAirfieldGround,
   paintAirfieldPavements,
@@ -325,7 +326,8 @@ function temporaryLabel(
       color: colorToCss(label.color),
       fontFamily: DISPLAY_FONT_STACK,
       fontSize: `${label.fontSize}px`,
-      fontStyle: 'bold'
+      fontStyle: 'bold',
+      resolution: renderScaleOf(scene)
     },
     add: false
   }, false).setOrigin(0.5).setRotation(label.angle).setAlpha(label.alpha);
@@ -368,9 +370,7 @@ export function renderSaltmarshMap(
   labels.push(...paintCoastalDetails(facilities, layout, options));
   layers.push(facilities);
 
-  const staticWorld = scene.add.renderTexture(0, 0, layout.width, layout.height)
-    .setOrigin(0, 0)
-    .setDepth(-20);
+  const staticWorld = sceneRenderTexture(scene, layout.width, layout.height).setDepth(-20);
   try {
     for (const layer of layers) staticWorld.draw(layer);
     for (const label of labels) {

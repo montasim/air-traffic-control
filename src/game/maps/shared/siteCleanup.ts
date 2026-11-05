@@ -23,6 +23,16 @@ const normalize = (a: Vector2): Vector2 => scale(a, 1 / (Math.hypot(a.x, a.y) ||
 const unitVector = (angle: number): Vector2 => ({ x: Math.cos(angle), y: Math.sin(angle) });
 const centroid = (polygon: readonly Vector2[]): Vector2 =>
   polygon.reduce((sum, p) => ({ x: sum.x + p.x / polygon.length, y: sum.y + p.y / polygon.length }), { x: 0, y: 0 });
+/** The direction of the apron edge nearest a point. */
+const nearestEdgeAngle = (point: Vector2, polygon: readonly Vector2[]): number => {
+  let best = { gap: Infinity, angle: 0 };
+  for (const [i, a] of polygon.entries()) {
+    const b = polygon[(i + 1) % polygon.length];
+    const gap = distance(point, nearestOnSegment(point, a, b));
+    if (gap < best.gap) best = { gap, angle: Math.atan2(b.y - a.y, b.x - a.x) };
+  }
+  return best.angle;
+};
 const runwayRect = (runway: Runway) => ({ center: runway.center, width: runway.length, height: runway.width, angle: runway.angle });
 
 
@@ -111,6 +121,7 @@ export function straightConnector(
   runways: readonly Runway[],
   unit: number,
   buildings: readonly Footprint[] = [],
+  centred = false,
 ): Vector2[] | undefined {
   const axis = { x: Math.cos(runway.angle), y: Math.sin(runway.angle) };
   const across = { x: -axis.y, y: axis.x };
@@ -158,7 +169,9 @@ export function straightConnector(
     // Open apron all round: probes on the apron and off buildings and helipads.
     const probes = [0.5, 1, 1.5].flatMap((reach) => Array.from({ length: 8 }, (_, i) => add(ahead, scale(unitVector((i * Math.PI) / 4), room * reach))));
     const open = probes.filter((p) => pointInPolygon(p, apron) && !buildings.some((rect) => segmentHitsRect(p, p, rect, 2))).length;
-    const score = (clear ? 1000 : 0) + open * 10 - Math.abs(along - start) / runway.length;
+    // With buildings at the apron ends, the connector keeps to the middle and leaves the ends free.
+    const offCentre = centred ? (Math.abs(dot(sub(end, centroid(apron)), axis)) / unit) * 300 : 0;
+    const score = (clear ? 1000 : 0) + open * 10 - Math.abs(along - start) / runway.length - offCentre;
     if (!best || score > best.score) best = { path: [base, end], score };
   }
   // On a crowded spot the buildings in the way move instead.
@@ -312,7 +325,7 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
     const runway = runways.find((item) => taxiway.connects.includes(item.id as never));
     // Deck taxi lines are authored with the carrier.
     if (runway && decks.has(runway.id)) return taxiway;
-    const path = runway && aprons.length ? straightConnector(taxiway, runway, aprons, runways, unit, [...padSquares, ...reserved]) : undefined;
+    const path = runway && aprons.length ? straightConnector(taxiway, runway, aprons, runways, unit, [...padSquares, ...reserved], record.buildingsAtApronEnds === true) : undefined;
     if (!path) return taxiway;
     const [base, end] = path;
     const direction = normalize(sub(end, base));
@@ -337,6 +350,10 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
     }
     return nearest;
   };
+  // Opt-in per map: buildings go to the two ends of the apron, leaving its middle for stands.
+  const atEnds = record.buildingsAtApronEnds === true;
+  // The apron runs along the runways, so its ends lie along their direction.
+  const axis = unitVector(runways[0]?.angle ?? 0);
   const footprintOf = (item: Building): Footprint => ({ center: item.center, width: item.width, height: item.height, angle: item.angle ?? 0 });
   const structures = [
     ...(landmark ? [{ key: 'landmark', footprint: footprintOf(landmark), main: true }] : []),
@@ -364,15 +381,17 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
   const segments = taxiways.map((taxiway) => ({ points: taxiway.path, half: (taxiway.width ?? unit * 0.016) / 2 }));
   const placedRects: Footprint[] = [];
   /** The best spot on the apron: wholly on it, clear of everything, hugging its edge, far from the connectors. */
-  const place = (footprint: Footprint, apron: readonly Vector2[], keepStandRoom: boolean): Vector2 | undefined => {
+  const place = (footprint: Footprint, apron: readonly Vector2[], keepStandRoom: boolean): { center: Vector2; angle: number } | undefined => {
     const xs = apron.map((p) => p.x);
     const ys = apron.map((p) => p.y);
+    const middle = centroid(apron);
     const step = Math.max(3, unit * 0.008);
-    let best: { center: Vector2; score: number } | undefined;
+    let best: { center: Vector2; angle: number; score: number } | undefined;
     for (let x = Math.min(...xs); x <= Math.max(...xs); x += step) {
       for (let y = Math.min(...ys); y <= Math.max(...ys); y += step) {
         const center = { x, y };
-        const at = { ...footprint, center };
+        // At the apron ends a building lies along the edge it hugs, tucking into a slanted end.
+        const at = { ...footprint, center, angle: atEnds ? nearestEdgeAngle(center, apron) : footprint.angle };
         if (!rectCorners({ ...at, width: at.width + margin * 2, height: at.height + margin * 2 }).every((corner) => pointInPolygon(corner, apron))) continue;
         if (runways.some((runway) => rectsOverlap(at, runwayRect(runway), gap / 2))) continue;
         if (padSquares.some((pad) => rectsOverlap(at, pad, 2))) continue;
@@ -383,11 +402,15 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
         if (keepStandRoom && crowding > 0) continue;
         const edge = Math.min(...apron.map((a, i) => distance(center, nearestOnSegment(center, a, apron[(i + 1) % apron.length]))));
         const fromConnectors = Math.min(unit * 0.35, ...connectorEnds.map((end) => distance(end, center)));
-        const score = fromConnectors - edge * 1.2 - distance(center, footprint.center) * 0.2 - crowding * unit * 0.05;
-        if (!best || score > best.score) best = { center, score };
+        const ends = atEnds
+          ? Math.abs(dot(sub(center, middle), axis)) * 1.5 + // Only the second structure spreads to the far end; smaller ones after it stay by the buildings.
+            + (placedRects.length === 1 ? distance(placedRects[0].center, center) * 0.5 : 0)
+          : 0;
+        const score = fromConnectors - edge * 1.2 - distance(center, footprint.center) * 0.2 - crowding * unit * 0.05 + ends;
+        if (!best || score > best.score) best = { center, angle: at.angle, score };
       }
     }
-    return best?.center;
+    return best && { center: best.center, angle: best.angle };
   };
 
   // A taxiway that leads into a main building (a terminal) ends at it rather than pushing it away.
@@ -403,7 +426,7 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
   };
   const moves: [Vector2, Vector2][] = [];
   /** Where a building goes and how compact it is drawn; undefined when a minor one has no room and is left out. */
-  type Placement = { readonly center: Vector2; readonly scale: number };
+  type Placement = { readonly center: Vector2; readonly scale: number; readonly angle?: number };
   const scales = new Map<string, number>();
   const position = (footprint: Footprint, apron: number, main: boolean): Placement | undefined => {
     const polygon = aprons[apron];
@@ -411,15 +434,15 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
     // A building that does not fit at full size is drawn a little more compact.
     for (const scale of polygon ? COMPACT_SCALES : []) {
       const sized = { ...footprint, width: footprint.width * scale, height: footprint.height * scale };
-      const center = place(sized, polygon, true) ?? place(sized, polygon, false);
-      if (center) {
-        placement = { center, scale };
+      const spot = place(sized, polygon, true) ?? place(sized, polygon, false);
+      if (spot) {
+        placement = { center: spot.center, scale, angle: spot.angle };
         break;
       }
     }
     if (!placement && !main && polygon) return undefined;
     placement ??= { center: settle(footprint, site), scale: 1 };
-    const sized = { ...footprint, width: footprint.width * placement.scale, height: footprint.height * placement.scale, center: placement.center };
+    const sized = { ...footprint, width: footprint.width * placement.scale, height: footprint.height * placement.scale, center: placement.center, angle: placement.angle ?? footprint.angle };
     placedRects.push(sized);
     site.placed.push({ authored: footprint, footprint: sized });
     if (!near(placement.center, footprint.center)) moves.push([footprint.center, placement.center]);
@@ -434,7 +457,7 @@ export function clearAirfieldSite<T extends PlayableMapLayout & GroundNetwork>(l
   }
   const resized = <Item extends Building>(item: Item, key: string): Item => {
     const placement = placedAt.get(key);
-    return placement ? { ...item, center: placement.center, width: item.width * placement.scale, height: item.height * placement.scale } : item;
+    return placement ? { ...item, center: placement.center, width: item.width * placement.scale, height: item.height * placement.scale, ...(placement.angle !== undefined ? { angle: placement.angle } : {}) } : item;
   };
   const removedCenters = structures.filter((item) => removed.has(item.key)).map((item) => item.footprint.center);
   const isRemoved = (point: Vector2) => isAnchorOf(point, removedCenters);

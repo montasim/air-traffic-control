@@ -71,13 +71,17 @@ const BUILDING_PROPS = new Set(['hangar', 'service', 'fuel', 'utility']);
 export const isAnchorOf = (position: Vector2, centers: readonly Vector2[]): boolean =>
   centers.some((center) => Math.hypot(center.x - position.x, center.y - position.y) < 0.5);
 const STANDS_PER_ROUTE = 3;
-/** A rollout shorter than this share of the runway looks abrupt, so the aircraft rolls on and back-taxis. */
-const MIN_ROLLOUT_SHARE = 0.18;
+/**
+ * The shortest rollout before turning off, as a share of the runway. Kept short so an aircraft
+ * leaves by the exit on its own side of the field instead of rolling to the far end and back.
+ */
+const MIN_ROLLOUT_SHARE = 0.08;
 
 const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y });
 const sub = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x - b.x, y: a.y - b.y });
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
 const dot = (a: Vector2, b: Vector2): number => a.x * b.x + a.y * b.y;
+const normalize = (a: Vector2): Vector2 => scale(a, 1 / (Math.hypot(a.x, a.y) || 1));
 const distance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
 const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 /** Where segment a→b first enters the (margin-expanded) rectangle, as 0..1, or undefined. */
@@ -276,9 +280,9 @@ export function createGroundRoutes(
       raw = [zone.position, junction, ...link.path];
       rolloutLength = link.along;
     } else {
-      // No exit ahead: roll most of the remaining runway, pivot, and taxi back to the exit.
-      const farEnd = dot(sub(add(runway.center, scale(direction, runway.length / 2)), zone.position), direction);
-      const stopAlong = Math.max(minimumRoll, farEnd - runway.length * 0.06);
+      // The only exit is behind: stop after a short roll, pivot, and taxi straight back to it,
+      // rather than rolling on to the far end first.
+      const stopAlong = Math.max(minimumRoll, link.along + runway.length * 0.08);
       raw = [zone.position, add(zone.position, scale(direction, stopAlong)), junction, ...link.path];
       rolloutLength = stopAlong;
     }
@@ -317,11 +321,18 @@ export function taxiGuidePaths(layout: PlayableMapLayout & GroundNetwork): Vecto
     // GroundTraffic replaces the last corner with this same stand approach.
     const approach = route.stands[0]?.approach;
     const before = route.points.at(-2);
-    if (approach && before && distance(approach[0], before) < 0.5) {
-      guides.push([...points.slice(0, -1), approach[1]]);
-    } else {
-      guides.push(points);
-    }
+    const guide = approach && before && distance(approach[0], before) < 0.5 ? [...points.slice(0, -1), approach[1]] : points;
+    // An exit too close to one landing end is reached by rolling past and turning back, which would
+    // repeat the other direction's curve; paint the lead-in from this side instead, as junctions do.
+    guides.push(guides.some((other) => distance(other[0], guide[0]) < 0.5) ? mirroredExit(guide, axis) : guide);
   }
   return guides;
+}
+
+/** Reflects a guide's runway exit curve across the taxiway it turns onto, so it leads in from the other side. */
+function mirroredExit(guide: readonly Vector2[], axis: Vector2): Vector2[] {
+  const onTaxiway = guide.findIndex((point, i) => i + 1 < guide.length && Math.abs(dot(normalize(sub(guide[i + 1], point)), axis)) < 0.05);
+  if (onTaxiway < 1) return [...guide];
+  const junction = guide[onTaxiway];
+  return guide.map((point, i) => (i < onTaxiway ? sub(point, scale(axis, 2 * dot(sub(point, junction), axis))) : point));
 }

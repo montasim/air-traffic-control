@@ -232,8 +232,7 @@ describe('River Bend definition', () => {
     }
     expect(layout.taxiways.map(({ connects }) => connects)).toEqual([
       ['river-main', 'river-apron'],
-      ['river-commuter', 'river-apron'],
-      ['river-apron', 'river-helipad']
+      ['river-commuter', 'river-apron']
     ]);
   });
 

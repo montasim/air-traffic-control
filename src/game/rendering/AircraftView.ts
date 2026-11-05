@@ -20,10 +20,69 @@ function mixColor(from: number, to: number, t: number): number {
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
 
+type Outline = readonly (readonly [number, number])[];
+/**
+ * Military airframes seen from above, drawn in each type's place on the carrier maps. Each keeps
+ * its civil counterpart's vertex order, so wing shading picks out the same parts, and about its
+ * size; drawing only, collision keeps the civil outlines.
+ */
+export const MILITARY_OUTLINES: Readonly<Record<Aircraft["type"], Outline>> = {
+  // A four-engine transport: long straight high wings and a broad tailplane.
+  liner: [
+    [34,0], [26,-6], [6,-7], [4,-27], [-4,-27], [-4,-7],
+    [-22,-6], [-28,-14], [-34,-14], [-31,0], [-34,14], [-28,14],
+    [-22,6], [-4,7], [-4,27], [4,27], [6,7], [26,6],
+  ],
+  // A carrier fighter: a pointed nose, swept wings set well aft, and wide tailplanes.
+  commuter: [
+    [31,0], [18,-4], [8,-5], [-8,-22], [-14,-22], [-12,-6],
+    [-18,-6], [-27,-14], [-31,-13], [-28,0], [-31,13], [-27,14],
+    [-18,6], [-12,6], [-14,22], [-8,22], [8,5], [18,4],
+  ],
+  // A gunship: a slim cabin with stub wings for weapon pods, and a long tail boom.
+  rotor: [
+    [28,0], [20,-5], [8,-6], [4,-15], [-3,-15], [-5,-6],
+    [-10,-5], [-28,-2], [-29,-9], [-33,-9], [-32,0], [-33,9],
+    [-29,9], [-28,2], [-10,5], [-5,6], [-3,15], [4,15], [8,6], [20,5],
+  ],
+};
+
 export interface AircraftViewOptions {
   livery?: LiveryId;
   reducedMotion?: boolean;
+  night?: boolean;
   presentationScale?: number;
+  /** Draw every type as its military counterpart (the carrier maps). */
+  military?: boolean;
+}
+
+/**
+ * The landing lights' beam, in the aircraft's own coordinates: a cone spreading ahead of the nose and
+ * ending in a pool of light, built from faint layers so it is brightest along its middle and fades
+ * out at its edges and far end. Drawn with additive blending, it lights the ground it falls on.
+ */
+function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number): void {
+  const reach = 110;
+  const color = 0xfff4d6;
+  for (let layer = 0; layer < 6; layer += 1) {
+    const share = 1 - layer * 0.14;
+    const spread = Math.tan(0.3 * share);
+    const far = nose + reach * share;
+    const points = [new Phaser.Math.Vector2(nose - 2, -2.5)];
+    // The far edge is a gentle arc rather than a straight cut.
+    for (let i = 0; i <= 8; i += 1) {
+      const t = i / 8 - 0.5;
+      points.push(new Phaser.Math.Vector2(far - Math.abs(t) * reach * 0.12 * share, t * 2 * reach * spread));
+    }
+    points.push(new Phaser.Math.Vector2(nose - 2, 2.5));
+    graphics.fillStyle(color, 0.05);
+    graphics.fillPoints(points, true);
+  }
+  // A brighter pool where the beam meets the ground.
+  for (let layer = 0; layer < 3; layer += 1) {
+    graphics.fillStyle(color, 0.05);
+    graphics.fillEllipse(nose + reach * 0.72, 0, reach * (0.5 - layer * 0.12), reach * (0.36 - layer * 0.09));
+  }
 }
 
 /** Retained vector artwork: no cropped atlas, resampling or changing sprite pivots. */
@@ -37,6 +96,7 @@ export class AircraftView {
   private reducedMotion: boolean;
   private readonly livery: LiveryId;
   private readonly type: Aircraft["type"];
+  private readonly military: boolean;
   private readonly outline: Phaser.Math.Vector2[];
   private readonly shadow: Phaser.GameObjects.Graphics;
   private readonly body: Phaser.GameObjects.Graphics;
@@ -44,6 +104,13 @@ export class AircraftView {
   private landedBlend = -1;
   /** Scale on the ground, at most GROUND_SCALE and small enough to fit this type's stand. */
   private groundScale = GROUND_SCALE;
+  /** Night lights: landing lights at the nose throwing a beam ahead, and a red beacon that flashes. */
+  private readonly headlight: Phaser.GameObjects.Graphics;
+  private readonly noseLight: Phaser.GameObjects.Arc;
+  private readonly beacon: Phaser.GameObjects.Arc[];
+  private night = false;
+  private grounded = false;
+  private strobeClock = 0;
   constructor(
     scene: Phaser.Scene,
     aircraft: Aircraft,
@@ -59,12 +126,13 @@ export class AircraftView {
           height: canvas.clientHeight || canvas.height,
         },
         {
-          width: scene.scale.gameSize.width,
-          height: scene.scale.gameSize.height,
+          width: scene.scale.gameSize.width / scene.cameras.main.zoom,
+          height: scene.scale.gameSize.height / scene.cameras.main.zoom,
         },
       );
     this.rotorAngle = initialRotorPhase(aircraft.id);
     this.reducedMotion = options.reducedMotion ?? false;
+    this.night = options.night ?? false;
     const spec = AIRCRAFT_SILHOUETTES[aircraft.type];
     this.ring = scene.add
       .circle(0, 0, spec.selectionRadius, 0, 0)
@@ -76,11 +144,17 @@ export class AircraftView {
       .setVisible(false);
     this.livery = options.livery ?? 'classic';
     this.type = aircraft.type;
-    this.outline = AIRCRAFT_OUTLINES[aircraft.type].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    this.military = Boolean(options.military);
+    const outline = (this.military ? MILITARY_OUTLINES : AIRCRAFT_OUTLINES)[aircraft.type];
+    this.outline = outline.map(([x, y]) => new Phaser.Math.Vector2(x, y));
     const shadow = (this.shadow = scene.add.graphics().setPosition(3, 4));
     const body = (this.body = scene.add.graphics());
     this.paint(0);
-    const children: Phaser.GameObjects.GameObject[] = [shadow, this.ring, this.innerRing, body];
+    // The landing lights' beam lies on the ground ahead, under the airframe, glowing where it falls.
+    const nose = Math.max(...outline.map(([x]) => x));
+    this.headlight = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
+    paintHeadlightBeam(this.headlight, nose);
+    const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body];
     if (aircraft.type === "rotor") {
       // A centered, symmetric rotor avoids the lopsided atlas wobble.
       this.rotorAssembly = scene.add.graphics().setPosition(5, 0);
@@ -94,6 +168,15 @@ export class AircraftView {
       const hub = scene.add.circle(5, 0, 3, INK.bodyHighlight).setStrokeStyle(1.5, INK.keyline);
       children.push(hub);
     }
+    // The lamps themselves sit just inside the nose; the red beacon at the tail, with a soft glow.
+    this.noseLight = scene.add.circle(nose - 3, 0, 2.4, 0xfffbe8);
+    const beaconX = outline.filter(([, y]) => y === 0).reduce((best, [x]) => Math.min(best, x), Infinity);
+    this.beacon = [
+      scene.add.circle(beaconX, 0, 6.5, 0xff2a1f, 0.35).setBlendMode(Phaser.BlendModes.ADD),
+      scene.add.circle(beaconX, 0, 2.6, 0xff3b30),
+    ];
+    children.push(this.noseLight, ...this.beacon);
+    this.updateLights();
     this.container = scene.add
       .container(aircraft.position.x, aircraft.position.y, children)
       .setDepth(7)
@@ -110,6 +193,8 @@ export class AircraftView {
     this.container
       .setPosition(aircraft.position.x, aircraft.position.y)
       .setRotation(aircraft.heading);
+    // Airborne shadows fall far from the aircraft and close in through the landing.
+    this.placeShadow(aircraft.heading, aircraft.state === "landing" ? 1 - aircraft.landingProgress : 1);
     if (this.rotorAssembly && !this.reducedMotion) {
       this.rotorAngle = rotorMotion(
         this.rotorAngle,
@@ -118,12 +203,24 @@ export class AircraftView {
       );
       this.rotorAssembly.setRotation(this.rotorAngle);
     }
+    this.strobeClock = (this.strobeClock + deltaMilliseconds) % 1000;
+    this.updateLights();
     const progress =
       aircraft.state === "landing" ? aircraft.landingProgress : 0;
     // Touchdown settles onto the ground scale; the ground layer then rolls it out and taxis it.
     this.container
       .setScale(this.presentationScale * (1 - progress * (1 - this.groundScale)))
       .setAlpha(1);
+  }
+  /**
+   * The shadow keeps one world direction, down and right from a north-west light, whatever the
+   * heading: the offset is turned back by the container's rotation. Altitude 1 is cruising, 0 on the ground.
+   */
+  private placeShadow(heading: number, altitude: number): void {
+    const x = 3 + altitude * 9;
+    const y = 4 + altitude * 12;
+    const cos = Math.cos(heading), sin = Math.sin(heading);
+    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(1 - altitude * 0.3);
   }
   setGroundScale(scale: number): void {
     this.groundScale = scale;
@@ -135,6 +232,8 @@ export class AircraftView {
   toGround(muteImmediately = false): void {
     this.setSelected(false);
     this.container.setDepth(3);
+    this.grounded = true;
+    this.updateLights();
     this.landedBlend = muteImmediately ? 1 : 0;
     if (muteImmediately) this.paint(1);
   }
@@ -144,29 +243,62 @@ export class AircraftView {
     const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
     const edge = mixColor(paint.edge, LANDED.keyline, landed);
     this.shadow.clear();
-    this.shadow.fillStyle(INK.shadow, 0.16 + (LANDED.shadowAlpha - 0.16) * landed);
+    this.shadow.fillStyle(INK.shadow, 0.28 + (LANDED.shadowAlpha - 0.28) * landed);
     this.shadow.fillPoints(this.outline, true);
     const body = this.body.clear();
     body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
     body.fillPoints(this.outline, true);
+    // Wings and tailplanes sit lower than the fuselage, so they read a shade darker.
+    if (this.type !== "rotor") {
+      body.fillStyle(INK.keyline, 0.14);
+      for (const [from, to] of [[2, 5], [13, 16], [6, 9], [9, 12]]) body.fillPoints(this.outline.slice(from, to + 1), true);
+    }
     // Midnight needs a pale edge on dark scenery, backed by dark ink on snow.
     if (this.livery === 'midnight') {
       body.lineStyle(4.4, keyline, 1);
       body.strokePoints(this.outline, true);
     }
-    body.lineStyle(2.4, edge, 1);
+    // A bold outline keeps the silhouette crisp against busier, textured ground.
+    body.lineStyle(3, edge, 1);
     body.strokePoints(this.outline, true);
     // One generous livery panel and one cockpit remain readable at flight scale.
     body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
     body.fillRoundedRect(paint.panelX, -paint.panelHeight / 2, paint.panelWidth, paint.panelHeight, Math.min(4, paint.panelHeight / 2));
-    if (this.type !== "rotor") {
+    // Military airframes carry no airline wing stripe; their own details are drawn below instead.
+    if (this.type !== "rotor" && !this.military) {
       const wingX = this.type === "liner" ? -7 : -4;
       body.lineStyle(paint.wingWidth, mixColor(paint.wing, LANDED.livery, landed), 1);
       body.lineBetween(wingX, -19, wingX + 3, -9);
       body.lineBetween(wingX, 19, wingX + 3, 9);
     }
+    // Engines under the wings and a light catching the spine give the airframe some depth.
+    if (this.type !== "rotor" && !this.military) {
+      body.fillStyle(mixColor(INK.keyline, LANDED.keyline, landed), 0.85);
+      const engineX = this.type === "liner" ? 0 : 2;
+      body.fillEllipse(engineX, -13, 8, 4);
+      body.fillEllipse(engineX, 13, 8, 4);
+    }
+    body.fillStyle(0xffffff, 0.28 * (1 - landed));
+    body.fillRoundedRect(this.type === "rotor" ? -14 : -22, -1, this.type === "rotor" ? 26 : 42, 2, 1);
     body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
-    body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
+    const ink = mixColor(INK.keyline, LANDED.keyline, landed);
+    if (this.military && this.type === "commuter") {
+      // A long bubble canopy forward, and twin exhaust nozzles at the tail.
+      body.fillRoundedRect(10, -2.5, 13, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      body.fillRoundedRect(-30, -3.5, 5, 3, 1);
+      body.fillRoundedRect(-30, 0.5, 5, 3, 1);
+    } else if (this.military && this.type === "liner") {
+      // A short flight deck, and four engines along the straight wing.
+      body.fillRoundedRect(24, -3.5, 6, 7, 2);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-19, -11, 11, 19]) body.fillEllipse(8, y, 9, 3.5);
+    } else if (this.military) {
+      // A two-seat gunship canopy, and a weapon pod under each stub wing.
+      body.fillRoundedRect(10, -2.5, 12, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-12, 12]) body.fillRoundedRect(-4, y - 1.5, 9, 3, 1.5);
+    } else body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
   }
   /** Draw a landed aircraft from presentation-only ground state. */
   syncGround(
@@ -183,6 +315,7 @@ export class AircraftView {
       .setRotation(state.heading)
       .setScale(this.presentationScale * this.groundScale)
       .setAlpha(state.alpha);
+    this.placeShadow(state.heading, 0);
     if (this.rotorAssembly && !this.reducedMotion) {
       this.rotorAngle = rotorMotion(this.rotorAngle, deltaMilliseconds, rotorRunning);
       this.rotorAssembly.setRotation(this.rotorAngle);
@@ -194,6 +327,19 @@ export class AircraftView {
   }
   setReducedMotion(reducedMotion: boolean): void {
     this.reducedMotion = reducedMotion;
+    this.updateLights();
+  }
+  setNight(night: boolean): void {
+    this.night = night;
+    this.updateLights();
+  }
+  /** Lights show in flight at night; the beacon flashes briefly once a second, or stays on with reduced motion. */
+  private updateLights(): void {
+    const on = this.night && !this.grounded;
+    this.headlight.setVisible(on);
+    this.noseLight.setVisible(on);
+    const flash = on && (this.reducedMotion || this.strobeClock < 150);
+    for (const light of this.beacon) light.setVisible(flash);
   }
   destroy(): void {
     this.container.destroy(true);

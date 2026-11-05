@@ -3,6 +3,7 @@ import { AIRPORT_CATEGORIES } from './game/maps/categories';
 import { DIFFICULTY_LABELS, isDifficulty, type DifficultyId } from './core/difficulty';
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
 import { renderCareer as renderCareerPage } from "./ui/career";
+import { clearActiveShift, loadActiveShift, saveActiveShift, type ActiveShift } from "./storage/activeShift";
 import Phaser from "phaser";
 import type { FeedbackEvent } from "./app/feedbackEvents";
 import { GameAudio, WebAudioBackend } from "./audio";
@@ -13,7 +14,10 @@ import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
   needsNewShiftLayout,
+  renderScaleFor,
   worldSizeForViewport,
+  LANDSCAPE_PROFILE,
+  PORTRAIT_PROFILE,
   isFieldPlayable,
   shouldPauseForResize,
   profileForViewport,
@@ -32,7 +36,7 @@ import {
   IndexedDbSavePersistence,
   type GameSaveV3,
 } from "./storage/gameStore";
-import { mountHugeIcon } from "./ui/hugeicons";
+import { mountHugeIcon, type AppIconName } from "./ui/hugeicons";
 import { mountPractice } from "./ui/practice";
 import { createMapPreviews } from "./ui/mapPreviews";
 import { renderAchievementBadges, renderPromotion, resetCareerResult } from "./ui/shiftCelebration";
@@ -90,6 +94,9 @@ const elements = {
   selectedMapName: document.querySelector<HTMLElement>("#selected-map-name")!,
   careerResult: document.querySelector<HTMLElement>("#career-result")!,
   pauseButton: document.querySelector<HTMLButtonElement>("#pause-button")!,
+  speedButton: document.querySelector<HTMLButtonElement>("#speed-button")!,
+  resumeShiftButton: document.querySelector<HTMLButtonElement>("#resume-shift-button")!,
+  resumeShiftContext: document.querySelector<HTMLElement>("#resume-shift-context")!,
   pauseIcon: document.querySelector<HTMLElement>("#pause-icon")!,
   startButton: document.querySelector<HTMLButtonElement>("#start-button")!,
   startIcon: document.querySelector<HTMLElement>("#start-icon")!,
@@ -127,7 +134,7 @@ mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
 mountHugeIcon(elements.restartIcon, "restart", 18);
 mountHugeIcon(elements.chooseMapIcon, "home", 18);
-for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close"] as const) {
+for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close", "landing", "target", "night", "weather", "bothEnds"] as const) {
   document.querySelectorAll<HTMLElement>(`[data-ui-icon="${name}"]`).forEach(target => {
     mountHugeIcon(target, name, 18);
   });
@@ -183,7 +190,8 @@ let activeTwoEndLanding = currentSave.settings.twoEndLanding;
 let savingLandingMode = false;
 let restoreLandingModeFocus = false;
 const landingModeInput = document.querySelector<HTMLInputElement>('#two-end-landing')!;
-const landingModeLabel = () => activeTwoEndLanding ? 'Both landing ends' : 'One landing end';
+const nightModeInput = document.querySelector<HTMLInputElement>('#night-mode')!;
+const weatherInput = document.querySelector<HTMLInputElement>('#weather-mode')!;
 let activeRunId = '';
 let finishingRunId = '';
 let sceneReady = false;
@@ -201,8 +209,14 @@ function resetResizeState(): void {
   resizedWhilePaused = false;
   acceptedViewport = availableViewport();
 }
+/** Device pixels per world unit for the current game; the canvas is this much larger than the world. */
+let renderScale = 1;
+/** The world in layout units, as the scene and saved shifts use it. */
+function worldSize(): { width: number; height: number } {
+  return { width: game.scale.gameSize.width / renderScale, height: game.scale.gameSize.height / renderScale };
+}
 function fieldPlayable(): boolean {
-  return isFieldPlayable(game.scale.gameSize, availableViewport());
+  return isFieldPlayable(worldSize(), availableViewport());
 }
 let volumeSaveTimer = 0;
 let promotionAudioTimer = 0;
@@ -212,27 +226,41 @@ let routeCoachDismissed = false;
 try { routeCoachDismissed = sessionStorage.getItem("vector-approach:route-coach-dismissed") === "1"; } catch { /* Session-only fallback. */ }
 let routeCoachTimer = 0;
 let scorePulseTimer = 0;
+// Session-only: the next shift keeps the player's last choice.
+const GAME_SPEEDS = [
+  { scale: 1, label: "1×", name: "normal" },
+  { scale: 2, label: "2×", name: "double" },
+  { scale: 0.5, label: "½×", name: "half" },
+] as const;
+let speedIndex = 0;
 
 elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
-function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
+function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShift): Phaser.Game {
   activeLivery = currentSave.settings.livery;
-  activeTwoEndLanding = currentSave.settings.twoEndLanding;
+  // A restored shift keeps the world and runway mode it started with.
+  activeTwoEndLanding = restore?.twoEndLanding ?? currentSave.settings.twoEndLanding;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
+  const world = restore?.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight);
+  // Draw at the display's real pixel density instead of stretching a world-sized canvas.
+  renderScale = renderScaleFor(world, { width: window.innerWidth, height: window.innerHeight }, window.devicePixelRatio);
   const nextGame = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
-    ...worldSizeForViewport(window.innerWidth, window.innerHeight),
+    width: world.width * renderScale,
+    height: world.height * renderScale,
     backgroundColor: "#263f3c",
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery)],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale)],
   });
 
   nextGame.events.on("scene-ready", () => {
     sceneReady = true;
+    playScene()?.setNight(currentSave.settings.night);
+    playScene()?.setWeather(currentSave.settings.weather);
     const focusLandingMode = restoreLandingModeFocus;
     restoreLandingModeFocus = false;
     landingModeInput.disabled = savingLandingMode || !isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
@@ -241,6 +269,10 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
       activeMapId,
       currentSave.career.earnedRankId,
     );
+    if (restore) {
+      requestAnimationFrame(() => finishRestore(restore));
+      return;
+    }
     if (!utilityScreen.hidden) {
       document.querySelector<HTMLElement>("#utility-title")!.focus();
       return;
@@ -300,6 +332,7 @@ function createGame(profile: ViewportProfile, mapId: MapId): Phaser.Game {
 }
 
 let game = createGame(activeProfile, activeMapId);
+updateResumeOffer();
 
 function playScene(): PlayScene | undefined {
   if (!sceneReady) return undefined;
@@ -402,7 +435,44 @@ function rankProgressCopy(): string {
   if (!next) return "Highest clearance earned.";
   const requirements = next.requirements;
   const progress = promotionProgress(currentSave.career, currentSave.mapRecords, requirements.qualifyingBestScore);
-  return `${currentSave.career.totalSafeLandings}/${requirements.minimumSafeLandings} safe landings · ${currentSave.career.shiftsPlayed}/${requirements.minimumShifts} shifts · ${progress.distinctMaps}/${requirements.minimumDistinctMaps} airfields with a best of ${requirements.qualifyingBestScore}+`;
+  return `${currentSave.career.totalSafeLandings}/${requirements.minimumSafeLandings} landings · ${currentSave.career.shiftsPlayed}/${requirements.minimumShifts} shifts · ${progress.distinctMaps}/${requirements.minimumDistinctMaps} airfields at ${requirements.qualifyingBestScore}+`;
+}
+
+/** Progress toward the next rank as three small meters; a met goal shows full with a check. */
+function renderRankProgress(target: HTMLElement): void {
+  const next = RANK_CATALOG[rankIndex(currentSave.career.earnedRankId) + 1];
+  if (!next) {
+    target.textContent = "Highest clearance earned.";
+    return;
+  }
+  const requirements = next.requirements;
+  const progress = promotionProgress(currentSave.career, currentSave.mapRecords, requirements.qualifyingBestScore);
+  const heading = document.createElement("p");
+  heading.className = "rank-next";
+  heading.append("Next rank · ");
+  const name = document.createElement("strong");
+  name.textContent = next.name;
+  heading.append(name);
+  const meters = document.createElement("ul");
+  meters.className = "rank-meters";
+  for (const [label, done, goal] of [
+    ["Landings", currentSave.career.totalSafeLandings, requirements.minimumSafeLandings],
+    ["Shifts", currentSave.career.shiftsPlayed, requirements.minimumShifts],
+    [`Airfields at ${requirements.qualifyingBestScore}+`, progress.distinctMaps, requirements.minimumDistinctMaps],
+  ] as const) {
+    const met = done >= goal;
+    const item = document.createElement("li");
+    item.classList.toggle("is-met", met);
+    const value = document.createElement("strong");
+    value.textContent = `${Math.min(done, goal)}/${goal}${met ? " ✓" : ""}`;
+    const bar = document.createElement("span");
+    bar.className = "rank-meter";
+    bar.setAttribute("aria-hidden", "true");
+    bar.style.setProperty("--fill", `${Math.min(100, (done / Math.max(1, goal)) * 100)}%`);
+    item.append(value, ` ${label}`, bar);
+    meters.append(item);
+  }
+  target.replaceChildren(heading, meters);
 }
 
 function renderCareer(): void {
@@ -415,6 +485,13 @@ function renderCareer(): void {
 function mapBest(mapId: MapId): number {
   const scores = currentSave.mapRecords[mapId].difficultyScores[currentSave.selectedDifficulty];
   return Math.max(scores.portrait, scores.landscape);
+}
+
+/** Fills the airfield chooser for the selected difficulty: its switch, status line and cards. */
+function showAirfieldDifficulty(): void {
+  document.querySelectorAll<HTMLInputElement>('input[name="airfield-difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
+  renderMapOptions();
+  document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`;
 }
 
 function renderMapOptions(): void {
@@ -436,6 +513,7 @@ function renderMapOptions(): void {
     );
     const preview = previews.get(definition.id);
     if (preview) button.style.setProperty("--map-preview", `url("${preview}")`);
+    button.style.setProperty("--map-preview-position", `var(--map-focus-${definition.id}, center)`);
     if (selected) button.classList.add("is-selected");
     if (!unlocked) button.classList.add("is-locked");
     const title = document.createElement("strong");
@@ -516,11 +594,15 @@ function beginRun(): void {
   resetResizeState();
   activeRunId = crypto.randomUUID();
   finishingRunId = '';
+  clearActiveShift();
+  updateResumeOffer();
   scene.startRun(activeDifficulty, activeRunId);
   updateBestDisplays();
   document.querySelector('#hud-difficulty')!.textContent = `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   audio.handle({ type: "ui-confirm", action: "play" });
+  scene.setTimeScale(GAME_SPEEDS[speedIndex].scale);
   elements.pauseButton.disabled = false;
+  elements.speedButton.disabled = false;
   showOnly();
   elements.pauseButton.setAttribute("aria-label", "Pause game");
   mountHugeIcon(elements.pauseIcon, "pause", 22);
@@ -540,6 +622,7 @@ function rebuildForTarget(
   profile: ViewportProfile,
   mapId: MapId,
   beginWhenReady: boolean,
+  restore?: ActiveShift,
 ): void {
   resetResizeState();
   sceneReady = false;
@@ -548,9 +631,74 @@ function rebuildForTarget(
   activeMapId = mapId;
   elements.startButton.disabled = true;
   elements.pauseButton.disabled = true;
+  elements.speedButton.disabled = true;
   game.destroy(true);
-  game = createGame(profile, mapId);
+  game = createGame(profile, mapId, restore);
   renderShell();
+}
+
+function persistShift(): void {
+  const scene = playScene();
+  if (!scene || !activeRunId || scene.getPhase() !== "paused") return;
+  saveActiveShift({
+    version: 1,
+    savedAt: Date.now(),
+    mapId: activeMapId,
+    difficulty: activeDifficulty,
+    orientation: activeProfile.id,
+    world: worldSize(),
+    twoEndLanding: activeTwoEndLanding,
+    ...scene.exportShift(),
+  });
+}
+
+function updateResumeOffer(): void {
+  const shift = loadActiveShift();
+  const offer = !!shift && isMapUnlocked(shift.mapId, currentSave.career.earnedRankId);
+  elements.resumeShiftButton.hidden = !offer;
+  if (!offer) return;
+  const name = mapDefinitionById(shift.mapId).metadata.name;
+  const landed = formatScore(shift.simulation.score);
+  elements.resumeShiftButton.title = `${name} · ${DIFFICULTY_LABELS[shift.difficulty]} · ${landed} landed`;
+  elements.resumeShiftContext.replaceChildren(shiftTags({
+    // No orientation tag here: it follows the device, so it does not help choose between resuming and starting.
+    name, difficulty: shift.difficulty, landed, twoEndLanding: shift.twoEndLanding,
+  }));
+}
+
+async function resumeSavedShift(): Promise<void> {
+  const shift = loadActiveShift();
+  if (!shift || !sceneReady || !isMapUnlocked(shift.mapId, currentSave.career.earnedRankId)) {
+    updateResumeOffer();
+    return;
+  }
+  await audio.unlock();
+  rebuildForTarget(shift.orientation === "portrait" ? PORTRAIT_PROFILE : LANDSCAPE_PROFILE, shift.mapId, false, shift);
+}
+
+function finishRestore(shift: ActiveShift): void {
+  const scene = playScene();
+  if (!scene?.restoreRun(shift.difficulty, shift)) {
+    clearActiveShift();
+    updateResumeOffer();
+    showOnly(elements.startPanel);
+    announce("Saved shift could not be restored");
+    return;
+  }
+  window.clearTimeout(promotionAudioTimer);
+  activeDifficulty = shift.difficulty;
+  resetResizeState();
+  activeRunId = shift.runId;
+  finishingRunId = '';
+  scene.setTimeScale(GAME_SPEEDS[speedIndex].scale);
+  updateBestDisplays();
+  document.querySelector('#hud-difficulty')!.textContent = `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
+  elements.score.textContent = formatScore(shift.simulation.score);
+  elements.pauseButton.disabled = false;
+  elements.speedButton.disabled = false;
+  elements.resumeLabel.textContent = "Resume";
+  hideRouteCoachmark();
+  showPausePanel();
 }
 
 async function selectMap(mapId: MapId): Promise<void> {
@@ -578,9 +726,15 @@ function pauseRun(): void {
   const scene = playScene();
   if (!scene || scene.getPhase() !== "running") return;
   scene.pauseRun();
+  persistShift();
+  showPausePanel();
+}
+
+function showPausePanel(): void {
   showOnly(elements.pausePanel);
-  document.querySelector("#pause-context")!.textContent =
-    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · ${elements.score.textContent} landed · Started in ${activeProfile.id} · ${landingModeLabel()}`;
+  // The airfield name is the pause heading, so the details below are tags only.
+  document.querySelector("#pause-map-name")!.textContent = mapDefinitionById(activeMapId).metadata.name;
+  renderShiftContext(document.querySelector<HTMLElement>("#pause-context")!, elements.score.textContent ?? "");
   updateResizeNotice();
   elements.pauseButton.setAttribute("aria-label", "Resume game");
   mountHugeIcon(elements.pauseIcon, "play", 22);
@@ -614,6 +768,8 @@ async function handleGameOver({
   if (runId && (runId !== activeRunId || finishingRunId === runId)) return;
   finishingRunId = runId ?? crypto.randomUUID();
   const completedRunId = finishingRunId;
+  clearActiveShift();
+  updateResumeOffer();
   const copy =
     reason === "airspace"
       ? [
@@ -630,12 +786,14 @@ async function handleGameOver({
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
   // Both result cards keep one-word labels so they stay level; the record's context reads below them.
   document.querySelector("#result-best-label")!.textContent = "Best";
-  document.querySelector('#result-difficulty')!.textContent =
-    `${mapDefinitionById(activeMapId).metadata.name} · ${DIFFICULTY_LABELS[activeDifficulty]} · Started in ${activeProfile.id} · ${landingModeLabel()}`;
+  // The same tags as the pause card; the airfield, the pause card's heading, joins the eyebrow here.
+  document.querySelector("#result-eyebrow")!.textContent = `Shift ended · ${mapDefinitionById(activeMapId).metadata.name}`;
+  renderShiftContext(document.querySelector<HTMLElement>('#result-difficulty')!, formatScore(score));
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
   resetCareerResult(elements.careerResult, "Recording shift…");
   elements.pauseButton.disabled = true;
+  elements.speedButton.disabled = true;
   elements.restartButton.disabled = true;
   elements.chooseMapButton.disabled = true;
   showOnly(elements.gameoverPanel);
@@ -676,7 +834,7 @@ async function handleGameOver({
     );
     currentSave = await acknowledgeEarnedRank();
   } else {
-    elements.careerResult.textContent = rankProgressCopy();
+    renderRankProgress(elements.careerResult);
   }
   if (!result.persisted) {
     const note = document.createElement("span");
@@ -713,11 +871,13 @@ function setLocalVolume(volume: number): void {
   }, 140);
 }
 
-document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => input.addEventListener('change', async () => {
+document.querySelectorAll<HTMLInputElement>('input[name="difficulty"], input[name="airfield-difficulty"]').forEach(input => input.addEventListener('change', async () => {
   if (!input.checked || !isDifficulty(input.value)) return;
   currentSave = await gameStore.selectDifficulty(input.value);
   activeDifficulty = currentSave.selectedDifficulty;
   renderShell();
+  // On the airfield chooser, its cards and status follow the new difficulty at once.
+  if (!document.querySelector<HTMLElement>('#airfields-content')!.hidden) showAirfieldDifficulty();
 }));
 landingModeInput.addEventListener('change', async () => {
   if (savingLandingMode || elements.startPanel.hidden || !utilityScreen.hidden) return;
@@ -728,10 +888,27 @@ landingModeInput.addEventListener('change', async () => {
   try {
     currentSave = await gameStore.setTwoEndLanding(landingModeInput.checked);
     resetPractice();
+    refreshPreviews();
   } finally {
     savingLandingMode = false;
   }
   rebuildForTarget(profileForViewport(), activeMapId, false);
+});
+// Night only changes the look, so the live map updates without a rebuild; the store queue orders rapid toggles.
+nightModeInput.addEventListener("change", () => {
+  playScene()?.setNight(nightModeInput.checked);
+  void gameStore.setNight(nightModeInput.checked).then(save => {
+    currentSave = save;
+    refreshPreviews();
+  });
+});
+// Weather only changes the look too: the live map shows or hides its clouds at once.
+weatherInput.addEventListener("change", () => {
+  playScene()?.setWeather(weatherInput.checked);
+  void gameStore.setWeather(weatherInput.checked).then(save => {
+    currentSave = save;
+    refreshPreviews();
+  });
 });
 elements.startButton.addEventListener("click", () => void startRun());
 elements.restartButton.addEventListener("click", () => void startRun());
@@ -746,6 +923,17 @@ elements.resumeButton.addEventListener("click", () => void resumeRun());
 elements.chooseMapButton.addEventListener("click", () => {
   renderShell();
   showOnly(elements.startPanel);
+});
+elements.resumeShiftButton.addEventListener("click", () => void resumeSavedShift());
+// Some platforms kill a hidden page without another event; pausing here saves the shift.
+window.addEventListener("pagehide", () => pauseRun());
+elements.speedButton.addEventListener("click", () => {
+  speedIndex = (speedIndex + 1) % GAME_SPEEDS.length;
+  const speed = GAME_SPEEDS[speedIndex];
+  playScene()?.setTimeScale(speed.scale);
+  elements.speedButton.textContent = speed.label;
+  elements.speedButton.setAttribute("aria-label", `Game speed: ${speed.name}`);
+  announce(`Game speed ${speed.name}`);
 });
 elements.pauseButton.addEventListener("click", () => {
   if (playScene()?.getPhase() === "paused") void resumeRun();
@@ -786,7 +974,7 @@ window.addEventListener("resize", () => {
   const scene = playScene();
   if (scene?.getPhase() === "running" || scene?.getPhase() === "paused") {
     scene.cancelDrawing();
-    const significant = shouldPauseForResize(acceptedViewport, availableViewport(), game.scale.gameSize);
+    const significant = shouldPauseForResize(acceptedViewport, availableViewport(), worldSize());
     if (significant || scene.getPhase() === "paused") {
       resizedWhilePaused = true;
       resizeSettling = true;
@@ -800,6 +988,9 @@ window.addEventListener("resize", () => {
     if (!elements.startPanel.hidden && utilityScreen.hidden) {
       rebuildForTarget(profileForViewport(), activeMapId, false);
     }
+    // A new window size can change the layout a new shift gets, so redraw the pictures to match.
+    const { world, detailLevel } = previewWorld();
+    if (`${world.width}x${world.height}:${detailLevel}` !== previewKey) refreshPreviews();
     updateResizeNotice();
   }, 160);
 });
@@ -836,6 +1027,7 @@ function renderFieldDetail(): void {
   const previewUrl = previews.get(activeMapId);
   if (previewUrl) preview.src = previewUrl;
   else preview.removeAttribute('src');
+  preview.style.objectPosition = `var(--map-focus-${activeMapId}, center)`;
   const unlocked = isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
   document.querySelector("#field-title")!.textContent =
     definition.metadata.name;
@@ -848,6 +1040,8 @@ function renderFieldDetail(): void {
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   landingModeInput.checked = currentSave.settings.twoEndLanding;
+  nightModeInput.checked = currentSave.settings.night;
+  weatherInput.checked = currentSave.settings.weather;
   landingModeInput.disabled = savingLandingMode || !sceneReady || !unlocked;
   const lock = document.querySelector<HTMLElement>("#field-lock")!;
   lock.hidden = unlocked;
@@ -874,17 +1068,58 @@ function updateResizeNotice(): void {
   elements.restartFromPause.hidden = false;
 }
 
+/** The shift's airfield as a heading, then its settings as short tags; the landing count only while paused. */
+/** The pause and result cards' shared tags; both name the airfield elsewhere (heading, eyebrow). */
+function renderShiftContext(target: HTMLElement, landed: string): void {
+  target.replaceChildren(shiftTags({
+    difficulty: activeDifficulty,
+    landed,
+    orientation: activeProfile.id,
+    twoEndLanding: activeTwoEndLanding,
+  }));
+}
+
+/** The pill tags that sum up a shift, shared by the pause menu, the result card and the saved-shift offer. */
+function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: string; orientation?: string; twoEndLanding: boolean }): HTMLUListElement {
+  const tags = document.createElement("ul");
+  tags.className = "shift-tags";
+  if (shift.name) {
+    const name = document.createElement("li");
+    name.className = "shift-tag-name";
+    name.textContent = shift.name;
+    tags.append(name);
+  }
+  const facts: [string, AppIconName?][] = [
+    [DIFFICULTY_LABELS[shift.difficulty]],
+    ...(shift.landed === undefined ? [] : [[`${shift.landed} landed`, "landing"] as [string, AppIconName]]),
+    ...(shift.orientation === undefined ? [] : [[shift.orientation.charAt(0).toUpperCase() + shift.orientation.slice(1)] as [string]]),
+    [shift.twoEndLanding ? "Both ends" : "One end"],
+  ];
+  for (const [text, icon] of facts) {
+    const tag = document.createElement("li");
+    if (icon) {
+      const glyph = document.createElement("span");
+      glyph.setAttribute("aria-hidden", "true");
+      mountHugeIcon(glyph, icon, 14);
+      tag.append(glyph);
+    }
+    tag.append(text);
+    tags.append(tag);
+  }
+  return tags;
+}
+
 function confirmAbandon(title: string, copy: string, action: () => void): void {
   pendingAction = action;
   document.querySelector("#confirm-title")!.textContent = title;
   document.querySelector("#confirm-copy")!.textContent = copy;
-  document.querySelector("#confirm-accept")!.textContent = title.startsWith(
-    "Restart",
-  )
-    ? "Restart shift"
+  const [label, icon] = title.startsWith("Restart")
+    ? (["Restart shift", "restart"] as const)
     : title.startsWith("Start")
-      ? "Start new shift"
-      : "Main menu";
+      ? (["Start new shift", "play"] as const)
+      : (["Main menu", "home"] as const);
+  document.querySelector("#confirm-accept-label")!.textContent = label;
+  mountHugeIcon(document.querySelector<HTMLElement>("#confirm-accept-icon")!, icon, 18);
   confirmDialog.showModal();
 }
 
@@ -904,6 +1139,8 @@ document.querySelector("#pause-map")!.addEventListener("click", () =>
     "Leave this shift?",
     "This unfinished shift will not count toward your career, records, or achievements.",
     () => {
+      clearActiveShift();
+      updateResumeOffer();
       rebuildForTarget(activeProfile, activeMapId, false);
       showOnly(elements.startPanel);
     },
@@ -934,7 +1171,7 @@ function openUtility(screen: string, pushHistory = true): void {
   const title = document.querySelector<HTMLElement>("#utility-title")!;
   title.textContent = { help: "How to play", career: "Your career", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
   if (screen === "career") renderCareerDetail();
-  if (screen === 'airfields') { renderMapOptions(); document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`; }
+  if (screen === 'airfields') showAirfieldDifficulty();
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
   utilityScreen.hidden = false;
@@ -958,7 +1195,7 @@ window.addEventListener("popstate", () => {
   if (isUtilityName(screen)) openUtility(screen, false);
   else if (!utilityScreen.hidden) closeUtility();
 });
-document.querySelectorAll<HTMLButtonElement>("[data-screen]").forEach(button =>
+document.querySelectorAll<HTMLElement>("[data-screen]").forEach(button =>
   button.addEventListener("click", () => openUtility(button.dataset.screen!))
 );
 document.querySelector("#utility-close")!.addEventListener("click", () => history.back());
@@ -981,17 +1218,32 @@ if (isUtilityName(initialUtility)) {
   history.replaceState(null, "", location.pathname + location.search);
   openUtility(initialUtility);
 }
-const disposePreviews = createMapPreviews((id, url) => {
-  previews.set(id, url);
-  if (id === activeMapId) document.querySelector<HTMLImageElement>("#home-map-preview")!.src = url;
-  const careerImage = document.querySelector<HTMLImageElement>(`[data-career-map="${id}"]`);
-  if (careerImage) careerImage.src = url;
-  const card = elements.mapOptions.querySelector<HTMLElement>(
-    `[data-map-id="${id}"]`,
-  );
-  card?.style.setProperty("--map-preview", `url("${url}")`);
-});
-window.addEventListener("pagehide", disposePreviews, { once: true });
+let disposePreviews = () => {};
+/** The world a new shift would get on this window; previews are drawn at it so they match play. */
+function previewWorld(): { world: { width: number; height: number }; detailLevel: ViewportProfile["detailLevel"] } {
+  return { world: worldSizeForViewport(window.innerWidth, window.innerHeight), detailLevel: profileForViewport().detailLevel };
+}
+let previewKey = "";
+/** Redraws every airfield picture with the current night and runway-end settings; old pictures stay until replaced. */
+function refreshPreviews(): void {
+  disposePreviews();
+  const { world, detailLevel } = previewWorld();
+  previewKey = `${world.width}x${world.height}:${detailLevel}`;
+  disposePreviews = createMapPreviews((id, url, focus) => {
+    previews.set(id, url);
+    // Every picture of this airfield crops around the airfield itself, whatever its box shape.
+    document.documentElement.style.setProperty(`--map-focus-${id}`, `${(focus.x * 100).toFixed(1)}% ${(focus.y * 100).toFixed(1)}%`);
+    if (id === activeMapId) document.querySelector<HTMLImageElement>("#home-map-preview")!.src = url;
+    const careerImage = document.querySelector<HTMLImageElement>(`[data-career-map="${id}"]`);
+    if (careerImage) careerImage.src = url;
+    const card = elements.mapOptions.querySelector<HTMLElement>(
+      `[data-map-id="${id}"]`,
+    );
+    card?.style.setProperty("--map-preview", `url("${url}")`);
+  }, { night: currentSave.settings.night, weather: currentSave.settings.weather, twoEndLanding: currentSave.settings.twoEndLanding, world, detailLevel, first: activeMapId });
+}
+refreshPreviews();
+window.addEventListener("pagehide", () => disposePreviews(), { once: true });
 // Inline MODE checks let Vite drop the unused PWA and Android imports per edition.
 if (import.meta.env.MODE !== "desktop" && import.meta.env.MODE !== "android") {
   void import("virtual:pwa-register").then(({ registerSW }) => registerSW({ immediate: true }));
@@ -1061,5 +1313,5 @@ elements.mapOptions.addEventListener("keydown", (event) => {
 export function inspectShift() {
   if (!import.meta.env.DEV) throw new Error("Shift inspection is development-only");
   return { ...playScene()?.getShiftSnapshot(), orientation: activeProfile.id,
-    world: { width: game.scale.gameSize.width, height: game.scale.gameSize.height } };
+    world: worldSize() };
 }

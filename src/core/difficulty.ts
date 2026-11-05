@@ -18,6 +18,8 @@ export function applyDifficulty(base: ResolvedTrafficProfile, difficulty: Diffic
     openingSpawns: base.openingSpawns.map(s => ({ ...s, at: s.at * interval })),
     spawnIntervalStages: base.spawnIntervalStages.map(s => ({ ...s, at: s.at * time, interval: s.interval * interval })),
     trafficLimitStages: base.trafficLimitStages.map(s => ({ at: s.at * time, limit: easy ? Math.max(2, Math.min(8, s.limit - 1)) : Math.min(11, s.limit + 1) })),
+    // A held aircraft loops five times on Easy and twice on Hard (three on Medium, the base).
+    holdLoops: easy ? 5 : 2,
     speedMultipliers: { liner: base.speedMultipliers.liner * speed, commuter: base.speedMultipliers.commuter * speed, rotor: base.speedMultipliers.rotor * speed }
   });
 }

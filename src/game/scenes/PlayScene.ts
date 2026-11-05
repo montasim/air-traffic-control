@@ -1,6 +1,6 @@
 import type { LiveryId } from '../../progression/liveries';
 import { applyDifficulty, type DifficultyId } from '../../core/difficulty';
-import { ShiftTracker } from '../../progression/achievements';
+import { ShiftTracker, type ShiftTrackerState } from '../../progression/achievements';
 import {
   AIRCRAFT_OUTLINES,
   aircraftWarningDistance,
@@ -11,8 +11,14 @@ import {
 import { GroundTraffic } from "../ground/groundTraffic";
 import { aircraftPresentationScale } from "../rendering/aircraft/visualTokens";
 import { ROUTE_OUTLINE_COLOR } from "../palette";
+
+/** A route's edge: a deep shade of the aircraft's own colour, softer than a near-black outline. */
+const routeEdgeColor = (color: number): number => {
+  const mix = (shift: number) => Math.round(((color >> shift) & 0xff) * 0.35 + ((ROUTE_OUTLINE_COLOR >> shift) & 0xff) * 0.65);
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+};
 import Phaser from "phaser";
-import { Simulation } from "../../core/Simulation";
+import { HOLD_RADIUS, MAX_HOLDING, Simulation, type SimulationState } from "../../core/Simulation";
 import { clamp, distance } from "../../core/geometry";
 import {
   resolveLandingTarget,
@@ -41,6 +47,7 @@ import {
   GROUND_SCALE,
   type AircraftView,
 } from "../rendering/AircraftView";
+import { drawNight } from "../rendering/NightRenderer";
 import {
   RouteGuidanceRenderer,
   type RouteGuidanceTarget,
@@ -74,6 +81,9 @@ export class PlayScene extends Phaser.Scene {
   private drawnPoints: Vector2[] = [];
   private landingTarget: LandingTargetingResult = { status: "neutral" };
   private lastHudSecond = -1;
+  private timeScale = 1;
+  private night = false;
+  private nightLayer: ReturnType<typeof drawNight> | [] = [];
   private reducedMotion = false;
   private guidanceHideAfterMilliseconds = 0;
   private motionPreference?: MediaQueryList;
@@ -91,17 +101,23 @@ export class PlayScene extends Phaser.Scene {
     }
   };
 
+  /** The carrier maps fly military traffic: a transport, fighters and gunships in place of the civil types. */
+  private get military(): boolean {
+    return this.mapDefinition.id === 'carrier-coast' || this.mapDefinition.id === 'blue-water';
+  }
+
   constructor(
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION,
     private readonly twoEndLanding = false,
     private readonly livery: LiveryId = 'classic',
+    /** Device pixels per world unit; the canvas is this much larger than the world and the camera zooms to match. */
+    private readonly renderScale = 1,
   ) {
     super("play");
   }
 
   preload(): void {
-    const width = this.scale.gameSize.width;
-    const height = this.scale.gameSize.height;
+    const { width, height } = this.worldSize();
     const detailLevel = profileForViewport().detailLevel;
     const preview = this.mapDefinition.prepare({ width, height, detailLevel, twoEndLanding: this.twoEndLanding });
     queuePresentationAssets(this, {
@@ -111,8 +127,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const width = this.scale.gameSize.width;
-    const height = this.scale.gameSize.height;
+    const { width, height } = this.worldSize();
+    this.cameras.main.setZoom(this.renderScale).centerOn(width / 2, height / 2);
     const detailLevel = profileForViewport().detailLevel;
     this.preparedMap = this.mapDefinition.prepare({
       width,
@@ -154,11 +170,15 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setBackgroundColor("#263e38");
     this.mapDefinition.render(this, this.preparedMap);
+    this.nightLayer = drawNight(this, this.layout);
+    this.setNight(this.night);
     this.approachLabels = this.layout.landingZones.map(zone => this.add.text(
       zone.position.x, zone.position.y + zone.captureRadius + 8,
       zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}` : zone.label,
       { fontFamily: 'Atkinson Hyperlegible', fontSize: '20px', color: '#fff5df', backgroundColor: '#203d39', padding: { x: 4, y: 2 } }
     ).setOrigin(.5,0).setDepth(7).setVisible(false));
+    // Text is rasterised at its own resolution; match the camera zoom so labels stay sharp.
+    for (const child of this.children.list) if (child instanceof Phaser.GameObjects.Text) child.setResolution(this.renderScale);
 
     this.routeGraphics = this.add.graphics().setDepth(4);
     this.warningGraphics = this.add.graphics().setDepth(6);
@@ -210,12 +230,19 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  /** The world in layout units; the canvas is renderScale times larger. */
+  private worldSize(): { width: number; height: number } {
+    return { width: this.scale.gameSize.width / this.renderScale, height: this.scale.gameSize.height / this.renderScale };
+  }
+
   update(_time: number, deltaMilliseconds: number): void {
-    this.simulation.update(deltaMilliseconds / 1000);
+    // Game speed scales the world only; guidance hints keep real time.
+    const worldMilliseconds = deltaMilliseconds * this.timeScale;
+    this.simulation.update(worldMilliseconds / 1000);
     const snapshot = this.simulation.snapshot();
 
-    this.syncAircraft(snapshot, deltaMilliseconds);
-    this.syncGroundTraffic(snapshot, deltaMilliseconds);
+    this.syncAircraft(snapshot, worldMilliseconds);
+    this.syncGroundTraffic(snapshot, worldMilliseconds);
     this.routeGuidance.update(deltaMilliseconds);
     this.updateGuidanceTimeout(deltaMilliseconds);
     this.drawRoutes(snapshot);
@@ -236,7 +263,7 @@ export class PlayScene extends Phaser.Scene {
   startRun(difficulty: DifficultyId = 'medium', runId = ''): void {
     this.runId = runId;
     this.shiftTracker = new ShiftTracker();
-    this.simulation = new Simulation(this.layout.landingZones, { width: this.scale.gameSize.width, height: this.scale.gameSize.height }, applyDifficulty(trafficProfileById(this.mapDefinition.trafficProfileId), difficulty), this.collisionScales);
+    this.simulation = new Simulation(this.layout.landingZones, this.worldSize(), applyDifficulty(trafficProfileById(this.mapDefinition.trafficProfileId), difficulty), this.collisionScales);
     this.failureMarker?.destroy();
     this.failureMarker = undefined;
     this.clearAircraftViews();
@@ -266,6 +293,41 @@ export class PlayScene extends Phaser.Scene {
     return structuredClone({ twoEndLanding: this.twoEndLanding, runId: this.runId, simulation: this.simulation.snapshot(), landingZones: this.layout.landingZones, evidence: this.shiftTracker.evidence });
   }
 
+  exportShift(): { runId: string; simulation: SimulationState; tracker: ShiftTrackerState } {
+    return { runId: this.runId, simulation: this.simulation.exportState(), tracker: this.shiftTracker.exportState() };
+  }
+
+  /** Continues a saved shift, paused. Refuses saves whose zones this layout no longer has. */
+  restoreRun(difficulty: DifficultyId, shift: ReturnType<PlayScene["exportShift"]>): boolean {
+    const zoneIds = new Set(this.layout.landingZones.map((zone) => zone.id));
+    const known = (id?: string) => id === undefined || zoneIds.has(id);
+    if (!shift.simulation.aircraft.every((aircraft) =>
+      known(aircraft.landingZoneId) && known(aircraft.approachZoneId) && known(aircraft.route?.destinationZoneId))) return false;
+    this.startRun(difficulty, shift.runId);
+    // shortcut: planes taxiing on the ground are not restored; restore groundTraffic if players notice.
+    this.simulation.restore(shift.simulation);
+    this.shiftTracker.restore(shift.tracker);
+    this.game.events.emit("run-state", "paused");
+    return true;
+  }
+
+  setNight(enabled: boolean): void {
+    this.night = enabled;
+    for (const layer of this.nightLayer) layer.setVisible(enabled);
+    for (const view of this.aircraftViews.values()) view.setNight(enabled);
+    // Scenery that changes with the time of day (the drifting clouds) listens for this.
+    this.events.emit("night-mode", enabled);
+  }
+
+  /** Shows or hides the drifting clouds. */
+  setWeather(enabled: boolean): void {
+    this.events.emit("weather-mode", enabled);
+  }
+
+  setTimeScale(scale: number): void {
+    this.timeScale = scale;
+  }
+
   getPhase(): SimulationSnapshot["phase"] {
     return this.simulation.snapshot().phase;
   }
@@ -289,8 +351,8 @@ export class PlayScene extends Phaser.Scene {
       const hitRadius = aircraftSelectionRadius(
         aircraft.type,
         this.collisionScales[aircraft.type],
-        Math.min(this.game.canvas.clientWidth / this.scale.gameSize.width,
-          this.game.canvas.clientHeight / this.scale.gameSize.height),
+        Math.min(this.game.canvas.clientWidth / this.worldSize().width,
+          this.game.canvas.clientHeight / this.worldSize().height),
         precision === "coarse",
       );
       if (
@@ -353,6 +415,12 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.recordPointerPoint(pointer, aircraft);
+    if (this.isTap()) {
+      this.cancelDrawing();
+      if (this.simulation.holdAircraft(aircraft.id)) this.announce("Holding");
+      else if (this.simulation.holdingCount() >= MAX_HOLDING) this.announce(`Only ${MAX_HOLDING} aircraft can hold at once`);
+      return;
+    }
     this.evaluateLandingTarget(aircraft);
 
     const targeting = this.landingTarget;
@@ -379,6 +447,12 @@ export class PlayScene extends Phaser.Scene {
         aircraft,
       );
     }
+  }
+
+  /** A press that never travels from where it landed is a hold, not a short route. */
+  private isTap(): boolean {
+    const [, pressed, ...rest] = this.drawnPoints;
+    return !!pressed && rest.every((point) => distance(point, pressed) < 10);
   }
 
   private recordPointerPoint(
@@ -536,6 +610,8 @@ export class PlayScene extends Phaser.Scene {
           livery: this.livery,
           presentationScale: this.collisionScales[aircraft.type],
           reducedMotion: this.reducedMotion,
+          night: this.night,
+          military: this.military,
         });
         view.setGroundScale(this.groundScales[aircraft.type]);
         this.aircraftViews.set(aircraft.id, view);
@@ -565,7 +641,7 @@ export class PlayScene extends Phaser.Scene {
       const view = createAircraftView(this, {
         id: seed.id, type: seed.type, position: { ...seed.stand.position }, heading: seed.stand.angle,
         speed: 0, collisionRadius: 0, state: "flying", hasEntered: true, landingProgress: 0,
-      } as Aircraft, { livery: this.livery, presentationScale: this.collisionScales[seed.type], reducedMotion: this.reducedMotion });
+      } as Aircraft, { livery: this.livery, presentationScale: this.collisionScales[seed.type], reducedMotion: this.reducedMotion, military: this.military });
       view.setGroundScale(this.groundScales[seed.type]);
       view.toGround(true);
       this.groundViews.set(seed.id, view);
@@ -608,6 +684,26 @@ export class PlayScene extends Phaser.Scene {
     });
 
     for (const aircraft of snapshot.aircraft) {
+      if (aircraft.holding && !aircraft.route && aircraft.state !== "landing") {
+        // The hold ring is centred a radius to the inside of the turn. It starts strong and fades
+        // as the loops are flown; on the last loop only the stretch still ahead is drawn, so the
+        // ring shrinks back to the point where the aircraft straightens out.
+        const side = aircraft.heading + aircraft.holding * Math.PI / 2;
+        const center = { x: aircraft.position.x + Math.cos(side) * HOLD_RADIUS, y: aircraft.position.y + Math.sin(side) * HOLD_RADIUS };
+        const total = this.simulation.holdLoops * Math.PI * 2;
+        const turned = Math.min(total, aircraft.holdTurned ?? 0);
+        const progress = turned / total;
+        this.routeGraphics.lineStyle(2.6 - progress, AIRCRAFT_STYLE[aircraft.type].color, 0.9 - progress * 0.65);
+        const ahead = total - turned;
+        if (ahead >= Math.PI * 2) {
+          this.routeGraphics.strokeCircle(center.x, center.y, HOLD_RADIUS);
+        } else {
+          const from = side + Math.PI;
+          this.routeGraphics.beginPath();
+          this.routeGraphics.arc(center.x, center.y, HOLD_RADIUS, from, from + aircraft.holding * ahead, aircraft.holding < 0);
+          this.routeGraphics.strokePath();
+        }
+      }
       if (!aircraft.route || aircraft.state === "landing") continue;
       const style = AIRCRAFT_STYLE[aircraft.type];
       const remaining = aircraft.route.points.slice(
@@ -615,16 +711,11 @@ export class PlayScene extends Phaser.Scene {
       );
       if (remaining.length < 2) continue;
 
-      this.routeGraphics.lineStyle(7, ROUTE_OUTLINE_COLOR, 1);
-      this.strokePolyline(this.routeGraphics, [
-        { ...aircraft.position },
-        ...remaining,
-      ]);
-      this.routeGraphics.lineStyle(2.8, style.color, 0.96);
-      this.strokePolyline(this.routeGraphics, [
-        { ...aircraft.position },
-        ...remaining,
-      ]);
+      // A soft edge in a deep shade of the aircraft's own colour, then the colour itself; both
+      // strongest just ahead of the aircraft and easing off toward the landing area.
+      const path = [{ ...aircraft.position }, ...remaining];
+      this.strokeFadingRoute(this.routeGraphics, path, 5, routeEdgeColor(style.color), 0.8, 0.45);
+      this.strokeFadingRoute(this.routeGraphics, path, 2.8, style.color, 0.96, 0.6);
 
       if (aircraft.route.destinationZoneId) {
         const zone = this.zoneById(aircraft.route.destinationZoneId);
@@ -650,7 +741,7 @@ export class PlayScene extends Phaser.Scene {
     const previewColor =
       this.landingTarget.status === "invalid" ? 0xf3a08d : style.color;
 
-    this.previewGraphics.lineStyle(8, 0x0c1716, 0.5);
+    this.previewGraphics.lineStyle(5, routeEdgeColor(previewColor), 0.6);
     this.strokePolyline(this.previewGraphics, points);
     this.previewGraphics.lineStyle(3, previewColor, 0.96);
     this.strokePolyline(this.previewGraphics, points);
@@ -891,6 +982,46 @@ export class PlayScene extends Phaser.Scene {
       this.routeCoachSetEmitted = true;
     }
     this.game.events.emit("route-coach", stage);
+  }
+
+  /**
+   * Strokes a route in a few bands along its length, each a little fainter than the last, from
+   * `from` opacity at the start to `to` at the end. Bands rather than single segments keep the
+   * joins between strokes few, so the overlaps never show.
+   */
+  private strokeFadingRoute(
+    graphics: Phaser.GameObjects.Graphics,
+    points: readonly Vector2[],
+    width: number,
+    color: number,
+    from: number,
+    to: number,
+  ): void {
+    const lengths = points.slice(1).map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
+    const total = lengths.reduce((sum, length) => sum + length, 0);
+    if (total <= 0) return;
+    const bands = 6;
+    let index = 0;
+    let walked = 0;
+    let band: Vector2[] = [points[0]];
+    for (let b = 1; b <= bands; b += 1) {
+      const end = (total * b) / bands;
+      while (index < lengths.length && walked + lengths[index] <= end + 1e-6) {
+        walked += lengths[index];
+        index += 1;
+        band.push(points[index]);
+      }
+      if (index < lengths.length && b < bands) {
+        // Split the segment that straddles the band boundary.
+        const t = (end - walked) / lengths[index];
+        const a = points[index];
+        const c = points[index + 1];
+        band.push({ x: a.x + (c.x - a.x) * t, y: a.y + (c.y - a.y) * t });
+      }
+      graphics.lineStyle(width, color, from + (to - from) * ((b - 0.5) / bands));
+      this.strokePolyline(graphics, band);
+      band = [band[band.length - 1]];
+    }
   }
 
   private strokePolyline(

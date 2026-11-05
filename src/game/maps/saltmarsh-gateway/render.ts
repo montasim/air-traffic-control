@@ -8,42 +8,50 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 */
 import type Phaser from 'phaser';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   paintAirfieldGround,
   paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
-  paintBuilding,
-  paintFieldPolygon,
+  paintControlTower,
+  paintForests,
+  paintHedgerows,
+  paintRaisedBuilding,
+  paintShoredPool,
+  paintShadedTree,
+  paintSurfaceTexture,
+  paintGroundTexture,
   paintHelipad,
-  paintRunway,
-  paintTree,
-  paintWaterPolygon,
+  paintMarkedRunway,
   strokePolyline,
   type CivilMapPalette
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import type { SaltmarshGatewayLayout } from './layout';
 
+/** Brighter, warmer greens with clear field contrast, blue water and plain grey asphalt. */
 export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
-  terrain: 0x819667,
-  terrainLight: 0xa3b680,
-  terrainDark: 0x6b835c,
-  fieldLine: 0xbec5a1,
-  water: 0x719fa4,
-  waterEdge: 0xc0c6a2,
-  waterShallow: 0xa5bfc0,
-  airportGround: 0xa1ac8b,
-  asphalt: 0x505e60,
-  asphaltEdge: 0xb0baa6,
-  apron: 0x89938a,
-  marking: 0xf4efda,
-  taxiwayMarking: 0xd4c29b,
-  building: 0xb8b9a3,
-  buildingRoof: 0xeee4c9,
-  shadow: 0x3b5049,
-  vegetation: 0x637e55,
-  vegetationLight: 0x9db27a
+  // A rich meadow green: deeper than sage so the map does not look faded, but kept off yellow-lime,
+  // which tires the eye over a long session.
+  terrain: 0x87ac5e,
+  terrainLight: 0x93b56a,
+  terrainDark: 0x76994f,
+  fieldLine: 0xc9d39a,
+  water: 0x3f93b8,
+  waterEdge: 0xe2dcae,
+  waterShallow: 0x7cc4d6,
+  airportGround: 0xa7b384,
+  asphalt: 0x666d70,
+  asphaltEdge: 0xc8ccc2,
+  apron: 0x9aa09d,
+  marking: 0xfbf8ee,
+  taxiwayMarking: 0xf0c64a,
+  building: 0xa99f8a,
+  buildingRoof: 0xece1c6,
+  shadow: 0x2d4433,
+  vegetation: 0x3f6a33,
+  vegetationLight: 0x7fa956
 };
 
 function paintSaltmarshGateway(
@@ -54,23 +62,21 @@ function paintSaltmarshGateway(
   const palette = SALTMARSH_GATEWAY_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
 
-  graphics.fillStyle(palette.terrainDark, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  graphics.fillStyle(palette.terrain, 0.95);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-
-  layout.fieldPolygons.forEach((field, index) => {
-    paintFieldPolygon(graphics, field, palette, index % 2 === 0);
-  });
-  for (const pool of layout.tidalPools) paintWaterPolygon(graphics, pool, palette);
+  // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
+  for (const pool of layout.tidalPools) paintShoredPool(graphics, pool, palette);
+  paintHedgerows(graphics, layout, layout.fieldPolygons, palette);
 
   graphics.lineStyle(Math.max(2, Math.min(layout.width, layout.height) * 0.006), palette.fieldLine, 0.18);
   for (const road of layout.serviceRoads) strokePolyline(graphics, road);
 
   for (let index = 0; index < Math.min(budget.trees, layout.treeBelt.length); index += 1) {
     const tree = layout.treeBelt[index];
-    if (clearOfAirfield(layout, tree.center, tree.radius)) paintTree(graphics, tree.center, tree.radius, palette, index);
+    if (clearOfAirfield(layout, tree.center, tree.radius)) paintShadedTree(graphics, tree.center, tree.radius, palette, index);
   }
+  const unit = Math.min(layout.width, layout.height);
+  const ponds = layout.tidalPools.map((pool) => pool.reduce((sum, point) => ({ x: sum.x + point.x / pool.length, y: sum.y + point.y / pool.length }), { x: 0, y: 0 }));
+  paintForests(graphics, layout, palette, Math.round(budget.trees / 3),
+    (point, radius) => ponds.some((pond) => Math.hypot(pond.x - point.x, pond.y - point.y) < radius + unit * 0.08));
 
  }
 
@@ -79,13 +85,15 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
   paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
-    paintRunway(graphics, runway, palette, budget.surfaceWear);
+    paintMarkedRunway(graphics, runway, palette, layout.landingZones);
   }
   paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
 
 
-  for (const building of layout.buildings) paintBuilding(graphics, building, palette, layout.runways);
+  const unit = Math.min(layout.width, layout.height);
+  for (const building of layout.buildings) paintRaisedBuilding(graphics, building, palette, unit, layout.runways);
+  paintControlTower(graphics, layout, palette);
 }
 
 export function renderSaltmarshGateway(
@@ -93,9 +101,20 @@ export function renderSaltmarshGateway(
   layout: SaltmarshGatewayLayout,
   detailLevel: WorldDetailLevel
 ): void {
+  const palette = SALTMARSH_GATEWAY_PALETTE;
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons }, {
+    base: palette.terrain,
+    // Close shades only: with crisp edges a dark field would read as a shadow.
+    fields: [palette.terrainLight, 0x8dae63, 0x9db96f, 0x82a55a, 0x96b468],
+    light: 0xd6e8b0,
+    dark: 0x4a6b3a
+  });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics}) => paintSaltmarshGateway(graphics, layout, detailLevel),
     operational: ({graphics}) => paintGatewayAirport(graphics, layout, detailLevel),
     detail: () => {}
-  }, {materialTextureKey: 'terrain:arcade:meadow'});
+  });
+  paintSurfaceTexture(scene, layout, { raisedBuildings: true });
+  // Clouds drifting over the marsh on the wind, their shadows sliding across the fields.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

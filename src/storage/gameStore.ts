@@ -1,4 +1,5 @@
 import { isLiveryUnlocked, type LiveryId } from '../progression/liveries';
+import { sealMatches, sealOf } from './saveSeal';
 import { isDifficulty, type DifficultyId } from '../core/difficulty';
 import { evaluateAchievements, type AchievementId, type ShiftEvidence } from '../progression/achievements';
 import {
@@ -50,6 +51,8 @@ export interface GameStore {
   selectLivery(livery: LiveryId): Promise<{ save: GameSaveV3; persisted: boolean }>;
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3>;
   setTwoEndLanding(enabled: boolean): Promise<GameSaveV3>;
+  setNight(enabled: boolean): Promise<GameSaveV3>;
+  setWeather(enabled: boolean): Promise<GameSaveV3>;
   selectMap(mapId: MapId): Promise<GameSaveV3>;
   updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV3>;
   acknowledgeEarnedRank(): Promise<GameSaveV3>;
@@ -75,6 +78,16 @@ function nonNegativeInteger(value: number, field: string): number {
 function normalizedVolume(value: number): number {
   if (!Number.isFinite(value)) throw new RangeError('Audio volume must be finite');
   return Math.min(1, Math.max(0, value));
+}
+
+/** Migrates a stored save and flags it when its seal shows an outside edit. Never discards data. */
+export function unsealGameSave(stored: unknown): GameSaveV3 {
+  const save = migrateGameSave(stored);
+  if (typeof stored !== 'object' || stored === null) return save;
+  const { seal } = stored as { seal?: unknown };
+  // shortcut: unsealed saves are trusted for the upgrade window; in the first release after 2027-03-01 treat a missing seal as modified.
+  if (seal === undefined || sealMatches(stored, seal)) return save;
+  return { ...save, modified: true };
 }
 
 class SerialGameStore implements GameStore {
@@ -177,6 +190,20 @@ class SerialGameStore implements GameStore {
     })).then(({ save }) => save);
   }
 
+  setNight(enabled: boolean): Promise<GameSaveV3> {
+    return this.enqueue(async current => ({
+      save: { ...current, settings: { ...current.settings, night: enabled === true } },
+      result: undefined
+    })).then(({ save }) => save);
+  }
+
+  setWeather(enabled: boolean): Promise<GameSaveV3> {
+    return this.enqueue(async current => ({
+      save: { ...current, settings: { ...current.settings, weather: enabled === true } },
+      result: undefined
+    })).then(({ save }) => save);
+  }
+
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3> {
     if (!isDifficulty(difficulty)) return Promise.reject(new RangeError('Invalid difficulty'));
     return this.enqueue(async current => ({ save: { ...current, selectedDifficulty: difficulty }, result: undefined })).then(({ save }) => save);
@@ -233,7 +260,7 @@ class SerialGameStore implements GameStore {
     if (this.snapshot) return this.snapshot;
     if (!this.loading) {
       this.loading = this.persistence.read()
-        .then(migrateGameSave)
+        .then(unsealGameSave)
         .catch(() => createDefaultGameSave())
         .then((save) => {
           this.snapshot = save;
@@ -256,7 +283,7 @@ class SerialGameStore implements GameStore {
       this.snapshot = next;
       let persisted = true;
       try {
-        await this.persistence.write(next);
+        await this.persistence.write({ ...next, seal: sealOf(next) } as GameSaveV3);
       } catch {
         persisted = false;
         // The in-memory snapshot remains authoritative for this session.

@@ -99,6 +99,8 @@ export interface PlayableMapLayout {
   readonly groundRoutes?: Readonly<Record<string, GroundRoute>>;
   /** Typed parking stands and taxilanes generated for the apron. */
   readonly apronMarkings?: ApronMarkings;
+  /** Helipads are settled onto the apron once stands are placed, with no taxi link (see settleHelipadsOnApron). */
+  readonly helipadsOnApron?: boolean;
 }
 
 /** A viewport-resolved map whose private layout is retained by its definition. */

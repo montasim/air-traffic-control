@@ -1,31 +1,36 @@
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   composeStaticMap,
   MAP_DETAIL_BUDGETS,
   paintAirfieldGround,
   paintAirfieldGuides,
-  paintBuilding,
+  paintControlTower,
+  paintGroundTexture,
   paintHelipad,
+  paintRaisedBuilding,
   paintRockRidge,
-  paintRunway,
-  paintSnowyPine,
-  paintWaterPolygon,
+  paintMarkedRunway,
+  paintSurfaceTexture,
+  deterministicUnit,
+  paintBrokenShore,
   type CivilMapPalette,
 } from '../../rendering/shared-map';
+import type { Vector2 } from '../../../core/types';
 import type { FrostCrossingLayout } from './layout';
 
-/** Snow, slate, ice-blue water, and pine: a cold palette kept as quiet as the others. */
+/** Ice-blue snow, slate rock, deep teal sea and dark pine: a bright winter coast. */
 export const FROST_CROSSING_PALETTE: CivilMapPalette = {
-  terrain: 0xe3ecee,
-  terrainLight: 0xf3f7f8,
-  terrainDark: 0xc9d7db,
-  fieldLine: 0xbccdd2,
-  water: 0x4f86a0,
-  waterEdge: 0xa6cedb,
-  waterShallow: 0x82b4c6,
-  airportGround: 0xd3dfe2,
+  terrain: 0xd2eaf3,
+  terrainLight: 0xe8f6fb,
+  terrainDark: 0xb4d6e5,
+  fieldLine: 0xbcdbe8,
+  water: 0x2b77a0,
+  waterEdge: 0xa8d8ea,
+  waterShallow: 0x5aa2c4,
+  airportGround: 0xc8e0ea,
   asphalt: 0x505e60,
   asphaltEdge: 0xb0baa6,
   apron: 0x8f9a9e,
@@ -33,44 +38,69 @@ export const FROST_CROSSING_PALETTE: CivilMapPalette = {
   taxiwayMarking: 0xd4c29b,
   building: 0xb5bab0,
   buildingRoof: 0xeee8d6,
-  shadow: 0x4f6670,
-  vegetation: 0x2c5242,
-  vegetationLight: 0x3d6650,
+  shadow: 0x4a6f86,
+  vegetation: 0x4a8a5c,
+  vegetationLight: 0x2f6a4a,
 };
 
-function paintSnowfield(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossingLayout, unit: number): void {
-  graphics.fillStyle(FROST_CROSSING_PALETTE.terrain, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  // Soft drifts: wide pale and shaded ellipses that break up the white.
+/** Soft drifts: wide pale and shaded ellipses that break up the snow painted underneath. */
+function paintDrifts(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossingLayout, unit: number): void {
   for (let i = 0; i < 14; i += 1) {
-    const a = Math.sin((i + 1) * 45.1) * 43758.5453;
-    const b = Math.sin((i + 1) * 17.3 + 4) * 43758.5453;
-    const x = (a - Math.floor(a)) * layout.width;
-    const y = (b - Math.floor(b)) * layout.height;
-    graphics.fillStyle(i % 2 ? FROST_CROSSING_PALETTE.terrainLight : FROST_CROSSING_PALETTE.terrainDark, 0.45);
+    const x = deterministicUnit(i, 811) * layout.width;
+    const y = deterministicUnit(i, 821) * layout.height;
+    graphics.fillStyle(i % 2 ? FROST_CROSSING_PALETTE.terrainLight : FROST_CROSSING_PALETTE.terrainDark, 0.4);
     graphics.fillEllipse(x, y, unit * (0.3 + (i % 4) * 0.08), unit * (0.1 + (i % 3) * 0.04));
   }
-  for (const water of layout.water) paintWaterPolygon(graphics, water, FROST_CROSSING_PALETTE);
+}
+
+/** Pine forest seen from above: dark crowns crowded together under a dusting of snow. */
+function paintSnowyGroves(graphics: Phaser.GameObjects.Graphics, crowns: readonly { center: Vector2; radius: number }[]): void {
+  const palette = FROST_CROSSING_PALETTE;
+  graphics.fillStyle(palette.shadow, 0.3);
+  for (const { center, radius } of crowns) graphics.fillCircle(center.x + radius * 0.55, center.y + radius * 0.6, radius);
+  // One deep green for every crown, no lighter highlight.
+  graphics.fillStyle(palette.vegetation, 1);
+  for (const { center, radius } of crowns) graphics.fillCircle(center.x, center.y, radius);
+  crowns.forEach(({ center, radius }, i) => {
+    graphics.fillStyle(0xf4fafc, 0.85);
+    graphics.fillCircle(center.x - radius * 0.35, center.y - radius * 0.38, radius * 0.32);
+    graphics.fillCircle(center.x + (deterministicUnit(i, 871) - 0.5) * radius, center.y + (deterministicUnit(i, 877) - 0.3) * radius * 0.8, radius * 0.18);
+  });
 }
 
 export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossingLayout, detailLevel: WorldDetailLevel): void {
+  // Ice-blue snow with a fine sparkle of white and blue shade.
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [] }, {
+    base: FROST_CROSSING_PALETTE.terrain,
+    fields: [],
+    light: 0xffffff,
+    dark: 0x8fbfd3
+  });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics, unit }) => {
-      paintSnowfield(graphics, layout, unit);
-      for (const ridge of layout.rocks) paintRockRidge(graphics, ridge, unit);
-      const budget = Math.round(MAP_DETAIL_BUDGETS[detailLevel].trees * 1.6);
-      layout.pines.slice(0, budget).forEach((pine, index) => {
-        if (clearOfAirfield(layout, pine.center, pine.radius)) paintSnowyPine(graphics, pine.center, pine.radius, index);
-      });
+      paintDrifts(graphics, layout, unit);
+      paintBrokenShore(graphics, layout, layout.water, FROST_CROSSING_PALETTE, detailLevel === 'mobile' ? 160 : 320);
+      // Each block grown a little about its middle so neighbours overlap into one broken mass.
+      for (const ridge of layout.rocks) {
+        const middle = ridge.reduce((sum, p) => ({ x: sum.x + p.x / ridge.length, y: sum.y + p.y / ridge.length }), { x: 0, y: 0 });
+        paintRockRidge(graphics, ridge.map((p) => ({ x: middle.x + (p.x - middle.x) * 1.35, y: middle.y + (p.y - middle.y) * 1.35 })), unit);
+      }
+      const budget = Math.round(MAP_DETAIL_BUDGETS[detailLevel].trees * 10);
+      paintSnowyGroves(graphics, layout.pines.slice(0, budget).filter((pine) => clearOfAirfield(layout, pine.center, pine.radius)));
     },
     operational: ({ graphics }) => {
       paintAirfieldGround(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
-      for (const runway of layout.runways) paintRunway(graphics, runway, FROST_CROSSING_PALETTE);
+      for (const runway of layout.runways) paintMarkedRunway(graphics, runway, FROST_CROSSING_PALETTE, layout.landingZones);
       paintAirfieldGuides(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
       paintHelipad(graphics, layout.helipad, FROST_CROSSING_PALETTE);
     },
-    detail: ({ graphics }) => {
-      for (const building of layout.buildings) paintBuilding(graphics, building, FROST_CROSSING_PALETTE, layout.runways);
+    detail: ({ graphics, unit }) => {
+      for (const building of layout.buildings) paintRaisedBuilding(graphics, building, FROST_CROSSING_PALETTE, unit, layout.runways);
+      paintControlTower(graphics, layout, FROST_CROSSING_PALETTE);
     },
-  }, { materialTextureKey: 'terrain:arcade:mineral' });
+  });
+  // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
+  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined }, { raisedBuildings: true });
+  // Clouds drifting over the snow and the sea.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

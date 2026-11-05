@@ -40,7 +40,7 @@ export function aircraftLiveryPaint(livery: LiveryId, type: AircraftType) {
     wing: signal ? ink.bodyHighlight : AIRCRAFT_COLORS[type],
     edge: midnight ? ink.bodyHighlight : ink.keyline,
     cockpit: midnight ? ink.bodyHighlight : ink.keyline,
-    rotor: midnight ? ink.bodyHighlight : ink.keyline,
+    rotor: ink.keyline,
     panelX: signal ? -15 : midnightRotor ? -8 : -22,
     panelWidth: signal ? 28 : midnightRotor ? 23 : type === 'rotor' ? 37 : 41,
     panelHeight: signal ? 3 : midnightRotor ? 6 : midnight ? 10 : 8,

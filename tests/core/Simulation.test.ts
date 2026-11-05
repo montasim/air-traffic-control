@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { Simulation } from '../../src/core/Simulation';
+import { HOLD_RADIUS, Simulation } from '../../src/core/Simulation';
 import { DEFAULT_TRAFFIC_PROFILE, resolveTrafficProfile } from '../../src/core/trafficProfile';
-import type { LandingZone } from '../../src/core/types';
+import { applyDifficulty } from '../../src/core/difficulty';
+import type { Aircraft, LandingZone } from '../../src/core/types';
 
 const LANDING_ZONES: LandingZone[] = [
   {
@@ -291,4 +292,129 @@ it('preserves routed aircraft and scheduling across a long resize pause', () => 
   advanceFrames(resized, 600);
   expect(resized.snapshot()).toEqual(control.snapshot());
   expect(resized.drainEvents()).toEqual(control.drainEvents());
+});
+
+describe('Simulation holding', () => {
+  const heldAircraft = (setup: (aircraft: Aircraft) => void = () => {}) => {
+    const simulation = new Simulation(LANDING_ZONES);
+    simulation.start(11);
+    const aircraft = simulation.snapshot().aircraft[0];
+    aircraft.position = { x: 450, y: 500 };
+    aircraft.heading = 0;
+    aircraft.hasEntered = true;
+    aircraft.state = 'flying';
+    setup(aircraft);
+    simulation.drainEvents();
+    return { simulation, aircraft };
+  };
+
+  it('circles within its hold for ten seconds', () => {
+    const { simulation, aircraft } = heldAircraft();
+    const start = { ...aircraft.position };
+    expect(simulation.holdAircraft(aircraft.id)).toBe(true);
+    let farthest = 0;
+    for (let frame = 0; frame < 600; frame += 1) {
+      simulation.update(1 / 60);
+      farthest = Math.max(farthest, Math.hypot(aircraft.position.x - start.x, aircraft.position.y - start.y));
+    }
+    expect(farthest).toBeLessThanOrEqual(2 * HOLD_RADIUS + 0.5);
+    expect(simulation.drainEvents().some((event) => event.type === 'gameover')).toBe(false);
+  });
+
+  it('never leaves the airspace when held just inside an edge, heading out or along it', () => {
+    for (const [position, heading] of [[{ x: 4, y: 800 }, Math.PI], [{ x: 896, y: 800 }, 0], [{ x: 450, y: 4 }, -Math.PI / 2], [{ x: 450, y: 1596 }, Math.PI / 2], [{ x: 4, y: 800 }, Math.PI / 2], [{ x: 4, y: 800 }, -Math.PI / 2], [{ x: 896, y: 800 }, Math.PI / 2], [{ x: 450, y: 4 }, 0], [{ x: 450, y: 4 }, Math.PI]] as const) {
+      const { simulation, aircraft } = heldAircraft((item) => { item.position = { ...position }; item.heading = heading; });
+      simulation.holdAircraft(aircraft.id);
+      advanceFrames(simulation, 600);
+      expect(simulation.drainEvents().some((event) => event.type === 'gameover')).toBe(false);
+    }
+  });
+
+  it('refuses aircraft that are landing or have not entered', () => {
+    const landing = heldAircraft((item) => { item.state = 'landing'; });
+    expect(landing.simulation.holdAircraft(landing.aircraft.id)).toBe(false);
+    const entering = heldAircraft((item) => { item.hasEntered = false; item.state = 'entering'; });
+    expect(entering.simulation.holdAircraft(entering.aircraft.id)).toBe(false);
+  });
+
+  it('drops the route to hold, and a new route releases the hold', () => {
+    const { simulation, aircraft } = heldAircraft();
+    simulation.assignRoute(aircraft.id, [{ ...aircraft.position }, { x: 450, y: 900 }]);
+    simulation.holdAircraft(aircraft.id);
+    expect(aircraft.route).toBeUndefined();
+    expect(aircraft.holding).toBeDefined();
+    expect(simulation.assignRoute(aircraft.id, [{ ...aircraft.position }, { x: 300, y: 900 }]).accepted).toBe(true);
+    expect(aircraft.holding).toBeUndefined();
+    expect(aircraft.route).toBeDefined();
+  });
+
+  it('flies its loops, then straightens out on the heading the hold began with', () => {
+    for (const holdLoops of [2, 3, 5]) {
+      const simulation = new Simulation(LANDING_ZONES, undefined, resolveTrafficProfile({ ...DEFAULT_TRAFFIC_PROFILE, holdLoops }));
+      simulation.start(11);
+      const aircraft = simulation.snapshot().aircraft[0];
+      Object.assign(aircraft, { position: { x: 450, y: 800 }, heading: 0.4, hasEntered: true, state: 'flying' });
+      simulation.holdAircraft(aircraft.id);
+      const loopFrames = ((Math.PI * 2 * HOLD_RADIUS) / aircraft.speed) * 60;
+      advanceFrames(simulation, Math.floor(loopFrames * holdLoops) - 30);
+      expect(aircraft.holding, `${holdLoops} loops`).toBeDefined();
+      advanceFrames(simulation, 60);
+      expect(aircraft.holding, `${holdLoops} loops`).toBeUndefined();
+      expect(aircraft.heading).toBe(0.4);
+    }
+  });
+
+  it('holds at most two aircraft at once, freeing a place when one takes a route', () => {
+    const { simulation, aircraft } = heldAircraft();
+    const others = [{ x: 250, y: 900 }, { x: 650, y: 1200 }].map((position, index) => ({ ...aircraft, id: 1001 + index, position }));
+    (simulation.snapshot().aircraft as Aircraft[]).push(...others);
+    expect(simulation.holdAircraft(aircraft.id)).toBe(true);
+    expect(simulation.holdAircraft(others[0].id)).toBe(true);
+    expect(simulation.holdAircraft(others[1].id)).toBe(false);
+    expect(others[1].holding).toBeUndefined();
+    // Tapping an aircraft already holding keeps its hold.
+    expect(simulation.holdAircraft(aircraft.id)).toBe(true);
+    simulation.assignRoute(aircraft.id, [{ ...aircraft.position }, { x: 450, y: 900 }]);
+    expect(simulation.holdAircraft(others[1].id)).toBe(true);
+  });
+
+  it('loops five times on Easy, three on Medium and twice on Hard', () => {
+    expect(applyDifficulty(DEFAULT_TRAFFIC_PROFILE, 'easy').holdLoops).toBe(5);
+    expect(applyDifficulty(DEFAULT_TRAFFIC_PROFILE, 'medium').holdLoops).toBe(3);
+    expect(applyDifficulty(DEFAULT_TRAFFIC_PROFILE, 'hard').holdLoops).toBe(2);
+  });
+});
+
+describe('Simulation save and restore', () => {
+  it('continues a JSON round-tripped shift exactly like an uninterrupted one', () => {
+    const play = (simulation: Simulation, from: number, to: number) => {
+      for (let frame = from; frame < to; frame += 1) {
+        if (frame === 120) {
+          const first = simulation.snapshot().aircraft[0];
+          simulation.assignRoute(first.id, [{ ...first.position }, { x: 450, y: 700 }, LANDING_ZONES[1].position], 'commuter-runway');
+        }
+        if (frame === 800) {
+          const flying = simulation.snapshot().aircraft.find((item) => item.state === 'flying');
+          if (flying) simulation.holdAircraft(flying.id);
+        }
+        simulation.update(1 / 60);
+      }
+    };
+    const control = new Simulation(LANDING_ZONES);
+    control.start(7);
+    play(control, 0, 1800);
+
+    const first = new Simulation(LANDING_ZONES);
+    first.start(7);
+    play(first, 0, 900);
+    first.pause();
+    const saved = JSON.parse(JSON.stringify(first.exportState()));
+    const resumed = new Simulation(LANDING_ZONES);
+    resumed.restore(saved);
+    expect(resumed.snapshot().phase).toBe('paused');
+    resumed.resume();
+    play(resumed, 900, 1800);
+
+    expect(resumed.snapshot()).toEqual(control.snapshot());
+  });
 });

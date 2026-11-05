@@ -23,6 +23,8 @@ export interface CarrierCoastLayout extends PlayableMapLayout {
   readonly deckRunwayIds: readonly string[];
   readonly fixedObstacles: readonly Carrier['island'][];
   readonly land: readonly Vector2[];
+  /** The open sea on the far side of the coastline from the land. */
+  readonly sea: readonly Vector2[];
   readonly coastline: readonly Vector2[];
   readonly islets: readonly (readonly Vector2[])[];
   readonly scrub: readonly { readonly center: Vector2; readonly radius: number }[];
@@ -33,7 +35,7 @@ const COAST = [[-0.3, -0.9], [-0.26, -0.56], [-0.12, -0.3], [-0.02, -0.06], [0.0
 const LINER = { x: 0.32, y: -0.22, length: 0.62 };
 const APRON = [[0.04, -0.14], [0.54, -0.14], [0.58, 0.1], [0.12, 0.1]];
 const LAND_PAD = { x: 0.58, y: 0.24 };
-const CARRIER = { x: -0.42, y: 0.14, length: 0.5, heading: -0.6 };
+const CARRIER = { x: -0.46, y: 0.12, length: 0.62, heading: -0.6 };
 const ISLETS = [[-0.78, -0.3, 0.07], [-0.36, -0.38, 0.05], [-0.14, 0.44, 0.06], [-0.84, 0.4, 0.045]];
 const SCRUB = [[0.24, -0.42], [0.56, -0.4], [0.76, -0.1], [0.36, 0.3], [0.66, 0.4], [0.04, -0.32]];
 
@@ -59,7 +61,6 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     center: frame.point(CARRIER.x, CARRIER.y),
     length: frame.length(CARRIER.length),
     angle: frame.angle(CARRIER.heading),
-    lanes: ['axial'],
     pads: 1,
     padRadius: unit * 0.032,
     taxiwayWidth: unit * 0.012,
@@ -89,7 +90,6 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
   const apronCenter = frame.point(0.3, -0.02);
   const taxiways: MapTaxiway[] = [
     { id: 'coast-taxi-liner', path: [frame.point(0.28, LINER.y), apronCenter], width: unit * 0.016, connects: ['coast-liner', 'apron'] },
-    { id: 'coast-taxi-pad', path: [apronCenter, landPad.center], width: unit * 0.012, connects: ['apron', 'helipad'] },
     ...carrier.taxiways,
   ];
   const buildings: MapBuilding[] = [
@@ -99,12 +99,13 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
 
   const coastline = COAST.map(point);
   const land = [...coastline, frame.point(1.4, 0.95), frame.point(1.4, -0.9)];
+  const sea = [...coastline, frame.point(-1.4, 0.95), frame.point(-1.4, -0.9)];
   const islets = ISLETS.map(([x, y, r], index) => Array.from({ length: 8 }, (_, i) => {
     const a = (i / 8) * Math.PI * 2;
     const wobble = 0.8 + unitNoise(i, index) * 0.35;
     return frame.point(x + Math.cos(a) * r * wobble, y + Math.sin(a) * r * 0.62 * wobble);
   }));
-  const scrub = SCRUB.flatMap(([x, y], cluster) => Array.from({ length: 6 }, (_, i) => ({
+  const scrub = SCRUB.flatMap(([x, y], cluster) => Array.from({ length: 10 }, (_, i) => ({
     center: frame.point(x + (unitNoise(i, cluster) - 0.5) * 0.16, y + (unitNoise(i, cluster + 7) - 0.5) * 0.1),
     radius: unit * (0.009 + unitNoise(i, cluster + 13) * 0.006),
   })));
@@ -119,6 +120,8 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     runways: [liner, ...carrier.runways],
     taxiways,
     helipads: [landPad, ...carrier.helipads],
+    // The field pad settles onto the apron once stands are placed; deck pads are already on the deck.
+    helipadsOnApron: true,
     apron: APRON.map(point),
     buildings,
     carrier,
@@ -126,6 +129,7 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     deckRunwayIds: carrier.runways.map((runway) => runway.id),
     fixedObstacles: [carrier.island],
     land,
+    sea,
     coastline,
     islets,
     scrub,

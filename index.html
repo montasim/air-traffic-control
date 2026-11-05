@@ -72,8 +72,11 @@
         background: #48675c; overflow: hidden; }
       #boot-screen .boot-track::after { content: ""; display: block; width: 40%; height: 100%;
         border-radius: inherit; background: #ebaa44; animation: boot-taxi 1.6s ease-in-out infinite alternate; }
-      #boot-screen a { color: #254039; background: #ebaa44; padding: 10px 24px;
+      #boot-retry { display: inline-flex; align-items: center; gap: 8px; color: #254039; background: #ebaa44; padding: 10px 24px;
         border-radius: 12px; font-weight: 700; text-decoration: none; }
+      #boot-retry svg { width: 18px; height: 18px; flex: none; }
+      #boot-screen .boot-credit a { color: inherit; text-decoration: none; text-underline-offset: 3px; }
+      #boot-screen .boot-credit a:hover, #boot-screen .boot-credit a:focus-visible { text-decoration: underline; }
       #boot-screen .boot-credit { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom));
         max-width: none; color: #a9bfb1; font-size: 14px; letter-spacing: 0.02em; opacity: 0; transition: opacity 420ms ease 120ms; }
       #boot-screen.is-revealed .boot-credit { opacity: 1; }
@@ -112,12 +115,20 @@
           <div class="boot-status">
             <p id="boot-message">Preparing your airfield…</p>
             <div class="boot-track" aria-hidden="true"></div>
-            <a id="boot-retry" href="" hidden>Try again</a>
+            <a id="boot-retry" href="" hidden>
+              <!-- The Hugeicons reload icon the in-game restart button uses, inline so it shows even when scripts fail. -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M16.5 7.99976H18C19.4142 7.99976 20.1213 7.99976 20.5607 7.56042C21 7.12108 21 6.41397 21 4.99976V3.49976"/>
+                <path d="M3 11.9998C3 7.02919 7.0293 2.99976 12 2.99976C15.571 2.99976 18.0948 4.73029 20 7.08347M21 11.9998C21 16.9703 16.9707 20.9998 12 20.9998C8.42904 20.9998 5.90524 19.2692 4 16.916"/>
+                <path d="M7.5 15.9998H6C4.58579 15.9998 3.87868 15.9998 3.43934 16.4391C3 16.8784 3 17.5855 3 18.9998V20.4998"/>
+              </svg>
+              Try again
+            </a>
             <noscript><p>Enable JavaScript to play Air Traffic Control.</p></noscript>
           </div>
         </div>
       </div>
-      <p class="boot-credit">by Montasim</p>
+      <p class="boot-credit">by <a href="https://montasim.dev/" target="_blank" rel="noopener noreferrer">Montasim</a></p>
     </div>
     <main id="app" inert>
       <section class="game-frame" aria-label="Air Traffic Control game">
@@ -146,6 +157,13 @@
             <span id="hud-difficulty">Best · Medium</span>
             <strong id="best">00</strong>
           </div>
+          <button
+            id="speed-button"
+            class="icon-button"
+            type="button"
+            aria-label="Game speed: normal"
+            disabled
+          >1×</button>
           <button
             id="pause-button"
             class="icon-button"
@@ -185,7 +203,8 @@
             <div class="career-summary" hidden><strong id="current-rank"></strong><small id="rank-progress"></small></div>
             <section class="departure-board" aria-label="Selected airfield">
               <div class="home-airfield">
-              <div class="home-preview"><img id="home-map-preview" alt="" /></div>
+              <!-- A pointer shortcut to the picker; keyboard and screen readers use the airfield name button. -->
+              <div class="home-preview" data-screen="airfields"><img id="home-map-preview" alt="" /></div>
               </div>
               <section class="flight-settings" aria-labelledby="field-title">
               <div class="airfield-details">
@@ -194,7 +213,7 @@
                   <h2 id="field-title">Saltmarsh Gateway</h2>
                   <span id="field-difficulty">Beginner</span>
                 </div>
-                <button id="choose-airfield" type="button" class="text-button" data-screen="airfields" aria-label="Change airfield">Change airfield<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
+                <button id="choose-airfield" type="button" class="text-button" data-screen="airfields">Change map<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
               </div>
               <p id="field-description"></p>
               <p id="field-lock" hidden></p>
@@ -207,10 +226,25 @@
                   <label><input type="radio" name="difficulty" value="hard" /><span>Hard</span></label>
                 </div>
               </fieldset>
-              <label class="runway-option" for="two-end-landing">
+              <!-- On/off options as toggle chips on one row: filled when on. The real switches sit invisibly over each chip. -->
+              <div class="flight-switches">
+              <label class="setting-chip" for="two-end-landing">
                 <input type="checkbox" role="switch" id="two-end-landing" aria-describedby="two-end-description" />
-                <span>Land at both runway ends<small id="two-end-description">Allow aircraft to land at either end of each runway.</small></span>
+                <span class="button-icon" data-ui-icon="bothEnds" aria-hidden="true"></span><span>Both side landing<small class="visually-hidden" id="two-end-description">Allow aircraft to land at either end of each runway.</small></span>
               </label>
+              <label class="setting-chip" for="night-mode">
+                <input type="checkbox" role="switch" id="night-mode" aria-describedby="night-mode-description" />
+                <span class="button-icon" data-ui-icon="night" aria-hidden="true"></span><span>Night shift<small class="visually-hidden" id="night-mode-description">Darken the map and turn on runway and aircraft lights.</small></span>
+              </label>
+              <label class="setting-chip" for="weather-mode">
+                <input type="checkbox" role="switch" id="weather-mode" aria-describedby="weather-mode-description" />
+                <span class="button-icon" data-ui-icon="weather" aria-hidden="true"></span><span>Weather<small class="visually-hidden" id="weather-mode-description">Show clouds drifting over the map.</small></span>
+              </label>
+              </div>
+              <div class="flight-actions">
+              <button id="resume-shift-button" class="secondary-button resume-shift" type="button" aria-describedby="resume-shift-details" hidden>
+                <span class="button-label">Resume shift</span>
+              </button>
               <button
                 id="start-button"
                 class="primary-button button-with-icon"
@@ -226,6 +260,9 @@
                   <span id="selected-map-name" class="visually-hidden">Saltmarsh Gateway</span></span
                 >
               </button>
+              <!-- Shown above the buttons while there is a shift to resume, so the button itself stays one line. -->
+              <div class="resume-details" id="resume-shift-details"><span>Unfinished shift</span><div id="resume-shift-context"></div></div>
+              </div>
               </section>
             </section>
 
@@ -250,10 +287,22 @@
           hidden
         >
           <div class="panel-content">
-            <h2 id="pause-title">Game paused</h2>
-            <p id="pause-context"></p>
+            <h2 id="pause-title"><span class="visually-hidden">Paused: </span><span id="pause-map-name">Game paused</span></h2>
+            <div id="pause-context" class="shift-context"></div>
             <p id="resize-notice" role="status" aria-live="polite" hidden></p>
             <div class="panel-actions">
+              <button
+                id="restart-from-pause"
+                class="secondary-button button-with-icon"
+                type="button"
+              >
+                <span
+                  id="restart-from-pause-icon"
+                  class="button-icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="button-label">Restart</span>
+              </button>
               <button
                 id="resume-button"
                 class="primary-button button-with-icon"
@@ -272,18 +321,6 @@
               <details class="menu-more">
                 <summary><span>More options</span><span class="button-icon menu-chevron" data-ui-icon="expand" aria-hidden="true"></span></summary>
                 <div class="menu-more-actions">
-              <button
-                id="restart-from-pause"
-                class="secondary-button button-with-icon"
-                type="button"
-              >
-                <span
-                  id="restart-from-pause-icon"
-                  class="button-icon"
-                  aria-hidden="true"
-                ></span>
-                <span class="button-label">Restart</span>
-              </button>
                   <button class="text-button" type="button" data-screen="settings"><span class="button-icon" data-ui-icon="settings" aria-hidden="true"></span><span>Settings</span></button>
                   <button class="text-button" type="button" data-screen="help"><span class="button-icon" data-ui-icon="help" aria-hidden="true"></span><span>How to play</span></button>
                 </div>
@@ -304,8 +341,10 @@
         >
           <div class="panel-content">
             <div class="result-body" role="region" aria-label="Shift details" tabindex="0">
+              <p class="result-eyebrow" id="result-eyebrow">Shift ended</p>
               <h2 id="gameover-code">Collision</h2>
               <p id="gameover-copy">Two aircraft collided.</p>
+              <div id="result-difficulty" class="shift-context"></div>
               <dl class="result-grid" aria-label="Game result">
                 <div>
                   <dt>Score</dt>
@@ -316,23 +355,10 @@
                   <dd id="final-best">00</dd>
                 </div>
               </dl>
-              <p id="result-difficulty"></p>
               <div id="achievement-result" class="achievement-result" hidden></div>
               <div id="career-result" class="career-result" aria-live="polite">Recording shift…</div>
             </div>
             <div class="panel-actions result-actions">
-              <button
-                id="restart-button"
-                class="primary-button button-with-icon"
-                type="button"
-              >
-                <span
-                  id="restart-icon"
-                  class="button-icon"
-                  aria-hidden="true"
-                ></span>
-                <span class="button-label">Play again</span>
-              </button>
               <button
                 id="choose-map-button"
                 class="secondary-button button-with-icon"
@@ -345,6 +371,25 @@
                 ></span>
                 <span class="button-label">Main menu</span>
               </button>
+              <button
+                id="restart-button"
+                class="primary-button button-with-icon"
+                type="button"
+              >
+                <span
+                  id="restart-icon"
+                  class="button-icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="button-label">Play again</span>
+              </button>
+              <details class="menu-more">
+                <summary><span>More options</span><span class="button-icon menu-chevron" data-ui-icon="expand" aria-hidden="true"></span></summary>
+                <div class="menu-more-actions">
+                  <button class="text-button" type="button" data-screen="settings"><span class="button-icon" data-ui-icon="settings" aria-hidden="true"></span><span>Settings</span></button>
+                  <button class="text-button" type="button" data-screen="help"><span class="button-icon" data-ui-icon="help" aria-hidden="true"></span><span>How to play</span></button>
+                </div>
+              </details>
             </div>
           </div>
         </section>
@@ -389,6 +434,14 @@
           <div id="airfields-content" hidden>
             <p class="help-lead">Choose your next assignment.</p>
             <p id="airfield-selection-status" role="status">Your difficulty stays the same when you change airfields.</p>
+            <fieldset class="difficulty-options career-mode" id="airfield-difficulty">
+              <legend>Difficulty</legend>
+              <div class="difficulty-choices">
+                <label><input type="radio" name="airfield-difficulty" value="easy" /><span>Easy</span></label>
+                <label><input type="radio" name="airfield-difficulty" value="medium" /><span>Medium</span></label>
+                <label><input type="radio" name="airfield-difficulty" value="hard" /><span>Hard</span></label>
+              </div>
+            </fieldset>
             <div id="category-filters" class="category-filters" role="group" aria-label="Airport category"></div>
             <div id="map-options" class="map-options" role="group" aria-label="Airfields"></div>
           </div>
@@ -400,8 +453,8 @@
               <span class="liner-key">L · Airliner</span
               ><span class="commuter-key">C · Commuter</span
               ><span class="rotor-key">H · Helicopter</span>
+              <button type="button" data-screen="practice" class="primary-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Practice</button>
             </div>
-            <button type="button" data-screen="practice" class="primary-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Try a practice flight</button>
             <ol class="help-steps">
               <li>
                 <svg class="lesson-art" viewBox="0 0 260 130" aria-hidden="true"><circle cx="130" cy="65" r="43" fill="none" stroke="#ebaa44" stroke-width="3" stroke-dasharray="5 5"/><g data-help-plane transform="translate(130 65) rotate(-25)"/></svg>
@@ -409,13 +462,22 @@
               </li>
               <li>
                 <svg class="lesson-art" viewBox="0 0 260 130" aria-hidden="true"><path d="M40 96 Q120 110 162 45" fill="none" stroke="#ebaa44" stroke-width="4" stroke-dasharray="6 6"/><rect x="145" y="25" width="100" height="28" rx="4" fill="#395b55"/><path d="M156 29V49" stroke="#f0bd66" stroke-width="6"/><path d="M177 39H230" stroke="#fff5df" stroke-width="3" stroke-dasharray="12 8"/><g data-help-plane transform="translate(45 92) scale(.65)"/></svg>
-                <strong>2. Draw to its runway</strong><p>Match the color and letter. Draw to the highlighted landing area. Enable “Land at both runway ends” on Play to use either end. The aircraft lands when it reaches its target.</p>
+                <strong>2. Draw to its runway</strong><p>Match the color and letter. Draw to the highlighted landing area. The aircraft lands when it reaches its target.</p>
               </li>
               <li>
                 <svg class="lesson-art" viewBox="0 0 260 130" aria-hidden="true"><path d="M40 35 Q150 0 220 30 M40 100 Q140 140 220 96" fill="none" stroke="#ebaa44" stroke-width="3" stroke-dasharray="6 6"/><g data-help-plane transform="translate(75 33) scale(.65)"/><g data-help-plane transform="translate(175 101) scale(.65)"/></svg>
-                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Personal bests are shared across both runway settings.</p>
+                <strong>3. Keep aircraft apart</strong><p>Red rings connected by a line warn that aircraft are too close. Reroute one of them, or hold it in a circle for a few loops while the way clears.</p>
               </li>
             </ol>
+            <h3 class="help-controls-title">Controls and options</h3>
+            <ul class="help-controls">
+              <li><strong>Hold</strong><span>Tap an aircraft to make it circle where it is: 5 loops on Easy, 3 on Medium, 2 on Hard. Its ring fades as the loops run out, then it flies on the way it was heading, so draw it a new route in time. Only two aircraft can hold at once.</span></li>
+              <li><strong>Speed</strong><span>The button in the bottom-left corner switches between normal, double and half speed.</span></li>
+              <li><strong>Night shift</strong><span>Turn it on before a flight for a darker map with runway and aircraft lights. Same rules and records as day.</span></li>
+              <li><strong>Weather</strong><span>Turn it on for clouds drifting over the map. They pass under aircraft and routes and thin out over the airfield, so play is the same either way.</span></li>
+              <li><strong>Both side landing</strong><span>Turn it on before a flight to let aircraft land at either end of a runway. Personal bests are shared across both settings.</span></li>
+              <li><strong>Resume shift</strong><span>Your shift is saved whenever it pauses, even if you leave the app. Pick it up later from the Play screen.</span></li>
+            </ul>
             <p>
               Land an aircraft to earn one point. A collision or an aircraft
               leaving the sector ends your shift.
@@ -426,7 +488,16 @@
             </p>
           </div>
           <div id="practice-content" hidden>
-            <p class="help-lead">One aircraft. No timer. Take your time.</p>
+            <fieldset class="practice-lessons">
+              <legend class="visually-hidden">Lesson</legend>
+              <label><input type="radio" name="practice-lesson" value="land" checked /><span><span class="button-icon" data-ui-icon="landing" aria-hidden="true"></span>Land</span></label>
+              <label><input type="radio" name="practice-lesson" value="hold" /><span><span class="button-icon" data-ui-icon="target" aria-hidden="true"></span>Hold</span></label>
+            </fieldset>
+            <div class="practice-lesson">
+              <h3 id="practice-lesson-title">Land an aircraft</h3>
+              <p id="practice-lesson-copy">Draw the aircraft to its runway.</p>
+            </div>
+            <div class="practice-stage">
             <p id="practice-status" role="status">Draw to the highlighted runway end.</p>
             <svg id="practice-field" viewBox="0 0 600 320" role="img" aria-label="Practice airfield: draw from the aircraft at the lower left to the amber runway at the upper right">
               <rect width="600" height="320" rx="16" fill="#819667"/>
@@ -436,14 +507,16 @@
               <text x="445" y="158" fill="#203d39" font-size="18" font-weight="700">C</text>
               <circle id="practice-target" cx="370" cy="110" r="32" fill="none" stroke="#f0bd66" stroke-width="3" stroke-dasharray="6 6"/>
               <circle id="practice-target-reverse" cx="520" cy="110" r="32" fill="none" stroke="#f0bd66" stroke-width="3" stroke-dasharray="6 6"/>
+              <circle id="practice-hold" r="40" fill="none" stroke="#f0bd66" stroke-opacity=".55" stroke-width="2.5" display="none"/>
               <polyline id="practice-route" fill="none" stroke="#f0bd66" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
               <g id="practice-aircraft"/>
             </svg>
+            </div>
             <div class="practice-actions">
               <button id="practice-reset" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="restart" aria-hidden="true"></span>Try again</button>
               <button id="practice-demo" type="button" class="secondary-button button-with-icon"><span class="button-icon" data-ui-icon="play" aria-hidden="true"></span>Show demonstration</button>
             </div>
-            <p class="fine-copy">Practice does not affect your score or career. Your current game stays paused.</p>
+            <p class="fine-copy">One aircraft, no timer. Practice doesn’t affect your score or career, and your current game stays paused.</p>
           </div>
             <section id="utility-support" class="utility-support" aria-labelledby="support-heading">
               <div><h3 id="support-heading">Enjoying the game?</h3><p>Support my work through SupportKori.</p></div>
@@ -458,10 +531,10 @@
           <h2 id="confirm-title">Leave this shift?</h2>
           <p id="confirm-copy">This unfinished shift will not be saved.</p>
           <div class="panel-actions">
-            <button id="confirm-cancel" class="primary-button" type="button">
-              Keep playing</button
-            ><button id="confirm-accept" class="secondary-button" type="button">
-              Leave shift
+            <button id="confirm-accept" class="secondary-button button-with-icon" type="button">
+              <span id="confirm-accept-icon" class="button-icon" aria-hidden="true"></span><span id="confirm-accept-label">Leave shift</span></button
+            ><!-- Focus opens on the safe choice, though it sits on the right. --><button id="confirm-cancel" class="primary-button button-with-icon" type="button" autofocus>
+              <span class="button-icon" data-ui-icon="play" aria-hidden="true"></span><span>Keep playing</span>
             </button>
           </div>
         </dialog>

@@ -27,6 +27,9 @@ export interface AudioSettings {
 export interface GameSettings {
   readonly livery: LiveryId;
   readonly twoEndLanding: boolean;
+  readonly night: boolean;
+  /** Drifting clouds over the map. */
+  readonly weather: boolean;
   readonly audio: AudioSettings;
 }
 
@@ -51,6 +54,8 @@ export interface GameSaveV3 {
   readonly achievements: AchievementAwards;
   readonly achievementEvidence: { mixedFleetBest: number; initialSafeBest: number };
   readonly lastCommittedRunId?: string;
+  /** Sticky: the stored save was edited outside the game. Sealed with the data so it cannot be dropped. */
+  readonly modified?: true;
   readonly schemaVersion: typeof SAVE_SCHEMA_VERSION;
   readonly selectedMapId: MapId;
   readonly settings: GameSettings;
@@ -110,6 +115,8 @@ export function createDefaultGameSave(): GameSaveV3 {
     settings: {
       livery: 'classic',
       twoEndLanding: false,
+      night: false,
+      weather: true,
       audio: {
         enabled: true,
         volume: DEFAULT_AUDIO_VOLUME
@@ -199,10 +206,13 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV3 {
     achievements,
     achievementEvidence: { mixedFleetBest: Math.min(3, nonNegativeInteger(evidence.mixedFleetBest)), initialSafeBest: nonNegativeInteger(evidence.initialSafeBest) },
     lastCommittedRunId: typeof value.lastCommittedRunId === 'string' ? value.lastCommittedRunId : undefined,
+    ...(value.modified === true ? { modified: true as const } : {}),
     selectedMapId: isMapId(value.selectedMapId) ? value.selectedMapId : DEFAULT_MAP_ID,
     settings: {
       livery: normalizeLivery(settings.livery, earnedRankId),
       twoEndLanding: settings.twoEndLanding === true,
+      night: settings.night === true,
+      weather: settings.weather !== false,
       audio: {
         enabled: booleanValue(storedAudio.enabled, defaults.settings.audio.enabled),
         volume: audioVolume(storedAudio.volume)
@@ -248,6 +258,8 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV3 {
     settings: {
       livery: 'classic',
       twoEndLanding: false,
+      night: false,
+      weather: true,
       audio: {
         enabled: booleanValue(value.soundEnabled, true),
         volume: DEFAULT_AUDIO_VOLUME

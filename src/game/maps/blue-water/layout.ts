@@ -36,7 +36,6 @@ export function createBlueWaterLayout(width: number, height: number): BlueWaterL
     center: frame.point(CARRIER.x, CARRIER.y),
     length: frame.length(CARRIER.length),
     angle: frame.angle(CARRIER.heading),
-    lanes: ['axial', 'angled'],
     pads: 2,
     padRadius: unit * 0.034,
     taxiwayWidth: unit * 0.012,

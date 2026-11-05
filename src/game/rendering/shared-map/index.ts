@@ -3,5 +3,7 @@ export * from './apronPainter';
 export * from './carrierPainter';
 export * from './composer';
 export * from './geometry';
+export * from './landscapePainter';
 export * from './sceneryPainter';
+export * from './surfaceTexture';
 export * from './types';

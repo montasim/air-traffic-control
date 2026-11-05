@@ -228,10 +228,10 @@ describe('Saltmarsh Gateway definition', () => {
     expect(separation).toBeGreaterThan((main.width + commuter.width) / 2 + 24);
     expect(layout.taxiways.map(({ connects }) => connects)).toEqual([
       ['gateway-main', 'gateway-apron'],
-      ['gateway-commuter', 'gateway-apron'],
-      ['gateway-apron', 'gateway-helipad']
+      ['gateway-commuter', 'gateway-apron']
     ]);
-    expect(layout.taxiways[2].path.at(-1)).toEqual(layout.helipad.center);
+    // The helipad sits on the apron, so helicopters need no taxi link.
+    expect(pointInPolygon(layout.helipad.center, layout.apron)).toBe(true);
     expect(pointInPolygon(layout.buildings[0].center, layout.apron)).toBe(true);
   });
 

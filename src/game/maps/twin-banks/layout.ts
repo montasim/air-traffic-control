@@ -11,7 +11,7 @@ import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type { HudExclusionZone, MapLayoutVariant, PlayableMapLayout } from '../types';
 
 export type TwinBanksRunwayId = 'east-main' | 'west-commuter';
-export type TwinBanksTaxiwayId = 'east-link' | 'west-link' | 'east-pad-link';
+export type TwinBanksTaxiwayId = 'east-link' | 'west-link';
 export type TwinBanksConnectionId = TwinBanksRunwayId | 'east-apron' | 'west-apron' | 'helipad';
 
 export interface TwinBanksRoutingArea {
@@ -318,12 +318,6 @@ export function createTwinBanksLayout(
       path: [pointOnRunway(west, west.length * 0.08), interpolate(west.center, westCenter, 0.58), westCenter],
       width: taxiwayWidth * 0.88,
       connects: ['west-commuter', 'west-apron']
-    },
-    {
-      id: 'east-pad-link',
-      path: [eastCenter, interpolate(eastCenter, helipadCenter, 0.55), helipadCenter],
-      width: taxiwayWidth * 0.74,
-      connects: ['east-apron', 'helipad']
     }
   ];
   const scenicSpec = profile.scenic;
@@ -394,6 +388,8 @@ export function createTwinBanksLayout(
     propAnchors,
     signs,
     helipad,
+    // Settled onto the apron once stands are placed; the authored spot is the fallback.
+    helipadsOnApron: true,
     apron: eastApron,
     westApron,
     river,

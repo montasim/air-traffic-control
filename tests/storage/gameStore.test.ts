@@ -149,3 +149,51 @@ describe('game store', () => {
     expect((await store.load()).settings.audio.enabled).toBe(true);
   });
 });
+
+describe('sealed game save', () => {
+  const shift = { mapId: 'saltmarsh-gateway', orientation: 'portrait', score: 4, safeLandings: 4 } as const;
+  const stored = async (persistence: MemorySavePersistence) => (await persistence.read()) as Record<string, unknown> & GameSaveV3;
+
+  it('writes a seal and reloads unmodified', async () => {
+    const persistence = new MemorySavePersistence();
+    await createGameStore(persistence).recordShift(shift);
+    expect(typeof (await stored(persistence)).seal).toBe('string');
+    expect((await createGameStore(persistence).load()).modified).toBeUndefined();
+  });
+
+  it('flags an outside edit, keeps the data, and never washes the flag off', async () => {
+    const persistence = new MemorySavePersistence();
+    await createGameStore(persistence).recordShift(shift);
+    const original = await stored(persistence);
+    const tampered = new MemorySavePersistence({ ...original, career: { ...original.career, totalSafeLandings: 9_999 } });
+
+    const loaded = await createGameStore(tampered).load();
+    expect(loaded.modified).toBe(true);
+    expect(loaded.career.totalSafeLandings).toBe(9_999);
+
+    await createGameStore(tampered).recordShift({ ...shift, runId: 'next' });
+    expect((await createGameStore(tampered).load()).modified).toBe(true);
+  });
+
+  it('flags a save whose modified mark was removed', async () => {
+    const persistence = new MemorySavePersistence();
+    await createGameStore(persistence).recordShift(shift);
+    const original = await stored(persistence);
+    const tampered = new MemorySavePersistence({ ...original, career: { ...original.career, shiftsPlayed: 50 } });
+    await createGameStore(tampered).recordShift({ ...shift, runId: 'next' });
+
+    const { modified: _dropped, ...unmarked } = await stored(tampered);
+    expect((await createGameStore(new MemorySavePersistence(unmarked)).load()).modified).toBe(true);
+  });
+
+  it('trusts an unsealed save from before sealing and seals it on the next write', async () => {
+    const persistence = new MemorySavePersistence();
+    await createGameStore(persistence).recordShift(shift);
+    const { seal: _old, ...legacy } = await stored(persistence);
+    const upgraded = new MemorySavePersistence(legacy);
+    const store = createGameStore(upgraded);
+    expect((await store.load()).modified).toBeUndefined();
+    await store.recordShift({ ...shift, runId: 'next' });
+    expect(typeof (await stored(upgraded)).seal).toBe('string');
+  });
+});

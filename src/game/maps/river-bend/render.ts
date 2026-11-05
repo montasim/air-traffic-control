@@ -9,27 +9,35 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   paintAirfieldGround,
   paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
-  paintBuilding,
+  paintControlTower,
+  paintForests,
+  paintGroundTexture,
+  paintHedgerows,
+  nearRiver,
   paintHelipad,
+  paintRaisedBuilding,
   paintRiver,
-  paintRunway,
-  paintTree,
+  paintMarkedRunway,
+  paintShadedTree,
+  paintSurfaceTexture,
   smoothPath,
   strokePolyline,
-  tracePolygon,
   type CivilMapPalette
 } from '../../rendering/shared-map';
+import type { Vector2 } from '../../../core/types';
 import type { RiverBendLayout } from './layout';
 
 export const RIVER_BEND_PALETTE: CivilMapPalette = {
-  terrain: 0x819667,
-  terrainLight: 0xa3b680,
-  terrainDark: 0x6b835c,
+  // A richer olive meadow than before, kept apart from Gateway's greener grass.
+  terrain: 0x8ea36b,
+  terrainLight: 0x9aae78,
+  terrainDark: 0x82976a,
   fieldLine: 0xbec5a1,
   water: 0x719fa4,
   waterEdge: 0xc0c6a2,
@@ -43,8 +51,8 @@ export const RIVER_BEND_PALETTE: CivilMapPalette = {
   building: 0xb8b9a3,
   buildingRoof: 0xeee4c9,
   shadow: 0x3b5049,
-  vegetation: 0x637e55,
-  vegetationLight: 0x9db27a
+  vegetation: 0x4f6a45,
+  vegetationLight: 0x8aa36c
 };
 
 function paintScenery(
@@ -55,25 +63,13 @@ function paintScenery(
   const palette = RIVER_BEND_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
 
-  graphics.fillStyle(palette.terrainDark, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  graphics.fillStyle(palette.terrain, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-
-  layout.fieldPolygons.forEach((field, index) => {
-    graphics.fillStyle(
-      index % 2 === 1 ? palette.terrainLight : palette.terrainDark,
-      index % 2 === 1 ? 0.25 : 0.16
-    );
-    tracePolygon(graphics, field);
-    graphics.fillPath();
-    graphics.lineStyle(1, palette.fieldLine, 0.14);
-    tracePolygon(graphics, field);
-    graphics.strokePath();
-  });
-
+  // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
   const river = smoothPath(layout.riverPath, budget.riverSubdivisions);
   paintRiver(graphics, river, layout.riverWidth, palette);
+  const unit = Math.min(layout.width, layout.height);
+  const byRiver = (point: Vector2, radius: number) => nearRiver(river, layout.riverWidth, point, radius + unit * 0.02);
+  paintHedgerows(graphics, layout, layout.fieldPolygons, palette, byRiver);
+  paintForests(graphics, layout, palette, Math.round(budget.trees / 3), byRiver);
 }
 
 function paintOperational(
@@ -86,12 +82,10 @@ function paintOperational(
 
   paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
-    paintRunway(graphics, runway, palette, budget.surfaceWear);
+    paintMarkedRunway(graphics, runway, palette, layout.landingZones);
   }
   paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
-
-
 }
 
 function paintDetail(
@@ -104,7 +98,7 @@ function paintDetail(
 
   for (let index = 0; index < Math.min(budget.trees, layout.bankTrees.length); index += 1) {
     const tree = layout.bankTrees[index];
-    if (clearOfAirfield(layout, tree.center, tree.radius)) paintTree(graphics, tree.center, tree.radius, palette, index);
+    if (clearOfAirfield(layout, tree.center, tree.radius)) paintShadedTree(graphics, tree.center, tree.radius, palette, index);
   }
 
   graphics.lineStyle(
@@ -114,7 +108,9 @@ function paintDetail(
   );
   strokePolyline(graphics, layout.accessRoad);
 
-  for (const building of layout.buildings) paintBuilding(graphics, building, palette, layout.runways);
+  const unit = Math.min(layout.width, layout.height);
+  for (const building of layout.buildings) paintRaisedBuilding(graphics, building, palette, unit, layout.runways);
+  paintControlTower(graphics, layout, palette);
 
   const windsock = layout.propAnchors.find(({ kind }) => kind === 'windsock');
   if (windsock) {
@@ -163,6 +159,14 @@ export function renderRiverBend(
   layout: RiverBendLayout,
   detailLevel: WorldDetailLevel
 ): void {
+  const palette = RIVER_BEND_PALETTE;
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons }, {
+    base: palette.terrain,
+    // Close olive shades only: with crisp edges a dark field would read as a shadow.
+    fields: [palette.terrainLight, 0x889e66, 0x9fb07c, palette.terrainDark, 0x93a771],
+    light: 0xd6e2b0,
+    dark: 0x4c6340
+  });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics, layout: prepared, detailLevel: detail }) => {
       paintScenery(graphics, prepared, detail);
@@ -173,7 +177,8 @@ export function renderRiverBend(
     detail: ({ graphics, layout: prepared, detailLevel: detail }) => {
       paintDetail(graphics, prepared, detail);
     }
-  }, {
-    materialTextureKey: 'terrain:arcade:meadow'
   });
+  paintSurfaceTexture(scene, layout, { raisedBuildings: true });
+  // Clouds drifting over the river country.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }
