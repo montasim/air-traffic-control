@@ -12,7 +12,6 @@ const DECK = {
   rim: 0x7b878c,
   line: 0xe9e6d8,
   wire: 0xc9c4b0,
-  foul: 0xb86a5c,
   island: 0x8c9599,
   islandTop: 0xb3bbbd,
   wake: 0xf2f7f6,
@@ -58,13 +57,6 @@ function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint
   graphics.lineStyle(Math.max(0.8, line * 0.8), DECK.wire, 0.6);
   for (const share of [0.12, 0.16, 0.2]) {
     const [a, b] = [along(lane, -half + lane.length * share, -edge), along(lane, -half + lane.length * share, edge)];
-    graphics.lineBetween(a.x, a.y, b.x, b.y);
-  }
-  // Red foul line on the starboard side, behind which deck parking sits.
-  graphics.lineStyle(line, DECK.foul, 0.7);
-  const foul = edge + 4;
-  for (let d = -half; d < half; d += dash * 1.6) {
-    const [a, b] = [along(lane, d, foul), along(lane, Math.min(half, d + dash), foul)];
     graphics.lineBetween(a.x, a.y, b.x, b.y);
   }
 }
