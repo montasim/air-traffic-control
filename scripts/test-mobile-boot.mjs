@@ -8,8 +8,8 @@ import { chromium } from '@playwright/test';
  * tallies every live canvas and WebGL texture, and fails when the peak passes the budget.
  */
 const BASE = process.env.MOBILE_TEST_URL || 'http://localhost:4287/';
-const BOOT_BUDGET_MB = 300;
-const LIST_BUDGET_MB = 400;
+const BOOT_BUDGET_MB = 320;
+const LIST_BUDGET_MB = 450;
 
 const tracker = () => {
   const live = new Map();

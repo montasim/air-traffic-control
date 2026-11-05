@@ -175,6 +175,11 @@ function renderHarness() {
   };
   texture.setOrigin.mockReturnValue(texture);
   texture.setDepth.mockReturnValue(texture);
+  // The airport vectors bake supersampled: a finer texture whose camera zooms in, shown at world size.
+  const camera = { setOrigin: vi.fn(), setZoom: vi.fn() };
+  camera.setOrigin.mockReturnValue(camera);
+  camera.setZoom.mockReturnValue(camera);
+  Object.assign(texture, { camera, setDisplaySize: vi.fn(() => texture) });
   const scene = {
     add: {
       graphics: vi.fn(() => graphics),
@@ -327,7 +332,7 @@ describe('River Bend definition', () => {
     expect(createRiverBendLayout(width, height)).toEqual(createRiverBendLayout(width, height));
   });
 
-  it('bakes the terrain once and retains the airport vectors', () => {
+  it('bakes the terrain and the airport vectors once', () => {
     const prepared = RIVER_BEND_DEFINITION.prepare({
       width: 900,
       height: 1600,
@@ -336,11 +341,13 @@ describe('River Bend definition', () => {
     const harness = renderHarness();
     RIVER_BEND_DEFINITION.render(harness.scene, prepared);
 
-    expect(harness.scene.add.renderTexture).toHaveBeenCalledOnce();
-    expect(harness.scene.add.renderTexture).toHaveBeenCalledWith(0, 0, 900, 1600);
-    expect(harness.texture.draw).toHaveBeenCalledOnce();
-    expect(harness.texture.render).toHaveBeenCalledOnce();
-    expect(harness.destroy).not.toHaveBeenCalled();
+    // Terrain at world size, then the vectors at twice it; the vector shapes are dropped once baked.
+    expect(harness.scene.add.renderTexture).toHaveBeenCalledTimes(2);
+    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(1, 0, 0, 900, 1600);
+    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(2, 0, 0, 1800, 3200);
+    expect(harness.texture.draw).toHaveBeenCalledTimes(2);
+    expect(harness.texture.render).toHaveBeenCalledTimes(2);
+    expect(harness.destroy).toHaveBeenCalledOnce();
   });
 
   it('applies progressively richer mobile, tablet, and desktop detail budgets', () => {

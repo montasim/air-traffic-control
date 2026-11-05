@@ -4,6 +4,7 @@ import { queuePresentationAssets } from "../game/assets/presentationAssets";
 import type { MapId } from "../game/maps/mapIds";
 import { drawNight } from "../game/rendering/NightRenderer";
 import { releaseCanvas } from "../game/rendering/shared-map/surfaceTexture";
+import { VECTOR_SUPERSAMPLE_KEY } from "../game/rendering/shared-map/composer";
 import type { WorldDetailLevel } from "../game/palette";
 import type { LandingZone } from "../core/types";
 
@@ -86,6 +87,7 @@ export function createMapPreviews(
   let stopped = false;
   class PreviewScene extends Phaser.Scene {
     preload(): void {
+      this.registry.set(VECTOR_SUPERSAMPLE_KEY, 1);
       for (const map of maps)
         queuePresentationAssets(this, { mapId: map.id, variant: "landscape" });
     }

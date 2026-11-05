@@ -17,8 +17,19 @@ export function renderScaleOf(scene: Phaser.Scene): number {
  * as sharp as live drawing on high-density screens: its camera zooms in and the texture is
  * displayed back at world size.
  */
-export function sceneRenderTexture(scene: Phaser.Scene, width: number, height: number): Phaser.GameObjects.RenderTexture {
-  const scale = renderScaleOf(scene);
+/** The longest side a baked layer may have: within every phone GPU's limit and memory budget. */
+const MAX_BAKE_SIZE = 4096;
+/**
+ * Registry key for how much finer than the screen the airport vectors bake (2 by default). The menu's
+ * picture renderer sets 1: its pictures are shrunk well below display size, so supersampling them only
+ * costs memory.
+ */
+export const VECTOR_SUPERSAMPLE_KEY = "vector-supersample";
+
+export function sceneRenderTexture(scene: Phaser.Scene, width: number, height: number, supersample = 1): Phaser.GameObjects.RenderTexture {
+  // Supersampling bakes at a higher scale and lets texture filtering smooth it back down: render textures
+  // have no multisampling, so angled edges drawn into them at display scale come out stepped.
+  const scale = renderScaleOf(scene) * Math.max(1, Math.min(supersample, MAX_BAKE_SIZE / (Math.max(width, height) * renderScaleOf(scene))));
   const texture = scene.add.renderTexture(0, 0, Math.ceil(width * scale), Math.ceil(height * scale)).setOrigin(0, 0);
   if (scale === 1) return texture;
   texture.camera.setOrigin(0, 0).setZoom(scale);
@@ -41,7 +52,12 @@ export function paintStaticMapLayers<Layout>(
   layers.detail(context);
 }
 
-/** Bake the terrain once; retain airport vectors so rotated edges stay crisp. */
+/**
+ * Bakes the map once: terrain into one texture and, for layered plans, the airport vectors (runways,
+ * markings, aprons) into a second one just above it, so things drawn between them keep their order.
+ * Live vector shapes were re-triangulated every frame, the largest single cost of a busy shift on a slow
+ * phone. The vectors bake at twice the render scale so their angled edges stay as smooth as live drawing.
+ */
 export function composeStaticMap<
   Layout extends { readonly width: number; readonly height: number },
 >(
@@ -64,7 +80,6 @@ export function composeStaticMap<
         .setDisplaySize(layout.width, layout.height)
     : undefined;
 
-  let retainVectors = false;
   try {
     if (scenery) texture.draw(scenery);
     const context = {
@@ -99,18 +114,18 @@ export function composeStaticMap<
       }
       paint.operational(context);
       paint.detail(context);
-      graphics.setDepth((options.depth ?? -20) + 0.1);
-      retainVectors = true;
+      const supersample = (scene.registry?.get(VECTOR_SUPERSAMPLE_KEY) as number | undefined) ?? 2;
+      const vectors = sceneRenderTexture(scene, layout.width, layout.height, supersample).setDepth((options.depth ?? -20) + 0.1);
+      vectors.draw(graphics);
+      vectors.render();
     } else {
       paint(context);
-    }
-    if (!retainVectors) {
       texture.draw(graphics);
       texture.render();
     }
   } finally {
     scenery?.destroy();
-    if (!retainVectors) graphics.destroy();
+    graphics.destroy();
   }
 
   return texture;

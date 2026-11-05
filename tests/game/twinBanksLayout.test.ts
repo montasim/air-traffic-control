@@ -199,7 +199,7 @@ describe('Twin Banks layout', () => {
     expect(prepared.layout.variant).toBe('landscape');
   });
 
-  it('bakes terrain once and retains crisp airport vectors', () => {
+  it('bakes the terrain and the airport vectors once', () => {
     const graphics = Object.fromEntries([
       'fillStyle', 'fillRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath',
       'setDepth', 'clear', 'lineStyle', 'strokePath', 'fillCircle', 'strokeCircle', 'lineBetween',
@@ -210,7 +210,10 @@ describe('Twin Banks layout', () => {
       setOrigin: vi.fn().mockReturnThis(),
       setDepth: vi.fn().mockReturnThis(),
       draw: vi.fn().mockReturnThis(),
-      render: vi.fn().mockReturnThis()
+      render: vi.fn().mockReturnThis(),
+      // The airport vectors bake supersampled: a finer texture whose camera zooms in, shown at world size.
+      setDisplaySize: vi.fn().mockReturnThis(),
+      camera: { setOrigin: vi.fn().mockReturnThis(), setZoom: vi.fn().mockReturnThis() }
     };
     const scene = {
       add: {
@@ -222,9 +225,9 @@ describe('Twin Banks layout', () => {
     renderTwinBanksMap(scene, createTwinBanksLayout(844, 390, 'mobile'), 'mobile');
 
     expect(scene.add.graphics).toHaveBeenCalledTimes(1);
-    expect(scene.add.renderTexture).toHaveBeenCalledTimes(1);
-    expect(texture.draw).toHaveBeenCalledOnce();
-    expect(texture.render).toHaveBeenCalledOnce();
-    expect(graphics.destroy).not.toHaveBeenCalled();
+    expect(scene.add.renderTexture).toHaveBeenCalledTimes(2);
+    expect(texture.draw).toHaveBeenCalledTimes(2);
+    expect(texture.render).toHaveBeenCalledTimes(2);
+    expect(graphics.destroy).toHaveBeenCalledOnce();
   });
 });

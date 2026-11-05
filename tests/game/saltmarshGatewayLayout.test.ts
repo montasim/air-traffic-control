@@ -152,6 +152,11 @@ function renderHarness() {
   };
   texture.setOrigin.mockReturnValue(texture);
   texture.setDepth.mockReturnValue(texture);
+  // The airport vectors bake supersampled: a finer texture whose camera zooms in, shown at world size.
+  const camera = { setOrigin: vi.fn(), setZoom: vi.fn() };
+  camera.setOrigin.mockReturnValue(camera);
+  camera.setZoom.mockReturnValue(camera);
+  Object.assign(texture, { camera, setDisplaySize: vi.fn(() => texture) });
   const scene = {
     add: {
       graphics: vi.fn(() => graphics),
@@ -303,7 +308,7 @@ describe('Saltmarsh Gateway definition', () => {
     );
   });
 
-  it('renders all static scenery into exactly one texture', () => {
+  it('bakes the terrain and the airport vectors once', () => {
     const prepared = SALTMARSH_GATEWAY_DEFINITION.prepare({
       width: 1600,
       height: 900,
@@ -312,11 +317,13 @@ describe('Saltmarsh Gateway definition', () => {
     const harness = renderHarness();
     SALTMARSH_GATEWAY_DEFINITION.render(harness.scene, prepared);
 
-    expect(harness.scene.add.renderTexture).toHaveBeenCalledOnce();
-    expect(harness.scene.add.renderTexture).toHaveBeenCalledWith(0, 0, 1600, 900);
-    expect(harness.texture.draw).toHaveBeenCalledOnce();
-    expect(harness.texture.render).toHaveBeenCalledOnce();
-    expect(harness.destroy).not.toHaveBeenCalled();
+    // Terrain at world size, then the vectors at twice it; the vector shapes are dropped once baked.
+    expect(harness.scene.add.renderTexture).toHaveBeenCalledTimes(2);
+    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(1, 0, 0, 1600, 900);
+    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(2, 0, 0, 3200, 1800);
+    expect(harness.texture.draw).toHaveBeenCalledTimes(2);
+    expect(harness.texture.render).toHaveBeenCalledTimes(2);
+    expect(harness.destroy).toHaveBeenCalledOnce();
   });
 
   it('applies progressively richer mobile, tablet, and desktop detail budgets', () => {
