@@ -5,6 +5,7 @@ import type { MapId } from "../game/maps/mapIds";
 import { drawNight } from "../game/rendering/NightRenderer";
 import { releaseCanvas } from "../game/rendering/shared-map/surfaceTexture";
 import { VECTOR_SUPERSAMPLE_KEY } from "../game/rendering/shared-map/composer";
+import { drawUnder } from "../game/rendering/shared-map/lighting";
 import type { WorldDetailLevel } from "../game/palette";
 import type { LandingZone } from "../core/types";
 
@@ -108,7 +109,7 @@ export function createMapPreviews(
       // The renderers read the camera zoom as their render scale, exactly as in PlayScene.
       this.cameras.main.setZoom(DENSITY).centerOn(WIDTH / 2, HEIGHT / 2);
       const prepared = map.prepare({ width: WIDTH, height: HEIGHT, detailLevel: options.detailLevel, twoEndLanding: options.twoEndLanding });
-      map.render(this, prepared);
+      drawUnder(options.night, () => map.render(this, prepared));
       if (options.night) drawNight(this, prepared.layout);
       // Time of day and weather reach the drifting clouds the same way as in a shift.
       this.events.emit("night-mode", options.night);

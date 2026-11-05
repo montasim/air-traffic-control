@@ -7,6 +7,7 @@ import { convexHull, type MapBuilding } from "./airfieldPainter";
 import { clearOfAirfield, mixColor } from "./apronPainter";
 import { deterministicUnit, tracePolygon } from "./geometry";
 import type { CivilMapPalette } from "./types";
+import { castAlpha, castReach } from "./lighting";
 
 /**
  * Landscape pieces first made for Saltmarsh Gateway and shared by every land map: shored ponds,
@@ -28,8 +29,8 @@ export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: r
 
 /** Overlapping crowns painted in passes (shadows, dark base, crown, highlight) so a clump reads as one canopy. */
 export function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
-  graphics.fillStyle(palette.shadow, 0.3);
-  for (const c of crowns) graphics.fillCircle(c.x + c.r * 0.6, c.y + c.r * 0.5, c.r);
+  graphics.fillStyle(palette.shadow, castAlpha(0.3));
+  for (const c of crowns) graphics.fillCircle(c.x + c.r * 0.6 * castReach(), c.y + c.r * 0.5 * castReach(), c.r);
   graphics.fillStyle(mixColor(palette.vegetation, palette.shadow, 0.35), 1);
   for (const c of crowns) graphics.fillCircle(c.x, c.y, c.r);
   graphics.fillStyle(palette.vegetation, 1);
@@ -252,7 +253,7 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
   // shadow cast from the whole tower to the south-east at the buildings' angle and strength.
   const lift = { x: 0, y: -height * 0.5 };
   const cab = { x: base.x + lift.x, y: base.y + lift.y };
-  const cast = { x: height * 0.86, y: height * 0.68 };
+  const cast = { x: height * 0.86 * castReach(), y: height * 0.68 * castReach() };
   const angle = layout.runways[0].angle;
   const polygon = (center: Vector2, radius: number, sides: number) =>
     Array.from({ length: sides }, (_, i) => {
@@ -263,7 +264,7 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
   const footprint = polygon(base, unit * 0.011, 4).reverse();
   const top = footprint.map((point) => ({ x: point.x + lift.x, y: point.y + lift.y }));
   const cabRadius = unit * 0.017;
-  graphics.fillStyle(palette.shadow, 0.3);
+  graphics.fillStyle(palette.shadow, castAlpha(0.3));
   tracePolygon(graphics, convexHull([
     ...footprint,
     ...polygon({ x: cab.x - lift.x + cast.x, y: cab.y - lift.y + cast.y }, cabRadius, 8)
@@ -295,8 +296,8 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
     // Far enough out that neither tank touches the raised cab.
     const tank = { x: base.x + across.x * offset * unit * 0.028 + axis.x * side * unit * 0.036, y: base.y + across.y * offset * unit * 0.028 + axis.y * side * unit * 0.036 };
     if (!clearOfAirfield(layout, tank, unit * 0.012)) continue;
-    graphics.fillStyle(palette.shadow, 0.28);
-    graphics.fillCircle(tank.x + unit * 0.006, tank.y + unit * 0.005, unit * 0.011);
+    graphics.fillStyle(palette.shadow, castAlpha(0.28));
+    graphics.fillCircle(tank.x + unit * 0.006 * castReach(), tank.y + unit * 0.005 * castReach(), unit * 0.011);
     graphics.fillStyle(0xd9dcd4, 1);
     graphics.fillCircle(tank.x, tank.y, unit * 0.011);
     graphics.lineStyle(Math.max(1, unit * 0.0015), 0x8b918d, 1);

@@ -28,6 +28,7 @@ import {
   type DesertParallelLayout
 } from './layout';
 import type { AirfieldSign } from '../shared/airfield';
+import { castAlpha, castReach } from '../../rendering/shared-map/lighting';
 
 const CIVIL_PALETTE: CivilMapPalette = {
   terrain: DESERT_PARALLEL_PALETTE.mineralGround,
@@ -141,7 +142,7 @@ function paintOutcrops(graphics: Phaser.GameObjects.Graphics, layout: DesertPara
     });
     const offset = (shift: Vector2, scale = 1) => outline.map((p) => ({ x: center.x + (p.x - center.x) * scale + shift.x, y: center.y + (p.y - center.y) * scale + shift.y }));
     for (const [points, color, alpha] of [
-      [offset({ x: radius * 0.9, y: radius * 0.7 }), CIVIL_PALETTE.shadow, 0.3],
+      [offset({ x: radius * 0.9 * castReach(), y: radius * 0.7 * castReach() }), CIVIL_PALETTE.shadow, castAlpha(0.3)],
       [outline, mixColor(rock, CIVIL_PALETTE.shadow, 0.35), 1],
       [offset({ x: -radius * 0.18, y: -radius * 0.3 }, 0.78), rock, 1],
       [offset({ x: -radius * 0.32, y: -radius * 0.45 }, 0.4), mixColor(rock, 0xffffff, 0.3), 0.9]

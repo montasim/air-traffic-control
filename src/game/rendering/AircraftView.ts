@@ -236,11 +236,17 @@ export class AircraftView {
    * The shadow keeps one world direction, down and right from a north-west light, whatever the
    * heading: the offset is turned back by the container's rotation. Altitude 1 is cruising, 0 on the ground.
    */
+  /**
+   * By day the shadow falls to the south-east, further the higher the aircraft. At night there is no sun:
+   * nothing in the air casts a shadow, and a landed aircraft keeps only a soft contact shadow underneath,
+   * fading in as it touches down.
+   */
   private placeShadow(heading: number, altitude: number): void {
-    const x = 3 + altitude * 9;
-    const y = 4 + altitude * 12;
+    const reach = this.night ? 0.15 : 1;
+    const x = (3 + altitude * 9) * reach;
+    const y = (4 + altitude * 12) * reach;
     const cos = Math.cos(heading), sin = Math.sin(heading);
-    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(1 - altitude * 0.3);
+    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(this.night ? (1 - altitude) * 0.55 : 1 - altitude * 0.3);
   }
   setGroundScale(scale: number): void {
     this.groundScale = scale;

@@ -20,6 +20,7 @@ import {
 } from '../../rendering/shared-map';
 import type { Vector2 } from '../../../core/types';
 import type { FrostCrossingLayout } from './layout';
+import { castAlpha, castReach } from '../../rendering/shared-map/lighting';
 
 /** Ice-blue snow, slate rock, deep teal sea and dark pine: a bright winter coast. */
 export const FROST_CROSSING_PALETTE: CivilMapPalette = {
@@ -56,8 +57,8 @@ function paintDrifts(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossin
 /** Pine forest seen from above: dark crowns crowded together under a dusting of snow. */
 function paintSnowyGroves(graphics: Phaser.GameObjects.Graphics, crowns: readonly { center: Vector2; radius: number }[]): void {
   const palette = FROST_CROSSING_PALETTE;
-  graphics.fillStyle(palette.shadow, 0.3);
-  for (const { center, radius } of crowns) graphics.fillCircle(center.x + radius * 0.55, center.y + radius * 0.6, radius);
+  graphics.fillStyle(palette.shadow, castAlpha(0.3));
+  for (const { center, radius } of crowns) graphics.fillCircle(center.x + radius * 0.55 * castReach(), center.y + radius * 0.6 * castReach(), radius);
   // One deep green for every crown, no lighter highlight.
   graphics.fillStyle(palette.vegetation, 1);
   for (const { center, radius } of crowns) graphics.fillCircle(center.x, center.y, radius);

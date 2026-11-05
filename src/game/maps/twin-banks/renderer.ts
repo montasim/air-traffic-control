@@ -33,6 +33,7 @@ import {
 } from './layout';
 import type { AirfieldSign } from '../shared/airfield';
 import { pointInPolygon } from '../shared/apronLayout';
+import { castAlpha, castReach } from '../../rendering/shared-map/lighting';
 
 const CIVIL_PALETTE: CivilMapPalette = {
   terrain: TWIN_BANKS_PALETTE.eastGround,
@@ -166,12 +167,12 @@ function paintTerrain(
 
   for (const bridge of layout.bridges) {
     const shadow = runwayCorners({
-      center: { x: bridge.center.x + 4, y: bridge.center.y + 6 },
+      center: { x: bridge.center.x + 4 * castReach(), y: bridge.center.y + 6 * castReach() },
       length: bridge.length,
       width: bridge.width,
       angle: bridge.angle
     });
-    graphics.fillStyle(TWIN_BANKS_PALETTE.riverDeep, 0.35);
+    graphics.fillStyle(TWIN_BANKS_PALETTE.riverDeep, castAlpha(0.35));
     tracePolygon(graphics, shadow);
     graphics.fillPath();
     graphics.fillStyle(TWIN_BANKS_PALETTE.bridge, 1);

@@ -4,6 +4,7 @@ import type { Carrier, CarrierLanePaint } from "../../maps/shared/carrier";
 import { pointInPolygon } from "../../maps/shared/apronLayout";
 import { AIRCRAFT_COLORS } from "../../palette";
 import { strokePolyline, tracePolygon } from "./geometry";
+import { castAlpha, castReach } from "./lighting";
 
 /** Navy greys: haze-grey hull and island over a darker non-skid deck, kept as quiet as the concrete aprons. */
 const DECK = {
@@ -132,7 +133,7 @@ export function paintCarrierIsland(graphics: Phaser.GameObjects.Graphics, carrie
     graphics.fillPath();
   };
   // A tall structure casts a long shadow down and to the right.
-  fill(box(width, height).map((p) => ({ x: p.x + unit * 0.016, y: p.y + unit * 0.022 })), DECK.shadow, 0.35);
+  fill(box(width, height).map((p) => ({ x: p.x + unit * 0.016 * castReach(), y: p.y + unit * 0.022 * castReach() })), DECK.shadow, castAlpha(0.35));
   fill(box(width, height), DECK.islandShade);
   fill(box(width * 0.94, height * 0.7, -width * 0.02, -height * 0.1), DECK.island);
   fill(box(width * 0.6, height * 0.5, -width * 0.06, -height * 0.12), DECK.islandTop);

@@ -54,6 +54,7 @@ import {
 } from "../rendering/RouteGuidanceRenderer";
 import { profileForViewport } from "../viewport";
 import { aircraftSelectionRadius } from "../../core/aircraftSelection";
+import { drawUnder } from "../rendering/shared-map/lighting";
 
 const GUIDANCE_REJECTION_DURATION = 380;
 const GUIDANCE_CONFIRMATION_DURATION = 400;
@@ -112,6 +113,8 @@ export class PlayScene extends Phaser.Scene {
     private readonly livery: LiveryId = 'classic',
     /** Device pixels per world unit; the canvas is this much larger than the world and the camera zooms to match. */
     private readonly renderScale = 1,
+    /** The map is drawn for night (contact shadows only) or day; changing it redraws the scene. */
+    private readonly drawnAtNight = false,
   ) {
     super("play");
   }
@@ -169,7 +172,7 @@ export class PlayScene extends Phaser.Scene {
     );
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setBackgroundColor("#263e38");
-    this.mapDefinition.render(this, this.preparedMap);
+    drawUnder(this.drawnAtNight, () => this.mapDefinition.render(this, this.preparedMap));
     this.nightLayer = drawNight(this, this.layout);
     this.setNight(this.night);
     this.approachLabels = this.layout.landingZones.map(zone => this.add.text(

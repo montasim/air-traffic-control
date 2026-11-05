@@ -216,6 +216,8 @@ let activeMapId: MapId = currentSave.selectedMapId;
 let activeDifficulty: DifficultyId = currentSave.selectedDifficulty;
 let activeLivery = currentSave.settings.livery;
 let activeTwoEndLanding = currentSave.settings.twoEndLanding;
+/** Whether the live map was drawn for night: shadows differ, so a change redraws it. */
+let activeNight = currentSave.settings.night;
 let savingLandingMode = false;
 let restoreLandingModeFocus = false;
 const landingModeInput = document.querySelector<HTMLInputElement>('#two-end-landing')!;
@@ -269,6 +271,7 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   activeLivery = currentSave.settings.livery;
   // A restored shift keeps the world and runway mode it started with.
   activeTwoEndLanding = restore?.twoEndLanding ?? currentSave.settings.twoEndLanding;
+  activeNight = currentSave.settings.night;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
   const world = restore?.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight);
   // Draw at the display's real pixel density instead of stretching a world-sized canvas.
@@ -285,7 +288,7 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
     // All sound goes through GameAudio; Phaser's own sound system would open a second AudioContext
     // per game (iOS Safari caps them) and add its own tap-unlock handling beside ours.
     audio: { noAudio: true },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale)],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale, activeNight)],
   });
 
   nextGame.events.on("scene-ready", () => {
@@ -502,7 +505,7 @@ function renderShell(): void {
 
 function beginRun(): void {
   if (savingLandingMode) return;
-  if (activeLivery !== currentSave.settings.livery || activeTwoEndLanding !== currentSave.settings.twoEndLanding || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
+  if (activeLivery !== currentSave.settings.livery || activeTwoEndLanding !== currentSave.settings.twoEndLanding || activeNight !== currentSave.settings.night || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight) {
     rebuildForTarget(profileForViewport(), activeMapId, true);
     return;
   }
@@ -788,6 +791,8 @@ nightModeInput.addEventListener("change", () => {
   void gameStore.setNight(nightModeInput.checked).then(save => {
     currentSave = save;
     menuPictures.refresh();
+    // Shadows are drawn into the map (long by day, contact only at night), so it is redrawn to match.
+    if (activeNight !== save.settings.night) rebuildForTarget(profileForViewport(), activeMapId, false);
   });
 });
 // Weather only changes the look too: the live map shows or hides its clouds at once.
@@ -1020,7 +1025,7 @@ if (isUtilityName(initialUtility)) {
 function offerLivePreview(source: Phaser.Game): void {
   const scene = playScene();
   // Only a frame that matches what a fresh picture would show: same window, runway mode, and settings.
-  if (!scene || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight || activeTwoEndLanding !== currentSave.settings.twoEndLanding) return;
+  if (!scene || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight || activeTwoEndLanding !== currentSave.settings.twoEndLanding || activeNight !== currentSave.settings.night) return;
   menuPictures.takeFromFrame(source, scene.getLayout().landingZones, () => playScene() === scene);
 }
 // Inline MODE checks let Vite drop the unused PWA and Android imports per edition.

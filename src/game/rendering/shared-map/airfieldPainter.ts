@@ -15,6 +15,7 @@ import {
 } from "./geometry";
 import type { CivilMapPalette } from "./types";
 import { mixColor } from "./apronPainter";
+import { castAlpha, castReach } from "./lighting";
 
 export interface MapBuilding {
   readonly id: string;
@@ -334,8 +335,8 @@ export function paintBuilding(
     building.height,
     building.angle,
   );
-  const shadow = points.map((point) => ({ x: point.x + 5, y: point.y + 7 }));
-  graphics.fillStyle(palette.shadow, 0.34);
+  const shadow = points.map((point) => ({ x: point.x + 5 * castReach(), y: point.y + 7 * castReach() }));
+  graphics.fillStyle(palette.shadow, castAlpha(0.34));
   tracePolygon(graphics, shadow);
   graphics.fillPath();
   graphics.fillStyle(palette.building, 1);
@@ -391,8 +392,8 @@ export function paintRaisedBuilding(
   const height = unit * (building.kind === "hangar" ? 0.02 : building.kind === "terminal" ? 0.016 : 0.012);
   const lift = { x: 0, y: -height * 0.55 };
   const roof = base.map((point) => ({ x: point.x + lift.x, y: point.y + lift.y }));
-  const cast = { x: height * 0.95, y: height * 0.75 };
-  graphics.fillStyle(palette.shadow, 0.3);
+  const cast = { x: height * 0.95 * castReach(), y: height * 0.75 * castReach() };
+  graphics.fillStyle(palette.shadow, castAlpha(0.3));
   tracePolygon(graphics, convexHull([...base, ...base.map((point) => ({ x: point.x + cast.x, y: point.y + cast.y }))]));
   graphics.fillPath();
   // Walls: darker the more they turn from the light.
@@ -435,8 +436,8 @@ export function paintRaisedBuilding(
     const box = Math.max(2, unit * 0.007);
     for (const s of building.kind === "terminal" ? [-0.28, 0, 0.28] : [-0.15, 0.2]) {
       const spot = at(s * building.width, -building.height * 0.12);
-      graphics.fillStyle(palette.shadow, 0.25);
-      graphics.fillRect(spot.x - box / 2 + box * 0.4, spot.y - box / 2 + box * 0.3, box, box);
+      graphics.fillStyle(palette.shadow, castAlpha(0.25));
+      graphics.fillRect(spot.x - box / 2 + box * 0.4 * castReach(), spot.y - box / 2 + box * 0.3 * castReach(), box, box);
       graphics.fillStyle(mixColor(palette.building, palette.shadow, 0.15), 1);
       graphics.fillRect(spot.x - box / 2, spot.y - box / 2, box, box);
     }
@@ -451,8 +452,8 @@ export function paintShadedTree(
   palette: CivilMapPalette,
   index: number,
 ): void {
-  graphics.fillStyle(palette.shadow, 0.28);
-  graphics.fillCircle(center.x + radius * 0.6, center.y + radius * 0.5, radius * 0.95);
+  graphics.fillStyle(palette.shadow, castAlpha(0.28));
+  graphics.fillCircle(center.x + radius * 0.6 * castReach(), center.y + radius * 0.5 * castReach(), radius * 0.95);
   const crown = index % 3 === 0 ? palette.vegetationLight : palette.vegetation;
   graphics.fillStyle(mixColor(crown, palette.shadow, 0.3), 1);
   graphics.fillCircle(center.x, center.y, radius);
@@ -469,10 +470,10 @@ export function paintTree(
   palette: CivilMapPalette,
   index: number,
 ): void {
-  graphics.fillStyle(palette.shadow, 0.2);
+  graphics.fillStyle(palette.shadow, castAlpha(0.2));
   graphics.fillCircle(
-    center.x + radius * 0.28,
-    center.y + radius * 0.38,
+    center.x + radius * 0.28 * castReach(),
+    center.y + radius * 0.38 * castReach(),
     radius * 0.9,
   );
   graphics.fillStyle(

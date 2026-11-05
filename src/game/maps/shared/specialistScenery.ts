@@ -15,6 +15,7 @@ import {
 } from '../../rendering/shared-map';
 import type { SpecialistLayout } from './specialistAirfield';
 import { animateDrawing } from '../../rendering/shared-map/motion';
+import { castAlpha, castReach } from '../../rendering/shared-map/lighting';
 
 /**
  * The signature landscape of each specialist field, so no two of them look alike: an open-pit
@@ -132,10 +133,10 @@ export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: Spe
     graphics.fillStyle(0xb3ad98, 1);
     graphics.fillCircle(at.x, at.y, unit * 0.008);
     // The tall tower casts a long shadow, and so do the turning blades, as a faint disc.
-    graphics.lineStyle(Math.max(1.5, unit * 0.004), 0x2d3a33, 0.3);
-    graphics.lineBetween(at.x, at.y, at.x + unit * 0.06, at.y + unit * 0.075);
-    graphics.fillStyle(0x2d3a33, 0.08);
-    graphics.fillCircle(at.x + unit * 0.06, at.y + unit * 0.075, blade);
+    graphics.lineStyle(Math.max(1.5, unit * 0.004), 0x2d3a33, castAlpha(0.3));
+    graphics.lineBetween(at.x, at.y, at.x + unit * 0.06 * castReach(), at.y + unit * 0.075 * castReach());
+    graphics.fillStyle(0x2d3a33, castAlpha(0.08));
+    graphics.fillCircle(at.x + unit * 0.06 * castReach(), at.y + unit * 0.075 * castReach(), blade);
   }
   if (!scene.add?.graphics) return () => false;
   const rotors = scene.add.graphics().setDepth(depth);
@@ -290,8 +291,8 @@ function paintMarina(graphics: Graphics, shore: readonly Vector2[], side: string
   }
   // A lighthouse at the far end of the shore: white tower, red band, and its shadow.
   const light = { x: shore[12].x - seaward.x * unit * 0.02, y: shore[12].y - seaward.y * unit * 0.02 };
-  graphics.fillStyle(0x2d3a33, 0.3);
-  graphics.fillEllipse(light.x + unit * 0.02, light.y + unit * 0.016, unit * 0.04, unit * 0.014);
+  graphics.fillStyle(0x2d3a33, castAlpha(0.3));
+  graphics.fillEllipse(light.x + unit * 0.02 * castReach(), light.y + unit * 0.016 * castReach(), unit * (0.022 + 0.018 * castReach()), unit * 0.014);
   graphics.fillStyle(0xf4f1e8, 1);
   graphics.fillCircle(light.x, light.y, unit * 0.011);
   graphics.lineStyle(Math.max(1.5, unit * 0.004), 0xc4453a, 1);
@@ -459,8 +460,8 @@ export function addRadarStation(scene: Phaser.Scene, graphics: Graphics, layout:
   graphics.lineStyle(Math.max(1, unit * 0.002), 0x39433a, 0.8);
   tracePolygon(graphics, box(site, unit * 0.09, unit * 0.05, 0));
   graphics.strokePath();
-  graphics.fillStyle(0x2d3a33, 0.3);
-  graphics.fillCircle(dome.x + unit * 0.006, dome.y + unit * 0.008, unit * 0.017);
+  graphics.fillStyle(0x2d3a33, castAlpha(0.3));
+  graphics.fillCircle(dome.x + unit * 0.006 * castReach(), dome.y + unit * 0.008 * castReach(), unit * 0.017);
   graphics.fillStyle(0xe9ebe6, 1);
   graphics.fillCircle(dome.x, dome.y, unit * 0.017);
   graphics.fillStyle(0xffffff, 0.9);
@@ -468,8 +469,8 @@ export function addRadarStation(scene: Phaser.Scene, graphics: Graphics, layout:
   fill(graphics, box(dish, unit * 0.01, unit * 0.01, 0), 0x6a7560);
   if (!scene.add?.graphics) return;
   const antenna = scene.add.graphics().setDepth(depth).setPosition(dish.x, dish.y);
-  antenna.fillStyle(0x2d3a33, 0.3);
-  antenna.fillRect(-unit * 0.016 + unit * 0.003, -unit * 0.003 + unit * 0.004, unit * 0.032, unit * 0.006);
+  antenna.fillStyle(0x2d3a33, castAlpha(0.3));
+  antenna.fillRect(-unit * 0.016 + unit * 0.003 * castReach(), -unit * 0.003 + unit * 0.004 * castReach(), unit * 0.032, unit * 0.006);
   antenna.fillStyle(0xd6d9d2, 1);
   antenna.fillRect(-unit * 0.016, -unit * 0.003, unit * 0.032, unit * 0.006);
   animateDrawing(scene, antenna, (seconds) => antenna.setRotation(seconds * 1.4), 4);
