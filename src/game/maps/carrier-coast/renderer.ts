@@ -11,7 +11,8 @@ import {
   paintCarrierWake,
   paintHelipad,
   paintIslet,
-  paintRunway,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintSwellBands,
   paintTree,
   strokePolyline,
@@ -73,7 +74,8 @@ export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastL
     operational: ({ graphics, unit }) => {
       paintCarrierDeck(graphics, layout.carrier, unit);
       paintAirfieldGround(graphics, layout, CARRIER_COAST_PALETTE, detailLevel);
-      paintRunway(graphics, layout.runways[0], CARRIER_COAST_PALETTE);
+      // The land runway and the deck lane both take the same marked runway as every other map.
+      for (const runway of layout.runways) paintMarkedRunway(graphics, runway, CARRIER_COAST_PALETTE, layout.landingZones);
       paintAirfieldGuides(graphics, layout, CARRIER_COAST_PALETTE, detailLevel);
       for (const pad of layout.helipads) paintHelipad(graphics, pad, CARRIER_COAST_PALETTE);
     },
@@ -82,4 +84,6 @@ export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastL
       paintCarrierIsland(graphics, layout.carrier, unit);
     },
   }, { materialTextureKey: 'terrain:arcade:mineral' });
+  // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
+  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
 }

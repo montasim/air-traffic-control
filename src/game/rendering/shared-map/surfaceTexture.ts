@@ -156,10 +156,11 @@ export function paintSurfaceTexture(
     // outline even where it is not square to the runways (Freight Junction, Twin Banks' west field).
     const slab = unit * 0.035;
     const reach = Math.hypot(width, height);
-    const aprons = [layout.apron, ...(layout.extraAprons ?? [])];
+    // A runways-only texture passes no apron, so empty outlines are skipped.
+    const aprons = [layout.apron, ...(layout.extraAprons ?? [])].filter((apron) => apron.length >= 3);
     const centre = (polygon: readonly Vector2[]) => polygon.reduce((sum, p) => ({ x: sum.x + p.x / polygon.length, y: sum.y + p.y / polygon.length }), { x: 0, y: 0 });
     // The helipad pocket shares the grid of the apron it joins, so the joints run on without a seam.
-    const pocketHost = layout.helipadApron && aprons.reduce((best, apron) => {
+    const pocketHost = layout.helipadApron && aprons.length > 0 && aprons.reduce((best, apron) => {
       const at = centre(layout.helipadApron!);
       const d = (polygon: readonly Vector2[]) => Math.hypot(centre(polygon).x - at.x, centre(polygon).y - at.y);
       return d(apron) < d(best) ? apron : best;

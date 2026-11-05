@@ -172,7 +172,9 @@ export function paintMarkedRunway(
   graphics: Phaser.GameObjects.Graphics,
   runway: MapRunway,
   palette: CivilMapPalette,
-  landingZones: readonly LandingZone[]
+  landingZones: readonly LandingZone[],
+  /** Off for a second lane whose sign would land on the first one's (a carrier's overlapping lanes). */
+  withSign = true
 ): void {
   const halfLength = runway.length / 2;
   const halfWidth = runway.width / 2;
@@ -247,14 +249,16 @@ export function paintMarkedRunway(
     graphics.lineBetween(a.x, a.y, b.x, b.y);
   }
   // The class letter sign beside the runway, as on every other map.
-  const sign = localRunwayPoint(runway, -halfLength + 34, halfWidth + 23);
-  graphics.fillStyle(palette.marking, 1);
-  graphics.fillRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
-  graphics.lineStyle(3, 0x294b46, 1);
-  graphics.strokeRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
-  graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x - 4, sign.y + 6);
-  graphics.lineBetween(sign.x - 4, sign.y + 6, sign.x + 5, sign.y + 6);
-  if (runway.accepts === "commuter") graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
+  if (withSign) {
+    const sign = localRunwayPoint(runway, -halfLength + 34, halfWidth + 23);
+    graphics.fillStyle(palette.marking, 1);
+    graphics.fillRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+    graphics.lineStyle(3, 0x294b46, 1);
+    graphics.strokeRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+    graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x - 4, sign.y + 6);
+    graphics.lineBetween(sign.x - 4, sign.y + 6, sign.x + 5, sign.y + 6);
+    if (runway.accepts === "commuter") graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
+  }
   // Landing-direction arrows just past each landing threshold.
   graphics.fillStyle(palette.marking, 0.85);
   for (const zone of landingZones) {

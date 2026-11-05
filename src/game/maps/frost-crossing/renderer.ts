@@ -9,7 +9,8 @@ import {
   paintBuilding,
   paintHelipad,
   paintRockRidge,
-  paintRunway,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintSnowyPine,
   paintWaterPolygon,
   type CivilMapPalette,
@@ -65,7 +66,7 @@ export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossin
     },
     operational: ({ graphics }) => {
       paintAirfieldGround(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
-      for (const runway of layout.runways) paintRunway(graphics, runway, FROST_CROSSING_PALETTE);
+      for (const runway of layout.runways) paintMarkedRunway(graphics, runway, FROST_CROSSING_PALETTE, layout.landingZones);
       paintAirfieldGuides(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
       paintHelipad(graphics, layout.helipad, FROST_CROSSING_PALETTE);
     },
@@ -73,4 +74,6 @@ export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossin
       for (const building of layout.buildings) paintBuilding(graphics, building, FROST_CROSSING_PALETTE, layout.runways);
     },
   }, { materialTextureKey: 'terrain:arcade:mineral' });
+  // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
+  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
 }

@@ -9,6 +9,8 @@ import {
   paintCarrierIsland,
   paintCarrierWake,
   paintHelipad,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintSwellBands,
   paintWhitecaps,
   type CivilMapPalette,
@@ -49,9 +51,14 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
     operational: ({ graphics, unit }) => {
       paintCarrierDeck(graphics, layout.carrier, unit);
       paintAirfieldGround(graphics, layout, BLUE_WATER_PALETTE, detailLevel);
+      // The deck lanes take the same marked runway as every other map.
+      // Both lanes take the same class, so only the first carries the sign; the second's would overlap it.
+      layout.runways.forEach((runway, index) => paintMarkedRunway(graphics, runway, BLUE_WATER_PALETTE, layout.landingZones, index === 0));
       paintAirfieldGuides(graphics, layout, BLUE_WATER_PALETTE, detailLevel);
       for (const pad of layout.helipads) paintHelipad(graphics, pad, BLUE_WATER_PALETTE);
     },
     detail: ({ graphics, unit }) => paintCarrierIsland(graphics, layout.carrier, unit),
   });
+  // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
+  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
 }
