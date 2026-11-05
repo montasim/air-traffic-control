@@ -195,6 +195,9 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
       return [last, add(item.apronEnd, scale(unitVector(item.heading), span * 1.6))] as const;
     });
     const step = span * 0.35;
+    // Square rows run only along or across this type's own taxiway, so its guide goes straight on and
+    // turns at most once, at a right angle, as on Saltmarsh Gateway; other runways' angles do not apply.
+    const typeAngles = input.squareRows ? rowAngles([{ center: start, width: 0, height: 0, angle: exit.heading }], [], true) : angles;
 
     // A first pass keeps the groups well apart; if nothing fits, a second accepts a tighter apron.
     let relaxed = false;
@@ -231,7 +234,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
           for (let cy = Math.min(...ys) - reach; cy <= Math.max(...ys) + reach; cy += step) {
             const gridCenter = { x: cx, y: cy };
             if (!onApron(gridCenter, [polygon], reach)) continue;
-            for (const angle of angles) {
+            for (const angle of typeAngles) {
               const forward = unitVector(angle);
               const half = ((count - 1) / 2) * spacing + tail;
               const rowEnds = (middle: Vector2) => [add(middle, scale(forward, -half)), add(middle, scale(forward, half))];

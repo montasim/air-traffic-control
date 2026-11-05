@@ -65,7 +65,12 @@ function assertPreparedLayout(
 }
 
 function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T, input: MapPreparationInput): T {
-  if ((authored as { buildingsAtApronEnds?: boolean }).buildingsAtApronEnds !== true) return groundTraffic(authored, input, false);
+  if ((authored as { buildingsAtApronEnds?: boolean }).buildingsAtApronEnds !== true) {
+    // Square rows give straight guides with right-angle turns; keep them unless they cost a stand.
+    const loose = groundTraffic(authored, input, false);
+    const square = groundTraffic(authored, input, true);
+    return square.apronMarkings.stands.length >= loose.apronMarkings.stands.length ? square : loose;
+  }
   // Buildings at the apron ends with square stand rows, but never at the cost of a stand: a tight
   // screen gives up square rows first, then the end placement.
   const usualLayout = { ...authored, buildingsAtApronEnds: false };
