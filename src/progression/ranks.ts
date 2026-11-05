@@ -235,14 +235,10 @@ export function unlockedMapIds(
   return MAP_IDS.filter((mapId) => unlocked.has(mapId));
 }
 
-// shortcut: every map is open on the dev server so all 12 can be playtested; remove this once map testing is done.
-// Production builds and the test run keep the career locks.
-const UNLOCK_ALL_MAPS_FOR_TESTING = import.meta.env.DEV && import.meta.env.MODE !== 'test';
-
 export function isMapUnlocked(
   mapId: MapId,
   rankId: RankId,
   catalog: readonly RankDefinition[] = RANK_CATALOG
 ): boolean {
-  return UNLOCK_ALL_MAPS_FOR_TESTING || unlockedMapIds(rankId, catalog).includes(mapId);
+  return unlockedMapIds(rankId, catalog).includes(mapId);
 }
