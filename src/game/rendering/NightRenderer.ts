@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Vector2 } from "../../core/types";
 import type { RunwayGuidanceSurface } from "../maps/shared/guidance";
 import type { PlayableMapLayout } from "../maps/types";
+import { sceneRenderTexture } from "./shared-map/composer";
 
 // Phaser.BlendModes values; a type-only import keeps this file loadable in tests.
 const BLEND_ADD = 1;
@@ -77,9 +78,7 @@ export function drawNight(scene: Phaser.Scene, layout: NightLayout, tint = NIGHT
     graphics.fillStyle(light.color, 1);
     graphics.fillCircle(light.x, light.y, light.size / 3);
   }
-  const lights = scene.add
-    .renderTexture(0, 0, layout.width, layout.height)
-    .setOrigin(0, 0)
+  const lights = sceneRenderTexture(scene, layout.width, layout.height)
     .setDepth(1)
     .setBlendMode(BLEND_ADD);
   lights.draw(graphics);

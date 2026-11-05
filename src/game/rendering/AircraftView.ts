@@ -66,8 +66,8 @@ export class AircraftView {
           height: canvas.clientHeight || canvas.height,
         },
         {
-          width: scene.scale.gameSize.width,
-          height: scene.scale.gameSize.height,
+          width: scene.scale.gameSize.width / scene.cameras.main.zoom,
+          height: scene.scale.gameSize.height / scene.cameras.main.zoom,
         },
       );
     this.rotorAngle = initialRotorPhase(aircraft.id);

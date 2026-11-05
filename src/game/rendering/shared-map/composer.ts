@@ -7,6 +7,24 @@ import type {
   StaticMapPaintPlan,
 } from "./types";
 
+/** How many device pixels the scene draws per world unit: the main camera's zoom (1 off-screen). */
+export function renderScaleOf(scene: Phaser.Scene): number {
+  return scene.cameras?.main?.zoom ?? 1;
+}
+
+/**
+ * A render texture in world units that bakes at the scene's render scale, so cached layers stay
+ * as sharp as live drawing on high-density screens: its camera zooms in and the texture is
+ * displayed back at world size.
+ */
+export function sceneRenderTexture(scene: Phaser.Scene, width: number, height: number): Phaser.GameObjects.RenderTexture {
+  const scale = renderScaleOf(scene);
+  const texture = scene.add.renderTexture(0, 0, Math.ceil(width * scale), Math.ceil(height * scale)).setOrigin(0, 0);
+  if (scale === 1) return texture;
+  texture.camera.setOrigin(0, 0).setZoom(scale);
+  return texture.setDisplaySize(width, height);
+}
+
 function isLayeredPaintPlan<Layout>(
   paint: StaticMapPaintPlan<Layout>,
 ): paint is StaticMapLayers<Layout> {
@@ -34,10 +52,7 @@ export function composeStaticMap<
   options: StaticMapComposeOptions = {},
 ): Phaser.GameObjects.RenderTexture {
   const graphics = scene.add.graphics();
-  const texture = scene.add
-    .renderTexture(0, 0, layout.width, layout.height)
-    .setOrigin(0, 0)
-    .setDepth(options.depth ?? -20);
+  const texture = sceneRenderTexture(scene, layout.width, layout.height).setDepth(options.depth ?? -20);
   const sceneryTextureKey = options.sceneryTextureKey;
   const hasSceneryTexture =
     sceneryTextureKey !== undefined &&

@@ -99,13 +99,14 @@ export class PlayScene extends Phaser.Scene {
     private readonly mapDefinition: MapDefinition = SALTMARSH_GATEWAY_DEFINITION,
     private readonly twoEndLanding = false,
     private readonly livery: LiveryId = 'classic',
+    /** Device pixels per world unit; the canvas is this much larger than the world and the camera zooms to match. */
+    private readonly renderScale = 1,
   ) {
     super("play");
   }
 
   preload(): void {
-    const width = this.scale.gameSize.width;
-    const height = this.scale.gameSize.height;
+    const { width, height } = this.worldSize();
     const detailLevel = profileForViewport().detailLevel;
     const preview = this.mapDefinition.prepare({ width, height, detailLevel, twoEndLanding: this.twoEndLanding });
     queuePresentationAssets(this, {
@@ -115,8 +116,8 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const width = this.scale.gameSize.width;
-    const height = this.scale.gameSize.height;
+    const { width, height } = this.worldSize();
+    this.cameras.main.setZoom(this.renderScale).centerOn(width / 2, height / 2);
     const detailLevel = profileForViewport().detailLevel;
     this.preparedMap = this.mapDefinition.prepare({
       width,
@@ -165,6 +166,8 @@ export class PlayScene extends Phaser.Scene {
       zone.approach ? `${zone.accepts === 'liner' ? 'L' : 'C'} · ${zone.label}` : zone.label,
       { fontFamily: 'Atkinson Hyperlegible', fontSize: '20px', color: '#fff5df', backgroundColor: '#203d39', padding: { x: 4, y: 2 } }
     ).setOrigin(.5,0).setDepth(7).setVisible(false));
+    // Text is rasterised at its own resolution; match the camera zoom so labels stay sharp.
+    for (const child of this.children.list) if (child instanceof Phaser.GameObjects.Text) child.setResolution(this.renderScale);
 
     this.routeGraphics = this.add.graphics().setDepth(4);
     this.warningGraphics = this.add.graphics().setDepth(6);
@@ -216,6 +219,11 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  /** The world in layout units; the canvas is renderScale times larger. */
+  private worldSize(): { width: number; height: number } {
+    return { width: this.scale.gameSize.width / this.renderScale, height: this.scale.gameSize.height / this.renderScale };
+  }
+
   update(_time: number, deltaMilliseconds: number): void {
     // Game speed scales the world only; guidance hints keep real time.
     const worldMilliseconds = deltaMilliseconds * this.timeScale;
@@ -244,7 +252,7 @@ export class PlayScene extends Phaser.Scene {
   startRun(difficulty: DifficultyId = 'medium', runId = ''): void {
     this.runId = runId;
     this.shiftTracker = new ShiftTracker();
-    this.simulation = new Simulation(this.layout.landingZones, { width: this.scale.gameSize.width, height: this.scale.gameSize.height }, applyDifficulty(trafficProfileById(this.mapDefinition.trafficProfileId), difficulty), this.collisionScales);
+    this.simulation = new Simulation(this.layout.landingZones, this.worldSize(), applyDifficulty(trafficProfileById(this.mapDefinition.trafficProfileId), difficulty), this.collisionScales);
     this.failureMarker?.destroy();
     this.failureMarker = undefined;
     this.clearAircraftViews();
@@ -325,8 +333,8 @@ export class PlayScene extends Phaser.Scene {
       const hitRadius = aircraftSelectionRadius(
         aircraft.type,
         this.collisionScales[aircraft.type],
-        Math.min(this.game.canvas.clientWidth / this.scale.gameSize.width,
-          this.game.canvas.clientHeight / this.scale.gameSize.height),
+        Math.min(this.game.canvas.clientWidth / this.worldSize().width,
+          this.game.canvas.clientHeight / this.worldSize().height),
         precision === "coarse",
       );
       if (

@@ -6,6 +6,8 @@ import {
   shouldPauseForResize,
   needsNewShiftLayout,
   worldSizeForViewport,
+  renderScaleFor,
+  MAX_RENDER_SCALE,
   profileForSize,
   profileForViewport,
   type ViewportProfile
@@ -150,5 +152,15 @@ describe('active shift resize policy', () => {
     expect(isFieldPlayable(portrait, { width: 844, height: 240 * 1600 / 900 })).toBe(true);
     expect(isFieldPlayable(world, { width: 1280, height: 240 })).toBe(true);
     expect(isFieldPlayable(world, { width: 1280, height: 239 })).toBe(false);
+  });
+});
+
+describe('render scale', () => {
+  it('matches the canvas to the display: fit times pixel density, never below 1 or above the cap', () => {
+    const world = { width: 1600, height: 900 };
+    expect(renderScaleFor(world, { width: 1600, height: 900 }, 1)).toBe(1);
+    expect(renderScaleFor(world, { width: 1920, height: 1080 }, 1.25)).toBeCloseTo(1.5);
+    expect(renderScaleFor(world, { width: 800, height: 450 }, 1)).toBe(1);
+    expect(renderScaleFor(world, { width: 3840, height: 2160 }, 2)).toBe(MAX_RENDER_SCALE);
   });
 });

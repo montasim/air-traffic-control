@@ -54,6 +54,18 @@ export function worldSizeForViewport(width: number, height: number) {
   return { width: width / scale, height: height / scale };
 }
 
+/** The sharpest render scale worth drawing at, so heavy screens and phones are not asked for more. */
+export const MAX_RENDER_SCALE = 2.5;
+
+/**
+ * Device pixels per world unit: how much the fitted world is enlarged on screen times the
+ * screen's pixel density, so the canvas matches the display instead of being stretched.
+ */
+export function renderScaleFor(world: ViewportSize, viewport: ViewportSize, pixelRatio: number): number {
+  const fit = Math.min(viewport.width / world.width, viewport.height / world.height);
+  return Math.min(MAX_RENDER_SCALE, Math.max(1, fit * (pixelRatio || 1)));
+}
+
 export function needsNewShiftLayout(active: ViewportProfile, next: ViewportProfile): boolean {
   return active.id !== next.id;
 }

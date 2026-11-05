@@ -14,6 +14,7 @@ import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
   needsNewShiftLayout,
+  renderScaleFor,
   worldSizeForViewport,
   LANDSCAPE_PROFILE,
   PORTRAIT_PROFILE,
@@ -207,8 +208,14 @@ function resetResizeState(): void {
   resizedWhilePaused = false;
   acceptedViewport = availableViewport();
 }
+/** Device pixels per world unit for the current game; the canvas is this much larger than the world. */
+let renderScale = 1;
+/** The world in layout units, as the scene and saved shifts use it. */
+function worldSize(): { width: number; height: number } {
+  return { width: game.scale.gameSize.width / renderScale, height: game.scale.gameSize.height / renderScale };
+}
 function fieldPlayable(): boolean {
-  return isFieldPlayable(game.scale.gameSize, availableViewport());
+  return isFieldPlayable(worldSize(), availableViewport());
 }
 let volumeSaveTimer = 0;
 let promotionAudioTimer = 0;
@@ -234,15 +241,19 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   // A restored shift keeps the world and runway mode it started with.
   activeTwoEndLanding = restore?.twoEndLanding ?? currentSave.settings.twoEndLanding;
   createdViewport = { width: window.innerWidth, height: window.innerHeight };
+  const world = restore?.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight);
+  // Draw at the display's real pixel density instead of stretching a world-sized canvas.
+  renderScale = renderScaleFor(world, { width: window.innerWidth, height: window.innerHeight }, window.devicePixelRatio);
   const nextGame = new Phaser.Game({
     type: Phaser.AUTO,
     parent: "game",
-    ...(restore?.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight)),
+    width: world.width * renderScale,
+    height: world.height * renderScale,
     backgroundColor: "#263f3c",
     render: { antialias: true, roundPixels: false },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     input: { activePointers: 2 },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery)],
+    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale)],
   });
 
   nextGame.events.on("scene-ready", () => {
@@ -625,7 +636,7 @@ function persistShift(): void {
     mapId: activeMapId,
     difficulty: activeDifficulty,
     orientation: activeProfile.id,
-    world: { width: game.scale.gameSize.width, height: game.scale.gameSize.height },
+    world: worldSize(),
     twoEndLanding: activeTwoEndLanding,
     ...scene.exportShift(),
   });
@@ -935,7 +946,7 @@ window.addEventListener("resize", () => {
   const scene = playScene();
   if (scene?.getPhase() === "running" || scene?.getPhase() === "paused") {
     scene.cancelDrawing();
-    const significant = shouldPauseForResize(acceptedViewport, availableViewport(), game.scale.gameSize);
+    const significant = shouldPauseForResize(acceptedViewport, availableViewport(), worldSize());
     if (significant || scene.getPhase() === "paused") {
       resizedWhilePaused = true;
       resizeSettling = true;
@@ -1251,5 +1262,5 @@ elements.mapOptions.addEventListener("keydown", (event) => {
 export function inspectShift() {
   if (!import.meta.env.DEV) throw new Error("Shift inspection is development-only");
   return { ...playScene()?.getShiftSnapshot(), orientation: activeProfile.id,
-    world: { width: game.scale.gameSize.width, height: game.scale.gameSize.height } };
+    world: worldSize() };
 }
