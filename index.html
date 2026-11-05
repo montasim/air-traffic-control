@@ -322,8 +322,10 @@
         >
           <div class="panel-content">
             <div class="result-body" role="region" aria-label="Shift details" tabindex="0">
+              <p class="result-eyebrow">Shift ended</p>
               <h2 id="gameover-code">Collision</h2>
               <p id="gameover-copy">Two aircraft collided.</p>
+              <div id="result-difficulty" class="shift-context"></div>
               <dl class="result-grid" aria-label="Game result">
                 <div>
                   <dt>Score</dt>
@@ -334,7 +336,6 @@
                   <dd id="final-best">00</dd>
                 </div>
               </dl>
-              <div id="result-difficulty" class="shift-context"></div>
               <div id="achievement-result" class="achievement-result" hidden></div>
               <div id="career-result" class="career-result" aria-live="polite">Recording shift…</div>
             </div>
@@ -363,6 +364,13 @@
                 ></span>
                 <span class="button-label">Play again</span>
               </button>
+              <details class="menu-more">
+                <summary><span>More options</span><span class="button-icon menu-chevron" data-ui-icon="expand" aria-hidden="true"></span></summary>
+                <div class="menu-more-actions">
+                  <button class="text-button" type="button" data-screen="settings"><span class="button-icon" data-ui-icon="settings" aria-hidden="true"></span><span>Settings</span></button>
+                  <button class="text-button" type="button" data-screen="help"><span class="button-icon" data-ui-icon="help" aria-hidden="true"></span><span>How to play</span></button>
+                </div>
+              </details>
             </div>
           </div>
         </section>

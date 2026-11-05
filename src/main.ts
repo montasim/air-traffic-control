@@ -1026,11 +1026,15 @@ function updateResizeNotice(): void {
 
 /** The shift's airfield as a heading, then its settings as short tags; the landing count only while paused. */
 function renderShiftContext(target: HTMLElement, landed?: string, withName = true): void {
-  const name = document.createElement("strong");
-  name.className = "shift-context-name";
-  name.textContent = mapDefinitionById(activeMapId).metadata.name;
   const tags = document.createElement("ul");
   tags.className = "shift-tags";
+  // On the result card the airfield leads the tags; the pause menu shows it as its heading instead.
+  if (withName) {
+    const name = document.createElement("li");
+    name.className = "shift-tag-name";
+    name.textContent = mapDefinitionById(activeMapId).metadata.name;
+    tags.append(name);
+  }
   const orientation = activeProfile.id.charAt(0).toUpperCase() + activeProfile.id.slice(1);
   const facts: [string, AppIconName?][] = [
     [DIFFICULTY_LABELS[activeDifficulty]],
@@ -1049,7 +1053,7 @@ function renderShiftContext(target: HTMLElement, landed?: string, withName = tru
     tag.append(text);
     tags.append(tag);
   }
-  target.replaceChildren(...(withName ? [name] : []), tags);
+  target.replaceChildren(tags);
 }
 
 function confirmAbandon(title: string, copy: string, action: () => void): void {
