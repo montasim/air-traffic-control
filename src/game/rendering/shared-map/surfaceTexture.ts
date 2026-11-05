@@ -89,6 +89,9 @@ function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: Can
   context.setTransform(1, 0, 0, 1, 0, 0);
   context.globalCompositeOperation = keep === "inside" ? "destination-in" : "destination-out";
   context.drawImage(stencil, 0, 0);
+  // Back to world units, so later cut-outs (buildings, helipad) land where they are drawn.
+  context.setTransform(scale, 0, 0, scale, 0, 0);
+  context.globalCompositeOperation = "source-over";
   return canvas;
 }
 
@@ -106,29 +109,8 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
   const grain = noiseTile(96, 0.07);
 
   const asphalt = surfaceLayer(layout, scale, (context) => {
-    // The same fine grain as the apron, without the blotchy mottling that read as dirt.
+    // The apron's fine grain but no slab grid: seamless asphalt contrasts with the gridded concrete.
     fillWith(context, grain, 1, width, height);
-    // Slab joints like the apron's, square to each runway: lanes along it, joints across it.
-    for (const runway of layout.runways) {
-      context.save();
-      context.translate(runway.center.x, runway.center.y);
-      context.rotate(runway.angle);
-      context.beginPath();
-      context.rect(-runway.length / 2, -runway.width / 2, runway.length, runway.width);
-      context.clip();
-      context.strokeStyle = "rgba(20,24,26,0.28)";
-      context.lineWidth = Math.max(1, unit * 0.0015);
-      const slab = unit * 0.035;
-      context.beginPath();
-      for (let along = -runway.length / 2 + slab; along < runway.length / 2; along += slab) {
-        context.moveTo(along, -runway.width / 2); context.lineTo(along, runway.width / 2);
-      }
-      for (let across = -runway.width / 2 + runway.width / 4; across < runway.width / 2 - 1; across += runway.width / 4) {
-        context.moveTo(-runway.length / 2, across); context.lineTo(runway.length / 2, across);
-      }
-      context.stroke();
-      context.restore();
-    }
     // Rubber left by main gear where aircraft touch down, fading along the landing direction.
     for (const zone of layout.landingZones) {
       if (!zone.approach) continue;
@@ -140,7 +122,7 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
       for (const side of [-1, 1]) {
         const streak = context.createLinearGradient(-runway.width * 0.4, 0, runway.length * 0.16, 0);
         streak.addColorStop(0, "rgba(20,24,26,0)");
-        streak.addColorStop(0.2, "rgba(20,24,26,0.22)");
+        streak.addColorStop(0.2, "rgba(20,24,26,0.1)");
         streak.addColorStop(1, "rgba(20,24,26,0)");
         context.fillStyle = streak;
         context.fillRect(-runway.width * 0.4, side * runway.width * 0.16 - runway.width * 0.07, runway.length * 0.16 + runway.width * 0.4, runway.width * 0.14);

@@ -12,12 +12,10 @@ import {
 } from '../../rendering/shared-map';
 import type { SaltmarshGatewayLayout } from './layout';
 
-const CHEVRON = 0xe9c04a;
-
 /**
  * A runway marked like a real one: a pale paved shoulder, a worn darker centre lane, edge lines,
- * blast pads with yellow chevrons, the class-coloured threshold bar players match, white
- * "piano key" threshold stripes, aiming-point blocks, a centreline, and arrows ahead of each
+ * darker blast pads, the class-coloured threshold bar players match, a few white
+ * "piano key" threshold stripes, a centreline that breaks for the arrows ahead of each
  * landing end showing which way aircraft land.
  */
 export function paintMarkedRunway(
@@ -60,13 +58,8 @@ export function paintMarkedRunway(
   for (const end of [-1, 1] as const) {
     // Along-runway position measured inward from this end.
     const at = (fromEnd: number) => end * (halfLength - fromEnd);
-    // Blast pad: darker, unused surface with yellow chevrons pointing toward the runway.
+    // Blast pad: plain darker surface; chevrons here crowded the end with a third colour.
     box(Math.min(at(0), at(pad)), Math.max(at(0), at(pad)), -halfWidth, halfWidth, mixColor(palette.asphalt, palette.shadow, 0.3));
-    graphics.lineStyle(Math.max(1.5, w * 0.05), CHEVRON, 0.9);
-    for (const step of [0.3, 0.75]) {
-      line(at(pad * (step - 0.25)), -halfWidth + inset, at(pad * step), 0);
-      line(at(pad * step), 0, at(pad * (step - 0.25)), halfWidth - inset);
-    }
     // The class-coloured threshold bar stays the main landing cue.
     graphics.lineStyle(Math.max(4, w * 0.15), AIRCRAFT_COLORS[runway.accepts], 1);
     line(at(pad + w * 0.075), -halfWidth + inset, at(pad + w * 0.075), halfWidth - inset);
@@ -82,13 +75,23 @@ export function paintMarkedRunway(
       }
     }
   }
-  // White centreline dashes between the piano keys at each end.
+  // White centreline dashes between the piano keys at each end, with a gap where the landing
+  // arrows sit so the arrows read on their own.
   const usable = runway.length - (pad + w * 0.25 + keyLength + 14) * 2;
   const count = Math.max(3, Math.floor(usable / 44));
   const spacing = usable / count;
+  const axis = { x: Math.cos(runway.angle), y: Math.sin(runway.angle) };
+  const arrowAlong = landingZones
+    .filter((zone) => zone.approach?.runwayId === runway.id)
+    .flatMap((zone) => [0.1, 0.16].map((step) => {
+      const tip = { x: zone.position.x + Math.cos(zone.angle) * runway.length * step, y: zone.position.y + Math.sin(zone.angle) * runway.length * step };
+      return (tip.x - runway.center.x) * axis.x + (tip.y - runway.center.y) * axis.y;
+    }));
+  const arrowSize = Math.min(halfWidth * 0.55, 9);
   graphics.lineStyle(Math.max(1.5, w * 0.05), palette.marking, 0.7);
   for (let index = 0; index < count; index += 1) {
     const center = -usable / 2 + spacing * (index + 0.5);
+    if (arrowAlong.some((along) => Math.abs(along - center) < spacing * 0.22 + arrowSize * 1.6)) continue;
     const a = localRunwayPoint(runway, center - spacing * 0.22);
     const b = localRunwayPoint(runway, center + spacing * 0.22);
     graphics.lineBetween(a.x, a.y, b.x, b.y);
