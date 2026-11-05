@@ -1,7 +1,8 @@
 import { createDefaultGameSave, type GameSaveV3 } from "../storage/gameSave";
 import { isMapId } from "../game/maps/mapIds";
 
-/** DEV-only fixtures use memory persistence and never read or write a player's career. */
+/** DEV-only fixtures use memory persistence and never read or write a player's career. The full
+ * career opens every airfield, so each map can be reviewed and profiled. */
 export function reviewSave(params: URLSearchParams): GameSaveV3 {
   const save = createDefaultGameSave();
   const map = params.get("map");
@@ -19,8 +20,8 @@ export function reviewSave(params: URLSearchParams): GameSaveV3 {
       : {
           totalSafeLandings: 240,
           shiftsPlayed: 40,
-          earnedRankId: "chief-controller",
-          acknowledgedRankId: "chief-controller",
+          earnedRankId: "air-boss",
+          acknowledgedRankId: "air-boss",
         },
     settings: { ...save.settings, audio: { enabled: false, volume: 0.8 } },
   };

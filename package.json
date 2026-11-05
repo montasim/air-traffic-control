@@ -27,7 +27,8 @@
     "test:resize": "node scripts/test-resize.mjs",
     "test:resize:maps": "node scripts/test-resize-maps.mjs",
     "test:runway-mode": "node scripts/test-runway-mode.mjs",
-    "test:runway-ends": "node scripts/test-runway-ends.mjs"
+    "test:runway-ends": "node scripts/test-runway-ends.mjs",
+    "test:mobile-boot": "node scripts/test-mobile-boot.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",

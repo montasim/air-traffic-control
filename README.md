@@ -147,7 +147,7 @@ npm run preview
 
 The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to any store.
 
-For browser regression checks, start `npm run dev -- --port 4287` in one terminal. In another, run `npm run test:resize`, `npm run test:resize:maps`, or `npm run test:runway-ends`. Use `RESIZE_TEST_URL=http://localhost:4287/ npm run test:runway-mode` for the runway-option checks. These scripts use Playwright: provide Chrome through `CHROME_PATH`, use `/usr/bin/google-chrome`, or install its bundled browser with `npx playwright install chromium`. Desktop smoke-test prerequisites are in the [Linux release guide](docs/linux-release.md#verify).
+For browser regression checks, start `npm run dev -- --port 4287` in one terminal. In another, run `npm run test:resize`, `npm run test:resize:maps`, or `npm run test:runway-ends`. Use `RESIZE_TEST_URL=http://localhost:4287/ npm run test:runway-mode` for the runway-option checks. `npm run test:mobile-boot` boots an emulated iPhone on three airfields and fails if canvas and texture memory passes its budget at startup or when the airfield list opens; set `MOBILE_TEST_URL` to point it at another server. These scripts use Playwright: provide Chrome through `CHROME_PATH`, use `/usr/bin/google-chrome`, or install its bundled browser with `npx playwright install chromium`. Desktop smoke-test prerequisites are in the [Linux release guide](docs/linux-release.md#verify).
 
 ## Native and desktop builds
 
