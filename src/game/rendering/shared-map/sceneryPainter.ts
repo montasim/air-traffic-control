@@ -116,3 +116,66 @@ export function paintSwellBands(
     graphics.fillPath();
   }
 }
+
+let waveSerial = 0;
+
+/** One seamless tile of soft wave crests: short pale arcs, wrapped across the edges so it repeats invisibly. */
+function waveTile(scene: Phaser.Scene, size: number, crests: number, seed: number): string {
+  const key = `wave-tile-${(waveSerial += 1)}`;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext("2d")!;
+  context.lineCap = "round";
+  for (let i = 0; i < crests; i += 1) {
+    const noise = (salt: number) => {
+      const value = Math.sin((i + 1) * 12.9898 + (seed + salt) * 78.233) * 43758.5453;
+      return value - Math.floor(value);
+    };
+    const [x, y] = [noise(1) * size, noise(2) * size];
+    const span = size * (0.08 + noise(3) * 0.12);
+    context.strokeStyle = `rgba(232,246,248,${0.35 + noise(4) * 0.45})`;
+    context.lineWidth = 1.2 + noise(5) * 1.6;
+    for (const dx of [-size, 0, size]) for (const dy of [-size, 0, size]) {
+      context.beginPath();
+      // Crests run across the tile's x axis, the direction the waves travel.
+      context.moveTo(x + dx, y + dy - span / 2);
+      context.quadraticCurveTo(x + dx + span * 0.18, y + dy, x + dx, y + dy + span / 2);
+      context.stroke();
+    }
+  }
+  scene.textures.addCanvas(key, canvas);
+  return key;
+}
+
+/**
+ * Wave crests that drift slowly across open water along `angle`, in two layers at different scales
+ * and speeds so the sea seems to move. Drawn between the painted ground and the scenery, so ships
+ * and wakes ride on top; held still when the player prefers reduced motion.
+ */
+export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: number; readonly height: number }, angle: number, depth = -20.5): void {
+  if (typeof document === "undefined" || !scene.textures || !scene.add?.tileSprite) return;
+  const reach = Math.hypot(bounds.width, bounds.height);
+  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const layers = [
+    { size: 240, crests: 18, seed: 3, alpha: 0.34, speed: 9, scale: 1 },
+    { size: 320, crests: 10, seed: 7, alpha: 0.22, speed: 4.5, scale: 1.7 },
+  ].map((layer) => {
+    const key = waveTile(scene, layer.size, layer.crests, layer.seed);
+    const sprite = scene.add.tileSprite(bounds.width / 2, bounds.height / 2, reach / layer.scale, reach / layer.scale, key)
+      .setScale(layer.scale).setRotation(angle).setAlpha(layer.alpha).setDepth(depth);
+    sprite.once("destroy", () => scene.textures.remove(key));
+    return { sprite, layer };
+  });
+  if (still) return;
+  let clock = 0;
+  const step = (_time: number, delta: number) => {
+    clock += delta / 1000;
+    for (const [index, { sprite, layer }] of layers.entries()) {
+      sprite.tilePositionX = -clock * layer.speed;
+      // A slow rise and fall in strength, out of step between the layers, like passing swells.
+      sprite.setAlpha(layer.alpha * (0.75 + 0.25 * Math.sin(clock * 0.6 + index * 2)));
+    }
+  };
+  scene.events.on("update", step);
+  scene.events.once("shutdown", () => scene.events.off("update", step));
+}

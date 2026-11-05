@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addMovingWaves,
   clearOfAirfield,
   composeStaticMap,
   paintAirfieldGround,
@@ -110,6 +111,8 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
     },
     detail: ({ graphics, unit }) => paintCarrierIsland(graphics, layout.carrier, unit),
   });
+  // Wave crests drifting across the swell bands, so the open sea moves.
+  addMovingWaves(scene, layout, layout.carrier.angle + 0.5 + Math.PI / 2);
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
   paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
 }
