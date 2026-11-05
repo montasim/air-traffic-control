@@ -13,11 +13,12 @@ import {
   paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
-  paintBuilding,
+  paintRaisedBuilding,
+  paintShadedTree,
+  paintSurfaceTexture,
   paintFieldPolygon,
   paintHelipad,
   paintRunway,
-  paintTree,
   paintWaterPolygon,
   strokePolyline,
   type CivilMapPalette
@@ -69,7 +70,7 @@ function paintSaltmarshGateway(
 
   for (let index = 0; index < Math.min(budget.trees, layout.treeBelt.length); index += 1) {
     const tree = layout.treeBelt[index];
-    if (clearOfAirfield(layout, tree.center, tree.radius)) paintTree(graphics, tree.center, tree.radius, palette, index);
+    if (clearOfAirfield(layout, tree.center, tree.radius)) paintShadedTree(graphics, tree.center, tree.radius, palette, index);
   }
 
  }
@@ -85,7 +86,8 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
   paintHelipad(graphics, layout.helipad, palette);
 
 
-  for (const building of layout.buildings) paintBuilding(graphics, building, palette, layout.runways);
+  const unit = Math.min(layout.width, layout.height);
+  for (const building of layout.buildings) paintRaisedBuilding(graphics, building, palette, unit, layout.runways);
 }
 
 export function renderSaltmarshGateway(
@@ -98,4 +100,5 @@ export function renderSaltmarshGateway(
     operational: ({graphics}) => paintGatewayAirport(graphics, layout, detailLevel),
     detail: () => {}
   }, {materialTextureKey: 'terrain:arcade:meadow'});
+  paintSurfaceTexture(scene, layout);
 }

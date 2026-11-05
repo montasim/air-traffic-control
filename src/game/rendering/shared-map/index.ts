@@ -4,4 +4,5 @@ export * from './carrierPainter';
 export * from './composer';
 export * from './geometry';
 export * from './sceneryPainter';
+export * from './surfaceTexture';
 export * from './types';
