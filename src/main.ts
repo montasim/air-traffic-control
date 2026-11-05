@@ -504,6 +504,7 @@ function renderMapOptions(): void {
     );
     const preview = previews.get(definition.id);
     if (preview) button.style.setProperty("--map-preview", `url("${preview}")`);
+    button.style.setProperty("--map-preview-position", `var(--map-focus-${definition.id}, center)`);
     if (selected) button.classList.add("is-selected");
     if (!unlocked) button.classList.add("is-locked");
     const title = document.createElement("strong");
@@ -960,6 +961,9 @@ window.addEventListener("resize", () => {
     if (!elements.startPanel.hidden && utilityScreen.hidden) {
       rebuildForTarget(profileForViewport(), activeMapId, false);
     }
+    // A new window size can change the layout a new shift gets, so redraw the pictures to match.
+    const { world, detailLevel } = previewWorld();
+    if (`${world.width}x${world.height}:${detailLevel}` !== previewKey) refreshPreviews();
     updateResizeNotice();
   }, 160);
 });
@@ -996,6 +1000,7 @@ function renderFieldDetail(): void {
   const previewUrl = previews.get(activeMapId);
   if (previewUrl) preview.src = previewUrl;
   else preview.removeAttribute('src');
+  preview.style.objectPosition = `var(--map-focus-${activeMapId}, center)`;
   const unlocked = isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
   document.querySelector("#field-title")!.textContent =
     definition.metadata.name;
@@ -1177,11 +1182,20 @@ if (isUtilityName(initialUtility)) {
   openUtility(initialUtility);
 }
 let disposePreviews = () => {};
+/** The world a new shift would get on this window; previews are drawn at it so they match play. */
+function previewWorld(): { world: { width: number; height: number }; detailLevel: ViewportProfile["detailLevel"] } {
+  return { world: worldSizeForViewport(window.innerWidth, window.innerHeight), detailLevel: profileForViewport().detailLevel };
+}
+let previewKey = "";
 /** Redraws every airfield picture with the current night and runway-end settings; old pictures stay until replaced. */
 function refreshPreviews(): void {
   disposePreviews();
-  disposePreviews = createMapPreviews((id, url) => {
+  const { world, detailLevel } = previewWorld();
+  previewKey = `${world.width}x${world.height}:${detailLevel}`;
+  disposePreviews = createMapPreviews((id, url, focus) => {
     previews.set(id, url);
+    // Every picture of this airfield crops around the airfield itself, whatever its box shape.
+    document.documentElement.style.setProperty(`--map-focus-${id}`, `${(focus.x * 100).toFixed(1)}% ${(focus.y * 100).toFixed(1)}%`);
     if (id === activeMapId) document.querySelector<HTMLImageElement>("#home-map-preview")!.src = url;
     const careerImage = document.querySelector<HTMLImageElement>(`[data-career-map="${id}"]`);
     if (careerImage) careerImage.src = url;
@@ -1189,7 +1203,7 @@ function refreshPreviews(): void {
       `[data-map-id="${id}"]`,
     );
     card?.style.setProperty("--map-preview", `url("${url}")`);
-  }, { night: currentSave.settings.night, twoEndLanding: currentSave.settings.twoEndLanding, first: activeMapId });
+  }, { night: currentSave.settings.night, twoEndLanding: currentSave.settings.twoEndLanding, world, detailLevel, first: activeMapId });
 }
 refreshPreviews();
 window.addEventListener("pagehide", () => disposePreviews(), { once: true });

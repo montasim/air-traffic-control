@@ -363,7 +363,7 @@ h3 {
   background: var(--preview, #77935a);
   background-image: var(--map-preview);
   background-size: cover;
-  background-position: center;
+  background-position: var(--map-preview-position, center);
   margin-bottom: 10px;
 }
 .map-option strong,

@@ -132,6 +132,7 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
     const image = node('img', '');
     image.alt = '';
     image.dataset.careerMap = map.id;
+    image.style.objectPosition = `var(--map-focus-${map.id}, center)`;
     const preview = previews.get(map.id);
     if (preview) image.src = preview;
     picture.append(image);
