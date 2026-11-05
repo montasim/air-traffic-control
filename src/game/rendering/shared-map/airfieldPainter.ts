@@ -1,6 +1,6 @@
 import { AIRCRAFT_COLORS } from "../../palette";
 import type Phaser from "phaser";
-import type { Vector2 } from "../../../core/types";
+import type { LandingZone, Vector2 } from "../../../core/types";
 import type {
   MapHelipad,
   MapRunway,
@@ -160,6 +160,117 @@ export function paintRunway(
     graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
   }
 
+}
+
+/**
+ * A runway marked like a real one: a pale paved shoulder, a worn darker centre lane, edge lines,
+ * darker blast pads, the class-coloured threshold bar players match, a few white
+ * "piano key" threshold stripes, a centreline that breaks for the arrows ahead of each
+ * landing end showing which way aircraft land.
+ */
+export function paintMarkedRunway(
+  graphics: Phaser.GameObjects.Graphics,
+  runway: MapRunway,
+  palette: CivilMapPalette,
+  landingZones: readonly LandingZone[]
+): void {
+  const halfLength = runway.length / 2;
+  const halfWidth = runway.width / 2;
+  const box = (fromAlong: number, toAlong: number, fromAcross: number, toAcross: number, color: number, alpha = 1) => {
+    graphics.fillStyle(color, alpha);
+    tracePolygon(graphics, [
+      localRunwayPoint(runway, fromAlong, fromAcross),
+      localRunwayPoint(runway, toAlong, fromAcross),
+      localRunwayPoint(runway, toAlong, toAcross),
+      localRunwayPoint(runway, fromAlong, toAcross)
+    ]);
+    graphics.fillPath();
+  };
+  const line = (fromAlong: number, fromAcross: number, toAlong: number, toAcross: number) => {
+    const a = localRunwayPoint(runway, fromAlong, fromAcross);
+    const b = localRunwayPoint(runway, toAlong, toAcross);
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  };
+  const w = runway.width;
+  const pad = Math.min(18, runway.length * 0.04);
+  const shoulder = Math.max(2, w * 0.08);
+  // Pale paved shoulder instead of a dark outline, then the runway asphalt.
+  box(-halfLength - shoulder, halfLength + shoulder, -halfWidth - shoulder, halfWidth + shoulder, mixColor(palette.asphalt, palette.apron, 0.55));
+  box(-halfLength, halfLength, -halfWidth, halfWidth, palette.asphalt);
+  // Tyres wear the middle lane a little darker than the edges.
+  box(-halfLength + pad, halfLength - pad, -w * 0.2, w * 0.2, mixColor(palette.asphalt, palette.shadow, 0.5), 0.14);
+  // Continuous white edge lines along the usable length.
+  const edge = Math.max(1, w * 0.03);
+  const inset = w * 0.06;
+  box(-halfLength + pad, halfLength - pad, -halfWidth + inset, -halfWidth + inset + edge, palette.marking, 0.6);
+  box(-halfLength + pad, halfLength - pad, halfWidth - inset - edge, halfWidth - inset, palette.marking, 0.6);
+  const keyLength = Math.min(20, runway.length * 0.04);
+  for (const end of [-1, 1] as const) {
+    // Along-runway position measured inward from this end.
+    const at = (fromEnd: number) => end * (halfLength - fromEnd);
+    // Blast pad: plain darker surface; chevrons here crowded the end with a third colour.
+    box(Math.min(at(0), at(pad)), Math.max(at(0), at(pad)), -halfWidth, halfWidth, mixColor(palette.asphalt, palette.shadow, 0.3));
+    // The class-coloured threshold bar stays the main landing cue.
+    graphics.lineStyle(Math.max(4, w * 0.15), AIRCRAFT_COLORS[runway.accepts], 1);
+    line(at(pad + w * 0.075), -halfWidth + inset, at(pad + w * 0.075), halfWidth - inset);
+    // Piano keys: a few short, slightly worn stripes either side of the centreline. No aiming-point
+    // blocks: they clashed with the landing arrows and made the runway noisy.
+    const keys = Math.max(2, Math.round(w / 24));
+    const keyWidth = (halfWidth - inset * 2) / (keys * 2);
+    const keyStart = pad + w * 0.25;
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < keys; k += 1) {
+        const from = side * (w * 0.1 + k * keyWidth * 2);
+        box(at(keyStart), at(keyStart + keyLength), from, from + side * keyWidth, palette.marking, 0.7);
+      }
+    }
+  }
+  // White centreline dashes between the piano keys at each end, with a gap where the landing
+  // arrows sit so the arrows read on their own.
+  const usable = runway.length - (pad + w * 0.25 + keyLength + 14) * 2;
+  const count = Math.max(3, Math.floor(usable / 44));
+  const spacing = usable / count;
+  const axis = { x: Math.cos(runway.angle), y: Math.sin(runway.angle) };
+  const arrowAlong = landingZones
+    .filter((zone) => zone.approach?.runwayId === runway.id)
+    .flatMap((zone) => [0.1, 0.16].map((step) => {
+      const tip = { x: zone.position.x + Math.cos(zone.angle) * runway.length * step, y: zone.position.y + Math.sin(zone.angle) * runway.length * step };
+      return (tip.x - runway.center.x) * axis.x + (tip.y - runway.center.y) * axis.y;
+    }));
+  const arrowSize = Math.min(halfWidth * 0.55, 9);
+  graphics.lineStyle(Math.max(1.5, w * 0.05), palette.marking, 0.7);
+  for (let index = 0; index < count; index += 1) {
+    const center = -usable / 2 + spacing * (index + 0.5);
+    if (arrowAlong.some((along) => Math.abs(along - center) < spacing * 0.22 + arrowSize * 1.6)) continue;
+    const a = localRunwayPoint(runway, center - spacing * 0.22);
+    const b = localRunwayPoint(runway, center + spacing * 0.22);
+    graphics.lineBetween(a.x, a.y, b.x, b.y);
+  }
+  // The class letter sign beside the runway, as on every other map.
+  const sign = localRunwayPoint(runway, -halfLength + 34, halfWidth + 23);
+  graphics.fillStyle(palette.marking, 1);
+  graphics.fillRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+  graphics.lineStyle(3, 0x294b46, 1);
+  graphics.strokeRoundedRect(sign.x - 13, sign.y - 13, 26, 26, 6);
+  graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x - 4, sign.y + 6);
+  graphics.lineBetween(sign.x - 4, sign.y + 6, sign.x + 5, sign.y + 6);
+  if (runway.accepts === "commuter") graphics.lineBetween(sign.x - 4, sign.y - 6, sign.x + 5, sign.y - 6);
+  // Landing-direction arrows just past each landing threshold.
+  graphics.fillStyle(palette.marking, 0.85);
+  for (const zone of landingZones) {
+    if (zone.approach?.runwayId !== runway.id) continue;
+    const forward = { x: Math.cos(zone.angle), y: Math.sin(zone.angle) };
+    const side = { x: -forward.y, y: forward.x };
+    const size = Math.min(halfWidth * 0.55, 9);
+    for (const step of [0.1, 0.16]) {
+      const tip = { x: zone.position.x + forward.x * runway.length * step, y: zone.position.y + forward.y * runway.length * step };
+      graphics.fillTriangle(
+        tip.x + forward.x * size, tip.y + forward.y * size,
+        tip.x - forward.x * size + side.x * size * 0.7, tip.y - forward.y * size + side.y * size * 0.7,
+        tip.x - forward.x * size - side.x * size * 0.7, tip.y - forward.y * size - side.y * size * 0.7
+      );
+    }
+  }
 }
 
 export function paintHelipad(

@@ -12,10 +12,15 @@ export interface SurfaceLayout {
   readonly runways: readonly MapRunway[];
   readonly taxiways: readonly MapTaxiway[];
   readonly apron: readonly Vector2[];
+  /** Further aprons on maps with more than one (Twin Banks' west field). */
+  readonly extraAprons?: readonly (readonly Vector2[])[];
   readonly landingZones: readonly LandingZone[];
   /** Raised buildings and the helipad keep their own finish, so the texture stays off them. */
   readonly buildings?: readonly MapBuilding[];
   readonly helipad?: { readonly center: Vector2; readonly radius: number };
+  readonly helipads?: readonly { readonly center: Vector2; readonly radius: number }[];
+  /** Other things drawn on the apron (containers, shelters), as upright rectangles to keep the texture off. */
+  readonly cutouts?: readonly { readonly center: Vector2; readonly width: number; readonly height: number }[];
 }
 
 let serial = 0;
@@ -48,10 +53,12 @@ function fillWith(context: CanvasRenderingContext2D, tile: HTMLCanvasElement, sc
 function paved(context: CanvasRenderingContext2D, layout: SurfaceLayout, which: "asphalt" | "concrete"): void {
   context.fillStyle = context.strokeStyle = "#000";
   if (which === "concrete") {
-    context.beginPath();
-    layout.apron.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
-    context.closePath();
-    context.fill();
+    for (const apron of [layout.apron, ...(layout.extraAprons ?? [])]) {
+      context.beginPath();
+      apron.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+      context.closePath();
+      context.fill();
+    }
     return;
   }
   for (const runway of layout.runways) {
@@ -100,12 +107,16 @@ function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: Can
  * and below aircraft and the night layer: fine grain and touchdown rubber on runways and
  * taxiways, and grain with slab joints on the apron.
  */
-export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, depth = -19.85): Phaser.GameObjects.Image | undefined {
+/** `raisedBuildings`: the map draws buildings with paintRaisedBuilding, so cut-outs follow the lifted roof too. */
+export function paintSurfaceTexture(
+  scene: Phaser.Scene,
+  layout: SurfaceLayout,
+  { depth = -19.85, raisedBuildings = false }: { readonly depth?: number; readonly raisedBuildings?: boolean } = {},
+): Phaser.GameObjects.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
   const { width, height } = layout;
   const unit = Math.min(width, height);
   const scale = renderScaleOf(scene);
-  const angle = layout.runways[0]?.angle ?? 0;
   const grain = noiseTile(96, 0.07);
 
   const asphalt = surfaceLayer(layout, scale, (context) => {
@@ -133,21 +144,32 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
 
   const concrete = surfaceLayer(layout, scale, (context) => {
     fillWith(context, grain, 1, width, height);
-    // Slab joints in a grid square to the runways.
-    context.save();
-    context.translate(width / 2, height / 2);
-    context.rotate(angle);
-    context.strokeStyle = "rgba(40,48,48,0.16)";
-    context.lineWidth = Math.max(1, unit * 0.0015);
+    // Slab joints in a grid square to each apron's longest edge, so the joints follow the slab's own
+    // outline even where it is not square to the runways (Freight Junction, Twin Banks' west field).
     const slab = unit * 0.035;
     const reach = Math.hypot(width, height);
-    context.beginPath();
-    for (let v = -reach; v < reach; v += slab) {
-      context.moveTo(v, -reach); context.lineTo(v, reach);
-      context.moveTo(-reach, v); context.lineTo(reach, v);
+    for (const apron of [layout.apron, ...(layout.extraAprons ?? [])]) {
+      const middle = apron.reduce((sum, p) => ({ x: sum.x + p.x / apron.length, y: sum.y + p.y / apron.length }), { x: 0, y: 0 });
+      const edges = apron.map((point, index) => ({ from: point, to: apron[(index + 1) % apron.length] }));
+      const longest = edges.reduce((best, edge) =>
+        Math.hypot(edge.to.x - edge.from.x, edge.to.y - edge.from.y) > Math.hypot(best.to.x - best.from.x, best.to.y - best.from.y) ? edge : best);
+      context.save();
+      context.beginPath();
+      apron.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+      context.closePath();
+      context.clip();
+      context.translate(middle.x, middle.y);
+      context.rotate(Math.atan2(longest.to.y - longest.from.y, longest.to.x - longest.from.x));
+      context.strokeStyle = "rgba(40,48,48,0.16)";
+      context.lineWidth = Math.max(1, unit * 0.0015);
+      context.beginPath();
+      for (let v = -reach; v < reach; v += slab) {
+        context.moveTo(v, -reach); context.lineTo(v, reach);
+        context.moveTo(-reach, v); context.lineTo(reach, v);
+      }
+      context.stroke();
+      context.restore();
     }
-    context.stroke();
-    context.restore();
   }, (context) => paved(context, layout, "concrete"), "inside");
   const concreteContext = concrete.getContext("2d")!;
   concreteContext.globalCompositeOperation = "destination-out";
@@ -155,8 +177,8 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
   for (const building of layout.buildings ?? []) {
     // The footprint plus the roof lifted above it, as paintRaisedBuilding draws them.
     const centre = buildingCenterClearOfRunways(building.center, building.width, building.height, layout.runways);
-    const lift = unit * (building.kind === "hangar" ? 0.02 : building.kind === "terminal" ? 0.016 : 0.012) * 0.55;
-    for (const shift of [0, lift / 2, lift]) {
+    const lift = raisedBuildings ? unit * (building.kind === "hangar" ? 0.02 : building.kind === "terminal" ? 0.016 : 0.012) * 0.55 : 0;
+    for (const shift of lift ? [0, lift / 2, lift] : [0]) {
       concreteContext.beginPath();
       rotatedRectangle({ x: centre.x, y: centre.y - shift }, building.width + 2, building.height + 2, building.angle)
         .forEach((point, index) => (index ? concreteContext.lineTo(point.x, point.y) : concreteContext.moveTo(point.x, point.y)));
@@ -164,9 +186,10 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
       concreteContext.fill();
     }
   }
-  if (layout.helipad) {
+  for (const cutout of layout.cutouts ?? []) concreteContext.fillRect(cutout.center.x - cutout.width / 2 - 1, cutout.center.y - cutout.height / 2 - 1, cutout.width + 2, cutout.height + 2);
+  for (const helipad of [...(layout.helipad ? [layout.helipad] : []), ...(layout.helipads ?? [])]) {
     concreteContext.beginPath();
-    concreteContext.arc(layout.helipad.center.x, layout.helipad.center.y, layout.helipad.radius, 0, Math.PI * 2);
+    concreteContext.arc(helipad.center.x, helipad.center.y, helipad.radius, 0, Math.PI * 2);
     concreteContext.fill();
   }
 

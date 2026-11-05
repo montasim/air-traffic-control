@@ -18,12 +18,13 @@ import {
   paintSurfaceTexture,
   paintGroundTexture,
   paintHelipad,
+  paintMarkedRunway,
   strokePolyline,
   type CivilMapPalette
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import type { SaltmarshGatewayLayout } from './layout';
-import { paintControlTower, paintForests, paintHedgerows, paintMarkedRunway, paintShoredPool } from './scenery';
+import { paintControlTower, paintForests, paintHedgerows, paintShoredPool } from './scenery';
 
 /** Brighter, warmer greens with clear field contrast, blue water and plain grey asphalt. */
 export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
@@ -106,5 +107,5 @@ export function renderSaltmarshGateway(
     operational: ({graphics}) => paintGatewayAirport(graphics, layout, detailLevel),
     detail: () => {}
   });
-  paintSurfaceTexture(scene, layout);
+  paintSurfaceTexture(scene, layout, { raisedBuildings: true });
 }
