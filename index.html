@@ -72,8 +72,9 @@
         background: #48675c; overflow: hidden; }
       #boot-screen .boot-track::after { content: ""; display: block; width: 40%; height: 100%;
         border-radius: inherit; background: #ebaa44; animation: boot-taxi 1.6s ease-in-out infinite alternate; }
-      #boot-screen a { color: #254039; background: #ebaa44; padding: 10px 24px;
+      #boot-screen a { display: inline-flex; align-items: center; gap: 8px; color: #254039; background: #ebaa44; padding: 10px 24px;
         border-radius: 12px; font-weight: 700; text-decoration: none; }
+      #boot-screen a svg { width: 18px; height: 18px; flex: none; }
       #boot-screen .boot-credit { position: absolute; left: 0; right: 0; bottom: max(24px, env(safe-area-inset-bottom));
         max-width: none; color: #a9bfb1; font-size: 14px; letter-spacing: 0.02em; opacity: 0; transition: opacity 420ms ease 120ms; }
       #boot-screen.is-revealed .boot-credit { opacity: 1; }
@@ -112,7 +113,15 @@
           <div class="boot-status">
             <p id="boot-message">Preparing your airfield…</p>
             <div class="boot-track" aria-hidden="true"></div>
-            <a id="boot-retry" href="" hidden>Try again</a>
+            <a id="boot-retry" href="" hidden>
+              <!-- The Hugeicons reload icon the in-game restart button uses, inline so it shows even when scripts fail. -->
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M16.5 7.99976H18C19.4142 7.99976 20.1213 7.99976 20.5607 7.56042C21 7.12108 21 6.41397 21 4.99976V3.49976"/>
+                <path d="M3 11.9998C3 7.02919 7.0293 2.99976 12 2.99976C15.571 2.99976 18.0948 4.73029 20 7.08347M21 11.9998C21 16.9703 16.9707 20.9998 12 20.9998C8.42904 20.9998 5.90524 19.2692 4 16.916"/>
+                <path d="M7.5 15.9998H6C4.58579 15.9998 3.87868 15.9998 3.43934 16.4391C3 16.8784 3 17.5855 3 18.9998V20.4998"/>
+              </svg>
+              Try again
+            </a>
             <noscript><p>Enable JavaScript to play Air Traffic Control.</p></noscript>
           </div>
         </div>
