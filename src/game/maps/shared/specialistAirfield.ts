@@ -8,7 +8,7 @@ import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
 import { createAirfieldGuidanceSurfaces } from './guidance';
 import { pointInPolygon } from './apronLayout';
-import { addRadarStation, addWindFarm, paintCityDistrict, paintCoast, paintGolfCourse, paintHills, paintPerimeter, paintQuarry } from './specialistScenery';
+import { addRadarStation, addWindFarm, paintCoast, paintGolfCourse, paintHills, paintOrchard, paintPerimeter, paintQuarry, paintSolarFarm } from './specialistScenery';
 
 export type SpecialistKind = 'military' | 'business' | 'passenger' | 'cargo' | 'rescue';
 /** Authored coordinates are fractions of viewport; runway lengths use the shorter side. */
@@ -120,7 +120,9 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
         const wind = addWindFarm(scene, g, layout, (point, radius) => avoid(point, radius) || quarry(point, radius));
         signature = (point, radius) => quarry(point, radius) || wind(point, radius);
       } else if (kind === 'passenger') {
-        signature = paintCityDistrict(g, layout, palette, avoid);
+        const solar = paintSolarFarm(g, layout, palette, avoid);
+        const orchard = paintOrchard(g, layout, palette, (point, radius) => avoid(point, radius) || solar(point, radius));
+        signature = (point, radius) => solar(point, radius) || orchard(point, radius);
       } else if (kind === 'business') {
         const sea = paintCoast(g, layout);
         const inSea = (point: Vector2, radius: number) => !!sea && (pointInPolygon(point, sea) || sea.some((p) => Math.hypot(p.x - point.x, p.y - point.y) < radius + u * .03));

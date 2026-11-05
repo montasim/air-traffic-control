@@ -487,6 +487,13 @@ function mapBest(mapId: MapId): number {
   return Math.max(scores.portrait, scores.landscape);
 }
 
+/** Fills the airfield chooser for the selected difficulty: its switch, status line and cards. */
+function showAirfieldDifficulty(): void {
+  document.querySelectorAll<HTMLInputElement>('input[name="airfield-difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
+  renderMapOptions();
+  document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`;
+}
+
 function renderMapOptions(): void {
   const buttons = MAP_DEFINITIONS.filter(map => categoryFilter === 'all' || map.metadata.category === categoryFilter).map((definition) => {
     const unlocked = isMapUnlocked(
@@ -864,11 +871,13 @@ function setLocalVolume(volume: number): void {
   }, 140);
 }
 
-document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => input.addEventListener('change', async () => {
+document.querySelectorAll<HTMLInputElement>('input[name="difficulty"], input[name="airfield-difficulty"]').forEach(input => input.addEventListener('change', async () => {
   if (!input.checked || !isDifficulty(input.value)) return;
   currentSave = await gameStore.selectDifficulty(input.value);
   activeDifficulty = currentSave.selectedDifficulty;
   renderShell();
+  // On the airfield chooser, its cards and status follow the new difficulty at once.
+  if (!document.querySelector<HTMLElement>('#airfields-content')!.hidden) showAirfieldDifficulty();
 }));
 landingModeInput.addEventListener('change', async () => {
   if (savingLandingMode || elements.startPanel.hidden || !utilityScreen.hidden) return;
@@ -1162,7 +1171,7 @@ function openUtility(screen: string, pushHistory = true): void {
   const title = document.querySelector<HTMLElement>("#utility-title")!;
   title.textContent = { help: "How to play", career: "Your career", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
   if (screen === "career") renderCareerDetail();
-  if (screen === 'airfields') { renderMapOptions(); document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`; }
+  if (screen === 'airfields') showAirfieldDifficulty();
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
   utilityScreen.hidden = false;

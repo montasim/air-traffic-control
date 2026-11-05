@@ -17,7 +17,7 @@ import type { SpecialistLayout } from './specialistAirfield';
 
 /**
  * The signature landscape of each specialist field, so no two of them look alike: an open-pit
- * quarry and a wind farm, a city district with its stadium, a coastal headland with a marina and
+ * quarry and a wind farm, a solar farm and an orchard, a coastal headland with a marina and
  * golf course, and wooded hills around a fenced military base. Everything keeps clear of the
  * runways, aprons and pads.
  */
@@ -173,79 +173,68 @@ export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: Spe
   return (point, r) => turbines.some((at) => Math.hypot(at.x - point.x, at.y - point.y) < blade * 1.2 + r);
 }
 
-// ─── Metro International: the city and its stadium ──────────────────────────────────────────
-
-const ROOFS = [0xb7b2a6, 0xa98f7a, 0x9aa3a6, 0xc4bba8, 0x8f8a82, 0xb59b80, 0xd0c8b8];
+// ─── Metro International: a solar farm and an orchard ──────────────────────────────────────
 
 /**
- * A city district on the largest open ground clear of the airfield and the on-screen panels: a grid
- * of blocks between streets, filled with buildings of mixed sizes and roofs, a stadium at its heart
- * with a few taller towers around it, and street trees.
+ * A solar farm on the largest open ground: rows of dark panels catching the light, a gravel track
+ * through the middle, inverter sheds, and a fence around it all. Returns where it lies.
  */
-export function paintCityDistrict(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
+export function paintSolarFarm(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
   const unit = unitOf(layout);
-  const cell = unit * 0.06;
-  const cells: Vector2[] = [];
-  for (let x = cell / 2; x < layout.width; x += cell) for (let y = cell / 2; y < layout.height; y += cell) {
-    const at = { x, y };
-    if (!underPanel(layout, at, cell) && freeAt(layout, at, cell * 0.8) && !avoid(at, cell * 0.6)) cells.push(at);
-  }
-  if (!cells.length) return () => false;
-  const reach = unit * 0.34;
-  // The heart is where the most open blocks lie within reach, so the district fills real space.
-  const around = (at: Vector2) => cells.filter((other) => Math.hypot(other.x - at.x, other.y - at.y) < reach).length;
-  const heart = cells.reduce((best, at) => (around(at) > around(best) ? at : best));
-  const district = cells.filter((at) => Math.hypot(at.x - heart.x, at.y - heart.y) < reach);
-  // Streets: the ground between blocks, then each block's own paving.
-  for (const at of district) fill(graphics, box(at, cell * 1.02, cell * 1.02, 0), 0x6f7468, 0.95);
-  // The stadium takes the blocks at the district's heart.
-  const onStadium = (at: Vector2) => Math.hypot(at.x - heart.x, at.y - heart.y) < cell * 1.2;
-  district.forEach((at, i) => {
-    if (onStadium(at)) return;
-    fill(graphics, box(at, cell * 0.78, cell * 0.78, 0), 0x9a9b8d);
-    const toward = Math.hypot(at.x - heart.x, at.y - heart.y) / reach;
-    const tower = toward < 0.3 && deterministicUnit(i, 841) < 0.6;
-    const parts = tower ? 1 : 2 + Math.floor(deterministicUnit(i, 843) * 3);
-    for (let k = 0; k < parts; k += 1) {
-      const quarter = parts === 1 ? { x: 0, y: 0 } : { x: (k % 2 ? 1 : -1) * cell * 0.18, y: (k < 2 ? -1 : 1) * cell * 0.18 * (parts > 2 ? 1 : 0) };
-      const size = tower ? cell * 0.62 : cell * (0.24 + deterministicUnit(i * 5 + k, 845) * 0.14);
-      const roof = ROOFS[Math.floor(deterministicUnit(i * 5 + k, 847) * ROOFS.length)];
-      const building: MapBuilding = { id: `city-${i}-${k}`, center: { x: at.x + quarter.x, y: at.y + quarter.y }, width: size, height: size * (0.75 + deterministicUnit(i * 5 + k, 849) * 0.4), angle: 0, kind: tower ? 'hangar' : 'operations' };
-      paintRaisedBuilding(graphics, building, { ...palette, building: roof, buildingRoof: mixColor(roof, 0xffffff, 0.35) }, unit * (tower ? 1.8 : 0.9));
+  const [length, depth] = [unit * 0.34, unit * 0.22];
+  const center = openSites(layout, length * 0.6, avoid)[0];
+  if (!center) return () => false;
+  const angle = 0.08;
+  const [c, s2] = [Math.cos(angle), Math.sin(angle)];
+  const at = (along: number, across: number) => ({ x: center.x + c * along - s2 * across, y: center.y + s2 * along + c * across });
+  // Mown grass under the arrays, then the gravel track along the middle.
+  fill(graphics, box(center, length + unit * 0.03, depth + unit * 0.03, angle), 0x9fae84, 0.9);
+  fill(graphics, box(center, length, unit * 0.012, angle), 0xc9c3a8);
+  // Rows of panels in two blocks either side of the track, each row a dark strip with a lit top edge.
+  for (const side of [-1, 1]) for (let row = 0; row < 6; row += 1) {
+    const across = side * (unit * 0.02 + row * unit * 0.016);
+    for (let k = 0; k < 4; k += 1) {
+      const along = -length / 2 + unit * 0.012 + k * (length - unit * 0.024) / 4 + (length - unit * 0.024) / 8;
+      const panel = box(at(along, across), (length - unit * 0.024) / 4 - unit * 0.008, unit * 0.009, angle);
+      fill(graphics, panel.map((p) => ({ x: p.x + unit * 0.0015, y: p.y + unit * 0.002 })), 0x2d3a33, 0.3);
+      fill(graphics, panel, 0x2c4b6e);
+      fill(graphics, box(at(along, across - unit * 0.0028), (length - unit * 0.024) / 4 - unit * 0.008, unit * 0.0022, angle), 0x7ea2c4, 0.85);
     }
-  });
-  paintStadium(graphics, heart, cell, unit);
-  // Street trees along the edge of the district.
-  const crowns = district.filter((_, i) => deterministicUnit(i, 851) < 0.45).map((at, i) => ({ x: at.x + cell * 0.46, y: at.y + (deterministicUnit(i, 853) - 0.5) * cell * 0.6, r: unit * 0.007 }));
-  paintCanopy(graphics, crowns, palette);
-  return (point, radius) => district.some((at) => Math.hypot(at.x - point.x, at.y - point.y) < cell * 0.75 + radius);
+  }
+  // Inverter sheds at one end of the track.
+  for (const side of [-1, 1]) {
+    const shed = at(length / 2 - unit * 0.02, side * unit * 0.012);
+    paintRaisedBuilding(graphics, { id: `solar-${side}`, center: shed, width: unit * 0.016, height: unit * 0.011, angle, kind: 'operations' }, { ...palette, building: 0xb9b6a8, buildingRoof: 0xdedbd0 }, unit * 0.7);
+  }
+  // The perimeter fence.
+  graphics.lineStyle(Math.max(1, unit * 0.0018), 0x5d6658, 0.8);
+  tracePolygon(graphics, box(center, length + unit * 0.03, depth + unit * 0.03, angle));
+  graphics.strokePath();
+  return (point, r) => Math.abs((point.x - center.x) * c + (point.y - center.y) * s2) < length / 2 + unit * 0.03 + r
+    && Math.abs(-(point.x - center.x) * s2 + (point.y - center.y) * c) < depth / 2 + unit * 0.03 + r;
 }
 
-/** A football stadium seen from above: roofed stands around a bowl of seating, the pitch and its markings, and floodlights. */
-function paintStadium(graphics: Graphics, center: Vector2, cell: number, unit: number): void {
-  const [rx, ry] = [cell * 1.15, cell * 0.85];
-  graphics.fillStyle(0x2d3a33, 0.3);
-  graphics.fillEllipse(center.x + unit * 0.012, center.y + unit * 0.016, rx * 2, ry * 2);
-  graphics.fillStyle(0xd8d5ca, 1);
-  graphics.fillEllipse(center.x, center.y, rx * 2, ry * 2);
-  graphics.fillStyle(0xeeebe2, 1);
-  graphics.fillEllipse(center.x - rx * 0.05, center.y - ry * 0.06, rx * 1.86, ry * 1.8);
-  // The seating bowl in club colours, then the pitch.
-  graphics.fillStyle(0x8e5a52, 1);
-  graphics.fillEllipse(center.x, center.y, rx * 1.55, ry * 1.5);
-  const pitch = box(center, rx * 1.05, ry * 0.95, 0);
-  fill(graphics, pitch, 0x5f9a4c);
-  graphics.fillStyle(0x6aa556, 1);
-  for (let k = 0; k < 6; k += 2) graphics.fillRect(center.x - rx * 0.525 + (k * rx * 1.05) / 6, center.y - ry * 0.475, (rx * 1.05) / 6, ry * 0.95);
-  graphics.lineStyle(Math.max(1, unit * 0.0016), 0xf4f1e8, 0.9);
-  tracePolygon(graphics, pitch);
-  graphics.strokePath();
-  graphics.lineBetween(center.x, center.y - ry * 0.475, center.x, center.y + ry * 0.475);
-  graphics.strokeCircle(center.x, center.y, ry * 0.18);
-  for (const side of [-1, 1]) graphics.strokeRect(center.x + side * rx * 0.525 - (side > 0 ? rx * 0.18 : 0), center.y - ry * 0.25, rx * 0.18, ry * 0.5);
-  // Floodlight masts at the four corners.
-  graphics.fillStyle(0x5a5f5c, 1);
-  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) graphics.fillCircle(center.x + a * rx * 0.72, center.y + b * ry * 0.72, unit * 0.004);
+/** An orchard: fruit trees standing in tidy rows on mown grass, on open ground of its own. Returns where it lies. */
+export function paintOrchard(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
+  const unit = unitOf(layout);
+  const [length, depth] = [unit * 0.24, unit * 0.16];
+  const center = openSites(layout, length * 0.6, avoid)[0];
+  if (!center) return () => false;
+  const angle = -0.12;
+  const [c, s2] = [Math.cos(angle), Math.sin(angle)];
+  fill(graphics, raggedOutline(box(center, length, depth, angle), unit * 0.3), 0x9db479, 0.9);
+  const crowns: { x: number; y: number; r: number }[] = [];
+  const spacing = unit * 0.02;
+  for (let along = -length / 2 + spacing; along < length / 2 - spacing * 0.5; along += spacing) {
+    for (let across = -depth / 2 + spacing; across < depth / 2 - spacing * 0.5; across += spacing) {
+      const seed = Math.round((along + length) / spacing) * 37 + Math.round((across + depth) / spacing);
+      if (deterministicUnit(seed, 931) < 0.06) continue;
+      crowns.push({ x: center.x + c * along - s2 * across, y: center.y + s2 * along + c * across, r: unit * (0.0065 + deterministicUnit(seed, 933) * 0.0015) });
+    }
+  }
+  paintCanopy(graphics, crowns, { ...palette, vegetation: 0x5f8a45, vegetationLight: 0x9dc070 });
+  return (point, r) => Math.abs((point.x - center.x) * c + (point.y - center.y) * s2) < length / 2 + unit * 0.02 + r
+    && Math.abs(-(point.x - center.x) * s2 + (point.y - center.y) * c) < depth / 2 + unit * 0.02 + r;
 }
 
 // ─── Executive Point: a coastal headland ────────────────────────────────────────────────────
