@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Support on SupportKori](https://img.shields.io/badge/Support-SupportKori-00B8B5)](https://www.supportkori.com/montasim)
 
-Air Traffic Control is a browser arcade game for short, increasingly busy air-traffic shifts. Guide three aircraft types to matching destinations across nine airfields, unlock new locations through a local career, and collect achievements.
+Air Traffic Control is a browser arcade game for short, increasingly busy air-traffic shifts. Guide three aircraft types to matching destinations across twelve airfields, unlock new locations through a local career, and collect achievements.
 
 **[Play in your browser](https://airtrafficcontrol.netlify.app/) · [How to play](#how-to-play) · [Run locally](#run-locally) · [Report a bug](https://github.com/montasim/air-traffic-control/issues)**
 
@@ -24,7 +24,7 @@ Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasi
 
 ## What you can do
 
-- Draw and revise routes with a mouse, touch, or pen across nine airfields.
+- Draw and revise routes with a mouse, touch, or pen across twelve airfields.
 - Match airliners, commuters, and helicopters to their landing destinations.
 - Choose three difficulty levels and optionally allow landings at either runway end.
 - Learn in a practice flight with no timer or effect on your career.
