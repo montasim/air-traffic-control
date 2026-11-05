@@ -37,7 +37,7 @@
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
   font-family: "Atkinson Hyperlegible", sans-serif;
-  color: #203d39;
+  color: var(--ink);
   background: #7b9860;
   font-synthesis: none;
   --font-display: "Barlow Condensed", sans-serif;
@@ -47,6 +47,15 @@
   --muted: #566656;
   --accent: #ebaa44;
   --line: #d4cfb8;
+  /* The deep green behind the menus, and what sits on it. */
+  --page-dark: #29483e;
+  --text-soft-on-dark: #c9d7bc;
+  --rule-on-dark: #fff5df30;
+  --focus-on-dark: #ffcc72;
+  --ring-on-dark: 3px solid var(--focus-on-dark);
+  /* The resting fill of chips, tags and secondary buttons on paper. */
+  --surface-rest: #e5e6d3;
+  --progress: #327666;
   --cyan: #167b85;
   --coral: #ac4437;
   --radius: 14px;
@@ -102,7 +111,7 @@ button:active:not(:disabled) {
 }
 ::selection {
   background: #efbd61;
-  color: #203d39;
+  color: var(--ink);
 }
 * {
   scrollbar-color: #617b66 #ede5d1;
@@ -224,19 +233,19 @@ h3 {
   font-weight: 700;
   line-height: 0.82;
   letter-spacing: -0.035em;
-  color: #fff5df;
+  color: var(--paper);
   text-shadow: 0 4px 16px #253a3970;
   position: relative;
 }
 #start-title em {
   font-style: normal;
-  color: #ffcc72;
+  color: var(--focus-on-dark);
 }
 .title-route {
   display: block;
   width: 80px;
   height: 6px;
-  background: #fff5df;
+  background: var(--paper);
   margin-top: 24px;
   border-radius: 4px;
 }
@@ -252,7 +261,7 @@ h3 {
   margin: 20px 0;
 }
 .home-tools button {
-  background: #fff5df;
+  background: var(--paper);
   color: var(--ink);
   border: 0;
   min-height: 42px;
@@ -268,9 +277,9 @@ h3 {
 .career-summary {
   display: flex;
   gap: 8px;
-  color: #fff5df;
+  color: var(--paper);
   align-items: baseline;
-  text-shadow: 0 1px 4px #203d39;
+  text-shadow: 0 1px 4px var(--ink);
 }
 .career-summary > span {
   font-size: 0.85rem;
@@ -336,9 +345,9 @@ h3 {
 .map-selection legend {
   font-family: var(--font-display);
   font-size: var(--section-title-size);
-  color: #fff5df;
+  color: var(--paper);
   margin-bottom: 8px;
-  text-shadow: 0 2px 5px #203d39;
+  text-shadow: 0 2px 5px var(--ink);
 }
 .map-options {
   display: flex;
@@ -503,7 +512,7 @@ dialog h2 {
 .shift-context { margin: 8px 0 0; }
 /* 8px between tags in both directions, the same as between a label and its tags. */
 .shift-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
-.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: var(--radius-small); background: #e5e6d3; font-size: 0.8rem; line-height: 1.4; }
+.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: var(--radius-small); background: var(--surface-rest); font-size: 0.8rem; line-height: 1.4; }
 .compact-panel p {
   font-size: 0.95rem;
   margin: 12px 0;
@@ -674,10 +683,10 @@ dialog::backdrop {
 .practice-lessons label { position: relative; flex: 1; cursor: pointer; }
 .practice-lessons label + label > span { border-left: 1px solid #738b78; }
 .practice-lessons input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.practice-lessons label > span { display: flex; align-items: center; justify-content: center; gap: var(--icon-gap); min-height: calc(var(--chip-height) - 2px); color: #c9d7bc; font-size: 0.875rem; font-weight: 600; }
+.practice-lessons label > span { display: flex; align-items: center; justify-content: center; gap: var(--icon-gap); min-height: calc(var(--chip-height) - 2px); color: var(--text-soft-on-dark); font-size: 0.875rem; font-weight: 600; }
 .practice-lessons label:hover input:not(:checked) + span { background: #fff5df14; }
 .practice-lessons input:checked + span { background: var(--paper); color: var(--ink); }
-.practice-lessons:has(input:focus-visible) { outline: 3px solid #ffcc72; outline-offset: 3px; }
+.practice-lessons:has(input:focus-visible) { outline: var(--ring-on-dark); outline-offset: 3px; }
 .practice-lesson h3 { margin: 0; font: 700 1.625rem/1.15 var(--font-display); }
 .practice-lesson p { margin: 4px 0 0; color: #d2ddc7; }
 /* Sized by the window height too, so the buttons below stay on screen; the field is 600×320. */
@@ -1136,7 +1145,7 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 #utility-close { min-height: var(--button-height); margin-top: calc(var(--title-size) * 0.19); padding: 8px 12px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
 /* Lifts the arrow onto the middle of the word rather than the middle of its box. */
 #utility-close .button-icon { transform: translateY(-0.06em); }
-#utility-close:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
+#utility-close:focus-visible { outline: var(--ring-on-dark); outline-offset: 3px; }
 .menu-more-actions button {
   justify-content: flex-start;
   text-align: left;
@@ -1204,13 +1213,13 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .career-overview { display: grid; grid-template-columns: .85fr 1.4fr; gap: 24px; }
 .controller-card, .promotion-card { border-radius: 18px; padding: 24px; }
 .controller-card { background: #173b33; border: 1px solid #688372; text-align: center; position: relative; }
-.controller-badge { width: 94px; height: 94px; margin: 0 auto 20px; display: grid; place-items: center; background: #ebaa44; color: #203d39; border: 6px solid #173b33; outline: 2px solid #ebaa44; border-radius: 50%; }
+.controller-badge { width: 94px; height: 94px; margin: 0 auto 20px; display: grid; place-items: center; background: var(--accent); color: var(--ink); border: 6px solid #173b33; outline: 2px solid var(--accent); border-radius: 50%; }
 .career-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.controller-card .career-eyebrow { color: #c9d7bc; }
+.controller-card .career-eyebrow { color: var(--text-soft-on-dark); }
 .controller-card h3, .promotion-card h3 { font: 700 var(--section-title-size)/1.08 var(--font-display); margin: 8px 0 8px; }
-.clearance-level { color: #c9d7bc; font-size: 0.875rem; }
-.career-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid #fff5df30; }
-.career-totals dt { font-size: 13px; color: #c9d7bc; }
+.clearance-level { color: var(--text-soft-on-dark); font-size: 0.875rem; }
+.career-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid var(--rule-on-dark); }
+.career-totals dt { font-size: 13px; color: var(--text-soft-on-dark); }
 .career-totals dd { margin: 4px 0 0; font: 700 2.5rem/1 var(--font-display); color: #ffcc78; }
 .promotion-card { background: var(--paper); color: var(--ink); box-shadow: 0 5px 0 #142f292e; }
 .promotion-card .career-eyebrow { color: #627258; }
@@ -1233,7 +1242,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .airfield-record-picture img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .airfield-record-picture img:not([src]) { visibility: hidden; }
 .airfield-record.is-locked img { filter: saturate(.35); opacity: .7; }
-.airfield-record-status { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 4px; background: #203d39; color: #fff5df; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
+.airfield-record-status { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 4px; background: var(--ink); color: var(--paper); border-radius: 6px; padding: 4px 8px; font-size: 11px; }
 .airfield-record-detail { padding: 12px; }
 .airfield-record h4 { font: 700 1.4375rem/1.15 var(--font-display); margin: 0 0 12px; }
 .airfield-best { display: flex; align-items: baseline; gap: 8px; }
@@ -1245,8 +1254,8 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .clearance-number { color: #bfccad; font: 700 1.5rem/1 var(--font-display); }
 .clearance-path strong { font: 700 1.125rem/1.15 var(--font-display); }
 .clearance-path small { color: #bdceb9; font-size: 11px; margin-top: auto; }
-.clearance-path .is-current { background: #ebaa44; color: #203d39; border-color: #ebaa44; }
-.clearance-path .is-current :is(small, .clearance-number) { color: #203d39; }
+.clearance-path .is-current { background: var(--accent); color: var(--ink); border-color: var(--accent); }
+.clearance-path .is-current :is(small, .clearance-number) { color: var(--ink); }
 .clearance-path .is-earned { background: #365e49; }
 @media (max-width: 850px) {
   .airfield-records { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1267,7 +1276,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 /* Settings shares the controller record palette, with one focused sound console. */
 .sound-panel { background: var(--paper); color: var(--ink); border-radius: 18px; overflow: hidden; box-shadow: 0 5px 0 #142f2940; }
 .sound-panel-heading { display: flex; align-items: center; gap: 16px; padding: 24px 32px; background: #efe4c7; border-bottom: 1px solid var(--line); }
-.sound-emblem { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px; background: #203d39; color: #ffcc78; }
+.sound-emblem { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px; background: var(--ink); color: #ffcc78; }
 .sound-emblem svg { width: 28px; height: 28px; }
 .settings-eyebrow { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .sound-panel h3 { margin: 0; font: 700 var(--section-title-size)/1.1 var(--font-display); }
@@ -1275,7 +1284,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .sound-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .sound-toggle-row h4 { margin: 0 0 4px; font: 700 1.5rem/1.2 var(--font-display); }
 .sound-toggle-row p { margin: 0; font-size: 0.875rem; color: var(--muted); }
-.sound-panel .audio-toggle { background: #e5e6d3; flex-shrink: 0; font-size: 0.875rem; }
+.sound-panel .audio-toggle { background: var(--surface-rest); flex-shrink: 0; font-size: 0.875rem; }
 .sound-switch { width: 38px; height: 22px; padding: 3px; background: #7b8174; border-radius: 20px; }
 .sound-switch::after { content: ""; display: block; width: 16px; height: 16px; background: var(--paper); border-radius: 50%; }
 .audio-toggle[aria-pressed="true"] .sound-switch { background: #346d51; }
@@ -1285,23 +1294,23 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .sound-volume label span { font-size: 1rem; font-weight: 700; }
 .sound-volume output { font: 700 2rem/1 var(--font-display); font-variant-numeric: tabular-nums; }
 .sound-volume input { display: block; width: 100%; height: 44px; margin: 0; appearance: none; background: transparent; cursor: pointer; }
-.sound-volume input::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(to right, #327666 var(--volume-level, 80%), #dadcc4 var(--volume-level, 80%)); }
+.sound-volume input::-webkit-slider-runnable-track { height: 8px; border-radius: 8px; background: linear-gradient(to right, var(--progress) var(--volume-level, 80%), #dadcc4 var(--volume-level, 80%)); }
 .sound-volume input::-moz-range-track { height: 8px; border-radius: 8px; background: #dadcc4; }
-.sound-volume input::-moz-range-progress { height: 8px; border-radius: 8px; background: #327666; }
-.sound-volume input::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -8px; border: 3px solid #203d39; border-radius: 50%; background: #ebaa44; }
-.sound-volume input::-moz-range-thumb { width: 18px; height: 18px; border: 3px solid #203d39; border-radius: 50%; background: #ebaa44; }
+.sound-volume input::-moz-range-progress { height: 8px; border-radius: 8px; background: var(--progress); }
+.sound-volume input::-webkit-slider-thumb { appearance: none; width: 24px; height: 24px; margin-top: -8px; border: 3px solid var(--ink); border-radius: 50%; background: var(--accent); }
+.sound-volume input::-moz-range-thumb { width: 18px; height: 18px; border: 3px solid var(--ink); border-radius: 50%; background: var(--accent); }
 .volume-scale { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
 .utility-support, .developer-info { margin-top: 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; border-top: 1px solid #819b87; }
 .utility-support h3, .developer-info h3 { margin: 0; font-size: var(--section-title-size); color: var(--paper); }
 .utility-support p, .developer-info p { margin: 8px 0 0; font-size: 0.875rem; line-height: 1.5; color: #d2ddc7; }
 .utility-screen[data-page="settings"] .utility-support { margin-top: 0; }
 #developer-link { flex-shrink: 0; text-decoration: none; }
-#developer-link:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
+#developer-link:focus-visible { outline: var(--ring-on-dark); outline-offset: 4px; }
 /* Utility-page actions sit beside the Back button, so they share its compact scale. */
 .utility-screen .primary-button, .utility-screen .secondary-button { gap: var(--icon-gap); }
 #help-content > .primary-button { width: fit-content; }
 #support-button { flex-shrink: 0; text-decoration: none; }
-#support-button:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
+#support-button:focus-visible { outline: var(--ring-on-dark); outline-offset: 4px; }
 @media (max-width: 500px) {
   .utility-support, .developer-info { align-items: flex-start; flex-direction: column; gap: 16px; }
 }
@@ -1313,14 +1322,15 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .sound-switch { margin-left: auto; }
 }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) { background: #29483e; color: var(--paper); }
+/* Every menu page sits on the deep green. */
+.utility-screen[data-page] { background: var(--page-dark); color: var(--paper); }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) .utility-top { border-color: #fff5df30; }
+.utility-screen[data-page] .utility-top { border-color: var(--rule-on-dark); }
 
 
 /* Illustrated flight briefing uses the same cream panels as the other game pages. */
 #help-content .help-lead { color: var(--paper); }
-#practice-content > .fine-copy { color: #c9d7bc; }
+#practice-content > .fine-copy { color: var(--text-soft-on-dark); }
 .utility-screen #help-content .help-steps li {
   padding: 16px 16px 20px;
   background: var(--paper);
@@ -1331,28 +1341,28 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #help-content .lesson-art { border-radius: 10px; }
 #help-content .help-steps p { margin-bottom: 0; }
 #help-content > .primary-button + p { max-width: 720px; line-height: 1.6; }
-#help-content > .fine-copy { color: #c9d7bc; max-width: 720px; line-height: 1.6; }
+#help-content > .fine-copy { color: var(--text-soft-on-dark); max-width: 720px; line-height: 1.6; }
 
 .difficulty-options { border: 0; padding: 0; margin: 12px 0 0; min-width: 0; }
 .difficulty-options legend { font-size: 13px; margin-bottom: 8px; }
 .difficulty-choices { display: flex; gap: 4px; }
 .difficulty-choices label { position: relative; flex: 1; cursor: pointer; }
 .difficulty-choices input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.difficulty-choices span { display: grid; place-items: center; min-height: 44px; background: #e5e6d3; color: var(--ink); border: 2px solid transparent; border-radius: 8px; font-weight: 700; font-size: 0.875rem; }
-.difficulty-choices input:checked + span { background: #203d39; color: var(--paper); border-color: #ebaa44; }
+.difficulty-choices span { display: grid; place-items: center; min-height: 44px; background: var(--surface-rest); color: var(--ink); border: 2px solid transparent; border-radius: 8px; font-weight: 700; font-size: 0.875rem; }
+.difficulty-choices input:checked + span { background: var(--ink); color: var(--paper); border-color: var(--accent); }
 .difficulty-choices input:focus-visible + span { outline: 3px solid #167b85; outline-offset: 3px; }
 .difficulty-options:disabled { opacity: .5; }
 .career-mode { max-width: 360px; margin: 0 0 20px; }
-.achievement-caption { color: #c9d7bc; font-size: 0.875rem; line-height: 1.5; margin-bottom: 20px; }
+.achievement-caption { color: var(--text-soft-on-dark); font-size: 0.875rem; line-height: 1.5; margin-bottom: 20px; }
 .achievement-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .achievement-card { background: var(--paper); color: var(--ink); border: 2px solid transparent; border-radius: 14px; padding: 20px; }
-.achievement-card.is-earned { border-color: #ebaa44; }
-.achievement-icon { display: inline-flex; padding: 8px; background: #e5e6d3; border-radius: 10px; }
-.is-earned .achievement-icon { background: #ebaa44; }
+.achievement-card.is-earned { border-color: var(--accent); }
+.achievement-icon { display: inline-flex; padding: 8px; background: var(--surface-rest); border-radius: 10px; }
+.is-earned .achievement-icon { background: var(--accent); }
 .achievement-state { display: block; font-size: 11px; margin-top: 12px; text-transform: uppercase; letter-spacing: .06em; }
 .achievement-card h4 { font: 700 1.5625rem/1.2 var(--font-display); margin: 4px 0 8px; }
 .achievement-card p { font-size: 13px; line-height: 1.5; min-height: 60px; }
-.achievement-card progress { width: 100%; height: 8px; accent-color: #327666; }
+.achievement-card progress { width: 100%; height: 8px; accent-color: var(--progress); }
 .achievement-card small { display: block; margin-top: 8px; }
 /* Shift-end celebration: achievement badges, a promotion block, and the new-best pill. */
 .achievement-result { margin: 12px 0; }
@@ -1362,13 +1372,13 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   animation: celebrate-pop 300ms cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: calc(200ms + var(--badge-index, 0) * 90ms); }
 .achievement-badge strong { font-size: 0.95rem; line-height: 1.25; }
 .achievement-badge-copy { grid-column: 2; font-size: 0.8rem; line-height: 1.4; color: #59664f; }
-.achievement-badge-icon { grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #ebaa44; color: #203d39;
+.achievement-badge-icon { grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--ink);
   animation: celebrate-pulse 800ms ease-out both; animation-delay: calc(380ms + var(--badge-index, 0) * 90ms); }
 .career-result.is-promotion { display: grid; grid-template-columns: 44px 1fr; gap: 8px 12px; align-items: center; padding: 12px; border: 0; border-radius: 12px; background: #173b33; color: var(--paper);
   animation: celebrate-pop 360ms cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: var(--celebrate-delay, 0ms); }
-.promotion-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #ebaa44; color: #203d39;
+.promotion-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: var(--ink);
   animation: celebrate-pulse 900ms ease-out both; animation-delay: calc(var(--celebrate-delay, 0ms) + 200ms); }
-.promotion-heading .celebration-eyebrow { margin-bottom: 4px; color: #c9d7bc; }
+.promotion-heading .celebration-eyebrow { margin-bottom: 4px; color: var(--text-soft-on-dark); }
 .promotion-heading strong { display: block; font: 700 1.35rem/1.15 var(--font-display); }
 .promotion-unlocks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .promotion-unlocks li { padding: 4px 8px; border: 1px solid #fff5df40; border-radius: 999px; background: #fff5df14; font-size: max(11px, 0.78rem); }
@@ -1396,8 +1406,8 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #start-button { margin-top: 4px; }
 .achievement-card progress { appearance: none; border: 0; border-radius: 8px; overflow: hidden; background: #dadcc4; }
 .achievement-card progress::-webkit-progress-bar { background: #dadcc4; }
-.achievement-card progress::-webkit-progress-value { background: #327666; border-radius: 8px; }
-.achievement-card progress::-moz-progress-bar { background: #327666; border-radius: 8px; }
+.achievement-card progress::-webkit-progress-value { background: var(--progress); border-radius: 8px; }
+.achievement-card progress::-moz-progress-bar { background: var(--progress); border-radius: 8px; }
 @media (max-height: 500px) and (min-width: 651px) {
   .departure-board { padding: 12px 16px; }
   #field-description { display: none; }
@@ -1407,13 +1417,11 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 }
 /* The full collection lives on its own page; home keeps one clear assignment. */
 body[data-screen="home"] .departure-board { margin-bottom: 0; }
-.utility-screen[data-page="airfields"] { background: #29483e; color: var(--paper); }
 .utility-screen[data-page="airfields"] { --page-width: 1120px; }
-.utility-screen[data-page="airfields"] .utility-top { border-color: #fff5df30; }
-#airfield-selection-status { color: #c9d7bc; font-size: 0.875rem; margin: 12px 0 20px; line-height: 1.5; }
+#airfield-selection-status { color: var(--text-soft-on-dark); font-size: 0.875rem; margin: 12px 0 20px; line-height: 1.5; }
 .category-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; }
 .category-filters button { padding: 8px 12px; min-height: 44px; color: var(--paper); background: #38594c; border: 1px solid #738b78; border-radius: 8px; }
-.category-filters button[aria-pressed="true"] { background: #ebaa44; color: var(--ink); border-color: #ebaa44; }
+.category-filters button[aria-pressed="true"] { background: var(--accent); color: var(--ink); border-color: var(--accent); }
 #airfields-content .map-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; overflow: visible; padding: 4px; }
 #airfields-content .map-option { max-width: none; width: 100%; padding-bottom: 16px; }
 #airfields-content .map-option::before { height: auto; aspect-ratio: 16/9; }
@@ -1425,7 +1433,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 @media(max-width:500px) { #airfields-content .map-options { grid-template-columns:1fr; } }
 
 /* Start screen: choose an airfield, set the challenge, then take control. */
-#start-panel.intro-panel { background: #29483e; overflow-y: auto; pointer-events: auto; scroll-padding: 24px; scrollbar-color: #819b87 #29483e; }
+#start-panel.intro-panel { background: var(--page-dark); overflow-y: auto; pointer-events: auto; scroll-padding: 24px; scrollbar-color: #819b87 var(--page-dark); }
 #start-panel .intro-content { position: relative; width: min(100%, 1080px); min-height: 100%; height: auto; margin: 0 auto; padding: 48px 40px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 24px; }
 /* The menu sits on the tagline's line; flex-end is the fallback where last-baseline is unsupported. */
 #start-panel .home-header { display: flex; align-items: flex-end; align-items: last baseline; justify-content: space-between; gap: 24px; }
@@ -1436,7 +1444,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 -8px -8px 0; flex-shrink: 0; }
 #start-panel .home-tools button { min-height: 44px; padding: 8px; background: transparent; color: var(--paper); font-size: 1rem; font-weight: 600; border: 1px solid transparent; }
 #start-panel .home-tools button:hover { background: #38594c; }
-#start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
+#start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: var(--ring-on-dark); outline-offset: 3px; }
 #start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 32px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
 #start-panel .home-airfield { min-width: 0; }
 #start-panel .home-preview { margin: 0; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
@@ -1570,7 +1578,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Reserve the same footprint for Pause and first-run guidance. */
 :root { --pause-size: 50px; --pause-right: max(18px, var(--safe-right)); }
 #dismiss-route-coach { flex: 0 0 44px; min-height: 44px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--ink); pointer-events: auto; }
-#dismiss-route-coach:hover { background: #e5e6d3; }
+#dismiss-route-coach:hover { background: var(--surface-rest); }
 
 /* Result details scroll; actions always retain their own space. */
 #gameover-panel { width: min(480px, calc(100% - 32px)); padding: 0; overflow: hidden; }
@@ -1626,7 +1634,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .difficulty-choices input:focus-visible + span { outline: 0; }
 #start-panel .difficulty-choices:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 3px; }
 /* One palette for every choice on the card: dark ink with light text means chosen or on (difficulty, chips),
-   the light neutral #e5e6d3 is the resting fill (tags included), and every focus ring is cyan.
+   the light neutral var(--surface-rest) is the resting fill (tags included), and every focus ring is cyan.
    On/off settings are toggle chips: outlined when off, filled with ink when on. The real switch
    covers each chip invisibly, so clicks, keys and screen readers work as before. */
 #start-panel .flight-switches { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
@@ -1644,7 +1652,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 :root[data-platform="android"] .utility-support { display: none; }
 /* Android's cutout strips and splash use the menu colour, so the boot screen matches it. */
 :root[data-platform="android"] body,
-:root[data-platform="android"] #boot-screen { background: #29483e; }
+:root[data-platform="android"] #boot-screen { background: var(--page-dark); }
 
 /* Fleet cosmetics live in Career, away from the active airfield. */
 .livery-options { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
