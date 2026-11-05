@@ -66,12 +66,12 @@ describe('frontier maps', () => {
     });
   }
 
-  it('Frost Crossing runways cross each other, and the apron stays clear of both', () => {
+  it('Frost Crossing runways stay apart, and the apron stays clear of both', () => {
     for (const [width, height] of SHAPES) {
       const layout = definition('frost-crossing').prepare({ width, height, detailLevel: 'desktop' }).layout as unknown as FrontierLayout & { apron: Vector2[] };
       const [liner, commuter] = layout.runways;
       const rect = (runway: MapRunway) => ({ center: runway.center, width: runway.length, height: runway.width, angle: runway.angle });
-      expect(rectsOverlap(rect(liner), rect(commuter), 0)).toBe(true);
+      expect(rectsOverlap(rect(liner), rect(commuter), 0)).toBe(false);
       for (const runway of layout.runways) for (const corner of layout.apron) {
         const dx = corner.x - runway.center.x;
         const dy = corner.y - runway.center.y;

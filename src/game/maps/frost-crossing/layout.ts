@@ -7,9 +7,9 @@ import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type { PlayableMapLayout } from '../types';
 
 /**
- * Frost Crossing: a winter archipelago where the liner runway and the commuter
- * runway cross in an X. The apron sits in the open angle above the crossing,
- * rock ridges and snowy pines fill the land, and open water edges the map.
+ * Frost Crossing: a winter archipelago with two parallel runways, the long liner
+ * runway below the apron and the commuter runway above it, so they never meet. Rock ridges and snowy pines fill the
+ * land, and open water edges the map.
  */
 export interface FrostCrossingLayout extends PlayableMapLayout {
   readonly runways: readonly MapRunway[];
@@ -20,20 +20,14 @@ export interface FrostCrossingLayout extends PlayableMapLayout {
   readonly water: readonly (readonly Vector2[])[];
   readonly rocks: readonly (readonly Vector2[])[];
   readonly pines: readonly { readonly center: Vector2; readonly radius: number }[];
-  /** Where the two runways cross. */
-  readonly crossing: Vector2;
 }
 
 /** Design-frame geometry, in units of the shorter side from the screen centre (landscape). */
-const CROSSING = { x: 0.178, y: 0.14 };
-const COMMUTER_HEADING = -0.6; // up and to the right
-const COMMUTER_LENGTH = 0.7;
+const COMMUTER_HEADING = 0;
+const COMMUTER_LENGTH = 0.6;
 const LINER = { x: -0.107, y: 0.14, length: 0.92 };
-/** The crossing sits a quarter of the way up the commuter runway. */
-const COMMUTER = {
-  x: CROSSING.x + Math.cos(COMMUTER_HEADING) * COMMUTER_LENGTH * 0.25,
-  y: CROSSING.y + Math.sin(COMMUTER_HEADING) * COMMUTER_LENGTH * 0.25,
-};
+/** Parallel to the liner runway on the far side of the apron, so the two never meet. */
+const COMMUTER = { x: 0.0, y: -0.34 };
 const APRON = [[-0.36, -0.1], [0.0, -0.2], [0.21, -0.16], [0.24, 0.06], [-0.3, 0.07]];
 const HELIPAD = { x: -0.56, y: -0.12 };
 const WATER = [
@@ -65,7 +59,7 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
     id: 'frost-liner', accepts: 'liner', zoneId: 'frost-liner-zone', designators: ['09', '27'],
     center: frame.point(LINER.x, LINER.y), length: frame.length(LINER.length), width: unit * 0.045, angle: frame.angle(0),
   };
-  // Landings come down from the upper right, so touchdown is well clear of the crossing.
+  // Landings come in from the right.
   const commuter: MapRunway = {
     id: 'frost-commuter', accepts: 'commuter', zoneId: 'frost-commuter-zone', designators: ['22', '04'],
     center: frame.point(COMMUTER.x, COMMUTER.y), length: frame.length(COMMUTER_LENGTH), width: unit * 0.04, angle: frame.angle(COMMUTER_HEADING + Math.PI),
@@ -88,7 +82,7 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
   // Authored roughly; preparation rebuilds them as square connectors.
   const taxiways: MapTaxiway[] = [
     { id: 'frost-taxi-liner', path: [frame.point(-0.12, LINER.y), apronCenter], width: unit * 0.016, connects: ['frost-liner', 'apron'] },
-    { id: 'frost-taxi-commuter', path: [frame.point(COMMUTER.x + 0.02, COMMUTER.y - 0.06), apronCenter], width: unit * 0.015, connects: ['frost-commuter', 'apron'] },
+    { id: 'frost-taxi-commuter', path: [frame.point(COMMUTER.x + 0.02, COMMUTER.y + 0.06), apronCenter], width: unit * 0.015, connects: ['frost-commuter', 'apron'] },
   ];
   const buildings: MapBuilding[] = [
     { id: 'frost-terminal', center: frame.point(-0.1, -0.12), width: frame.length(0.16), height: frame.length(0.055), angle: frame.angle(0), kind: 'terminal' },
@@ -117,6 +111,5 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
     water: WATER.map((polygon) => polygon.map(point)),
     rocks: ROCKS.map((polygon) => polygon.map(point)),
     pines,
-    crossing: point([CROSSING.x, CROSSING.y]),
   };
 }

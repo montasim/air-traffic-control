@@ -8,7 +8,7 @@ export const FROST_CROSSING_DEFINITION = defineMap<FrostCrossingLayout>({
   id: 'frost-crossing',
   metadata: {
     name: 'Frost Crossing',
-    description: 'A snowbound island field whose two runways cross in the middle.',
+    description: 'A snowbound island field with parallel runways either side of its apron.',
     category: 'regional',
     layoutLabel: 'Crossing runways',
     unlockRankId: 'chief-controller',
