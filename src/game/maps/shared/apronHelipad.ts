@@ -39,7 +39,10 @@ export function settleHelipadsOnApron<T extends WithPads>(layout: T, unit: numbe
   const settled = new Map<string, Vector2>();
   let pocket: Vector2[] | undefined;
   const step = unit * 0.01;
+  // A pad already on an apron or a carrier deck stays where it is.
+  const allAprons = apronPolygons(layout, 'all');
   for (const pad of pads) {
+    if (allAprons.some((apron) => pointInPolygon(pad.center, apron))) continue;
     // The painted ring is 1.14× the pad; a little more keeps it off its neighbours.
     const reach = pad.radius * 1.14 + unit * 0.008;
     const apart = (center: Vector2) => [...settled.values()].every((other) => Math.hypot(other.x - center.x, other.y - center.y) >= reach * 2);

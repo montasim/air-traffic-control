@@ -89,7 +89,6 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
   const taxiways: MapTaxiway[] = [
     { id: 'frost-taxi-liner', path: [frame.point(-0.12, LINER.y), apronCenter], width: unit * 0.016, connects: ['frost-liner', 'apron'] },
     { id: 'frost-taxi-commuter', path: [frame.point(COMMUTER.x + 0.02, COMMUTER.y - 0.06), apronCenter], width: unit * 0.015, connects: ['frost-commuter', 'apron'] },
-    { id: 'frost-taxi-pad', path: [apronCenter, helipad.center], width: unit * 0.012, connects: ['apron', 'helipad'] },
   ];
   const buildings: MapBuilding[] = [
     { id: 'frost-terminal', center: frame.point(-0.1, -0.12), width: frame.length(0.16), height: frame.length(0.055), angle: frame.angle(0), kind: 'terminal' },
@@ -111,6 +110,8 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
     runways,
     taxiways,
     helipad,
+    // Settled onto the apron once stands are placed; the authored spot is the fallback.
+    helipadsOnApron: true,
     apron,
     buildings,
     water: WATER.map((polygon) => polygon.map(point)),

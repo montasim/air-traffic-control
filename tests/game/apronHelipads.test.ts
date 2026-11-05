@@ -8,7 +8,7 @@ const ON_APRON = MAP_DEFINITIONS.filter((map) => map.prepare({ width: 1600, heig
 describe('helipads on the apron', () => {
   it('covers the land maps that asked for it', () => {
     expect(ON_APRON.map((map) => map.id).sort()).toEqual(
-      ['desert-parallel', 'executive-point', 'falcon-air-base', 'freight-junction', 'metro-international', 'river-bend', 'twin-banks'],
+      ['carrier-coast', 'desert-parallel', 'executive-point', 'falcon-air-base', 'freight-junction', 'frost-crossing', 'metro-international', 'river-bend', 'twin-banks'],
     );
   });
 
@@ -16,7 +16,8 @@ describe('helipads on the apron', () => {
     '$map.id sets its helipad down on the apron at $width×$height, with no taxi link',
     ({ map, width, height }) => {
       const { layout } = map.prepare({ width, height, detailLevel: 'desktop', twoEndLanding: false });
-      const aprons = apronPolygons(layout, 'land');
+      // A carrier deck counts: its pads already sit on it.
+      const aprons = apronPolygons(layout, 'all');
       const pads = layout.landingZones.filter((zone) => zone.accepts === 'rotor');
       for (const pad of pads) expect(aprons.some((apron) => pointInPolygon(pad.position, apron))).toBe(true);
       const taxiways = (layout as unknown as { taxiways: { connects: readonly string[] }[] }).taxiways;

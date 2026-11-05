@@ -89,7 +89,6 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
   const apronCenter = frame.point(0.3, -0.02);
   const taxiways: MapTaxiway[] = [
     { id: 'coast-taxi-liner', path: [frame.point(0.28, LINER.y), apronCenter], width: unit * 0.016, connects: ['coast-liner', 'apron'] },
-    { id: 'coast-taxi-pad', path: [apronCenter, landPad.center], width: unit * 0.012, connects: ['apron', 'helipad'] },
     ...carrier.taxiways,
   ];
   const buildings: MapBuilding[] = [
@@ -119,6 +118,8 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     runways: [liner, ...carrier.runways],
     taxiways,
     helipads: [landPad, ...carrier.helipads],
+    // The field pad settles onto the apron once stands are placed; deck pads are already on the deck.
+    helipadsOnApron: true,
     apron: APRON.map(point),
     buildings,
     carrier,
