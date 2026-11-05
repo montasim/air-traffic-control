@@ -8,6 +8,7 @@ import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
 import { createAirfieldGuidanceSurfaces } from './guidance';
 import { pointInPolygon } from './apronLayout';
+import { addFreightTrains, addMotorwayTraffic, addRadarStation, paintCityDistrict, paintCoast, paintGolfCourse, paintHills, paintMotorway, paintPerimeter, paintRailway } from './specialistScenery';
 
 export type SpecialistKind = 'military' | 'business' | 'passenger' | 'cargo' | 'rescue';
 /** Authored coordinates are fractions of viewport; runway lengths use the shorter side. */
@@ -82,9 +83,9 @@ const COUNTRYSIDE: Record<Exclude<SpecialistKind, 'rescue'>, {
   // Olive drab around a military base, with dense woods on its fringe.
   military: { base: 0x788760, fields: [0x7c8b63, 0x75845d, 0x818f67, 0x72815b], light: 0xc4cc9e, dark: 0x485536, vegetation: 0x46593a, vegetationLight: 0x7b8f5c, forest: 0.5, pond: false },
   // Kept parkland around the business field: brighter grass, scattered trees and a pond.
-  business: { base: 0x92a779, fields: [0x96ab7d, 0x8ea375, 0x9bb082, 0x8ca173], light: 0xdbe6bc, dark: 0x5c7148, vegetation: 0x4f6d45, vegetationLight: 0x8fad70, forest: 0.3, pond: true },
+  business: { base: 0x92a779, fields: [0x96ab7d, 0x8ea375, 0x9bb082, 0x8ca173], light: 0xdbe6bc, dark: 0x5c7148, vegetation: 0x4f6d45, vegetationLight: 0x8fad70, forest: 0.3, pond: false },
   // Grey-green farmland round the big passenger airport.
-  passenger: { base: 0x83947a, fields: [0x86977d, 0x7f9076, 0x8b9b81, 0x7d8e74], light: 0xd2dcc0, dark: 0x515f49, vegetation: 0x4e6646, vegetationLight: 0x86a06e, forest: 0.25, pond: true },
+  passenger: { base: 0x83947a, fields: [0x86977d, 0x7f9076, 0x8b9b81, 0x7d8e74], light: 0xd2dcc0, dark: 0x515f49, vegetation: 0x4e6646, vegetationLight: 0x86a06e, forest: 0.25, pond: false },
   // Dusty, worn ground round the freight yards, with only a few trees.
   cargo: { base: 0xa29a83, fields: [0xa69e87, 0x9e967f, 0xaba38c, 0x9a927c], light: 0xe0d8bf, dark: 0x6b6452, vegetation: 0x5e6a4a, vegetationLight: 0x8f9a70, forest: 0.12, pond: false },
 };
@@ -111,15 +112,40 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
   const avoid = (point: Vector2, radius: number) => nearRiver(road, u * .018, point, radius + u * .01)
     || (pond !== undefined && Math.hypot(point.x - pondCenter.x, point.y - pondCenter.y) < radius + u * .11);
   paintGroundTexture(scene, { width: w, height: h, fieldPolygons: fields }, { base: land.base, fields: land.fields, light: land.light, dark: land.dark });
+  // Each field's own signature landscape; trains and traffic are set going once it is painted.
+  let railway: ReturnType<typeof paintRailway>;
+  let motorway: ReturnType<typeof paintMotorway>;
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics: g }) => {
       // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
-      if (pond) paintShoredPool(g, pond, palette);
-      paintHedgerows(g, layout, fields, palette, avoid);
-      paintForests(g, layout, palette, Math.round(budget.trees * land.forest), avoid);
       g.lineStyle(u * .018, 0xc7c8ac, .5);
       g.lineBetween(road[0].x, road[0].y, road[1].x, road[1].y);
       g.lineBetween(road[1].x, road[1].y, road[2].x, road[2].y);
+      if (pond) paintShoredPool(g, pond, palette);
+      let signature: (point: Vector2, radius: number) => boolean = () => false;
+      if (kind === 'cargo') {
+        railway = paintRailway(g, layout);
+        signature = (point, radius) => !!railway && distanceToStrip(railway.main, point) < u * .1 + radius;
+      } else if (kind === 'passenger') {
+        motorway = paintMotorway(g, layout);
+        const onMotorway = (point: Vector2, radius: number) => !!motorway && distanceToStrip(motorway, point) < u * .045 + radius;
+        const city = paintCityDistrict(g, layout, palette, (point, radius) => avoid(point, radius) || onMotorway(point, radius));
+        signature = (point, radius) => onMotorway(point, radius) || city(point, radius);
+      } else if (kind === 'business') {
+        const sea = paintCoast(g, layout);
+        const inSea = (point: Vector2, radius: number) => !!sea && (pointInPolygon(point, sea) || sea.some((p) => Math.hypot(p.x - point.x, p.y - point.y) < radius + u * .03));
+        const golf = paintGolfCourse(g, layout, palette, (point, radius) => avoid(point, radius) || inSea(point, radius));
+        signature = (point, radius) => inSea(point, radius) || golf(point, radius);
+      } else {
+        paintPerimeter(g, layout);
+        const hills = paintHills(g, layout, palette, avoid);
+        addRadarStation(scene, g, layout, (point, radius) => avoid(point, radius) || hills(point, radius));
+        signature = hills;
+      }
+      const clearOfSignature = (point: Vector2, radius: number) => avoid(point, radius) || signature(point, radius);
+      // Executive Point is parkland around its golf course, so it keeps no field hedges.
+      if (kind !== 'business') paintHedgerows(g, layout, fields, palette, clearOfSignature);
+      paintForests(g, layout, palette, Math.round(budget.trees * land.forest), clearOfSignature);
     },
     operational: ({ graphics: g }) => {
       paintAirfieldGround(g, layout, palette, detailLevel);
@@ -138,8 +164,15 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
     }
   });
   paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
+  addFreightTrains(scene, railway);
+  addMotorwayTraffic(scene, motorway, u);
   // Clouds drifting over the field, thinning to a haze over its runways and apron.
   addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
+}
+
+/** Distance from a point to a straight strip's centre line. */
+function distanceToStrip(strip: { readonly from: Vector2; readonly angle: number }, point: Vector2): number {
+  return Math.abs(-(point.x - strip.from.x) * Math.sin(strip.angle) + (point.y - strip.from.y) * Math.cos(strip.angle));
 }
 
 /** The small apron fixtures in a row by the terminal: shelters, containers, gates or kiosks. */
