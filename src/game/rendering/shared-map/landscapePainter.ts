@@ -101,6 +101,17 @@ export function paintHedgerows(
   paintCanopy(graphics, bushes, palette);
 }
 
+/** A loose field patchwork covering the map: a grid of `cell`-sized quads with jittered corners, so no two fields line up exactly. */
+export function fieldPatchwork(width: number, height: number, cell: number): Vector2[][] {
+  const jitter = (i: number, j: number, salt: number) => (deterministicUnit(i * 31 + j, salt) - 0.5) * cell * 0.3;
+  const corner = (i: number, j: number) => ({ x: i * cell + jitter(i, j, 601), y: j * cell + jitter(i, j, 607) });
+  const fields: Vector2[][] = [];
+  for (let i = -1; i * cell < width + cell; i += 1) {
+    for (let j = -1; j * cell < height + cell; j += 1) fields.push([corner(i, j), corner(i + 1, j), corner(i + 1, j + 1), corner(i, j + 1)]);
+  }
+  return fields;
+}
+
 /** Whether a circle comes within the banks of a river of the given width along `river`. */
 export function nearRiver(river: readonly Vector2[], width: number, point: Vector2, radius: number): boolean {
   return river.some((a, i) => {

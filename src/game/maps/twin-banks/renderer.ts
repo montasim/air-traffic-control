@@ -4,6 +4,7 @@ import {
   clearOfAirfield,
   paintAirfieldGround,
   deterministicUnit,
+  fieldPatchwork,
   MAP_DETAIL_BUDGETS,
   nearRiver,
   paintAirfieldGuides,
@@ -119,24 +120,15 @@ const EAST_FIELDS = [0x8aa275, 0x7c956a, 0x93a97c, 0x86a070];
  * it lies on, with cells by the river left out so no field crosses to the other bank.
  */
 function bankFields(layout: TwinBanksLayout): { polygons: Vector2[][]; colors: number[] } {
-  const unit = Math.min(layout.width, layout.height);
-  const cell = unit * 0.24;
+  const cell = Math.min(layout.width, layout.height) * 0.24;
   const river = riverPathOf(layout);
   const east = eastBankPolygon(layout);
-  const polygons: Vector2[][] = [];
-  const colors: number[] = [];
-  const jitter = (x: number, y: number, salt: number) => (deterministicUnit(x * 31 + y, salt) - 0.5) * cell * 0.3;
-  const corner = (i: number, j: number) => ({ x: i * cell + jitter(i, j, 601), y: j * cell + jitter(i, j, 607) });
-  for (let i = -1; i * cell < layout.width + cell; i += 1) {
-    for (let j = -1; j * cell < layout.height + cell; j += 1) {
-      const quad = [corner(i, j), corner(i + 1, j), corner(i + 1, j + 1), corner(i, j + 1)];
-      const middle = { x: (i + 0.5) * cell, y: (j + 0.5) * cell };
-      if (nearRiver(river, layout.river.width, middle, cell * 0.75)) continue;
-      const shades = pointInPolygon(middle, east) ? EAST_FIELDS : WEST_FIELDS;
-      polygons.push(quad);
-      colors.push(shades[Math.floor(deterministicUnit(i * 17 + j, 613) * shades.length)]);
-    }
-  }
+  const middle = (quad: readonly Vector2[]) => ({ x: (quad[0].x + quad[2].x) / 2, y: (quad[0].y + quad[2].y) / 2 });
+  const polygons = fieldPatchwork(layout.width, layout.height, cell).filter((quad) => !nearRiver(river, layout.river.width, middle(quad), cell * 0.75));
+  const colors = polygons.map((quad, index) => {
+    const shades = pointInPolygon(middle(quad), east) ? EAST_FIELDS : WEST_FIELDS;
+    return shades[Math.floor(deterministicUnit(index, 613) * shades.length)];
+  });
   return { polygons, colors };
 }
 
