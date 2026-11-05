@@ -76,6 +76,21 @@ body,
 body {
   min-width: 320px;
 }
+html {
+  /* iOS flashes a grey box on every tap; buttons press down instead. */
+  -webkit-tap-highlight-color: transparent;
+  /* No double-tap zoom on chips and labels either; the route canvas opts out of panning on its own. */
+  touch-action: manipulation;
+  /* Keep text the designed size when a phone turns sideways. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+/* A held finger over the game draws a route: no text selection or long-press menu there. */
+.game-frame {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 /* The outlined native cursor stays legible over grass, water, and runways.
    Its center is the exact route-drawing hotspot, including while dragging. */
 #game canvas,
@@ -1641,6 +1656,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 .setting-chip { position: relative; display: inline-flex; align-items: center; gap: var(--icon-gap); min-height: var(--chip-height); padding: 0 16px 0 12px; border: 1px solid #b9bea6; border-radius: var(--radius-control); color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
 .setting-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border-radius: inherit; opacity: 0; cursor: pointer; }
 .setting-chip:hover { background: #203d3914; }
+.setting-chip { transition: background 0.16s, transform 0.16s; }
+.setting-chip:active:not(:has(input:disabled)) { transform: translateY(2px); }
 .setting-chip:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 .setting-chip:has(input:focus-visible) { outline: 3px solid var(--cyan); outline-offset: 3px; }
 .setting-chip:has(input:disabled) { cursor: wait; opacity: .55; }
@@ -1691,4 +1708,15 @@ html { font-size: 100%; }
 @media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
   html { font-size: 87.5%; }
   :root { --button-height: 40px; --button-pad-x: 16px; }
+}
+
+/* Touch screens: every control is at least the 44px a fingertip needs (Apple's minimum target). Phones keep
+   their tighter type and spacing, but buttons stop at 44px instead of 40px, and chips and segments match
+   the buttons rather than sitting a step under them; filled versus outlined still sets them apart. */
+@media (pointer: coarse) and (max-width: 700px), (pointer: coarse) and (max-height: 500px) and (orientation: landscape) {
+  :root { --button-height: 44px; }
+}
+@media (pointer: coarse) {
+  :root { --chip-height: var(--button-height); }
+  .menu-more summary { display: flex; align-items: center; justify-content: center; min-height: 44px; }
 }
