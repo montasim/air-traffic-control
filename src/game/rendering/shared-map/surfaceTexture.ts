@@ -20,14 +20,14 @@ export interface SurfaceLayout {
 
 let serial = 0;
 
-/** A square of random black and white pixels with random alpha: fine grain. */
-function noiseTile(size: number, strength: number): HTMLCanvasElement {
+/** A square of random light and dark pixels with random alpha: fine grain. */
+function noiseTile(size: number, strength: number, light = [255, 255, 255], dark = [0, 0, 0]): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const context = canvas.getContext("2d")!;
   const image = context.createImageData(size, size);
   for (let i = 0; i < image.data.length; i += 4) {
-    const [r, g, b] = Math.random() < 0.5 ? [255, 255, 255] : [0, 0, 0];
+    const [r, g, b] = Math.random() < 0.5 ? light : dark;
     image.data[i] = r;
     image.data[i + 1] = g;
     image.data[i + 2] = b;
@@ -173,22 +173,21 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
 const rgb = (color: number) => [(color >> 16) & 255, (color >> 8) & 255, color & 255];
 const css = (color: number) => `rgb(${rgb(color).join(",")})`;
 
-/** What the painted ground needs: the field patchwork and the direction to mow along. */
+/** What the painted ground needs: the field patchwork. */
 export interface GroundLayout {
   readonly width: number;
   readonly height: number;
   readonly fieldPolygons: readonly (readonly Vector2[])[];
-  readonly angle: number;
 }
 
 /**
  * The ground under all map scenery, painted once at the render scale: a base colour, a
- * patchwork of flat fields in a few close crop shades, and faint mowing stripes along the runways.
+ * patchwork of flat fields in a few close shades, fine grass speckle, and soft light falloff.
  */
 export function paintGroundTexture(
   scene: Phaser.Scene,
   ground: GroundLayout,
-  shades: { readonly base: number; readonly fields: readonly number[] },
+  shades: { readonly base: number; readonly fields: readonly number[]; readonly light: number; readonly dark: number },
   depth = -21,
 ): Phaser.GameObjects.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
@@ -210,16 +209,15 @@ export function paintGroundTexture(
     context.closePath();
     context.fill();
   });
-  context.save();
-  context.translate(width / 2, height / 2);
-  context.rotate(ground.angle);
-  const band = unit * 0.05;
-  const reach = Math.hypot(width, height);
-  for (let y = -reach, i = 0; y < reach; y += band, i += 1) {
-    context.fillStyle = i % 2 ? "rgba(255,255,240,0.05)" : "rgba(20,40,10,0.04)";
-    context.fillRect(-reach, y, reach * 2, band);
-  }
-  context.restore();
+  // Fine grass: soft speckles a couple of pixels wide in the ground's own greens, never grey.
+  fillWith(context, noiseTile(128, 0.16, rgb(shades.light), rgb(shades.dark)), 2, width, height);
+  // Soft light falloff: brighter where the airfield sits, gently darker toward the edges.
+  const light = context.createRadialGradient(width / 2, height / 2, unit * 0.1, width / 2, height / 2, Math.hypot(width, height) / 2);
+  light.addColorStop(0, "rgba(255,255,240,0.10)");
+  light.addColorStop(0.55, "rgba(255,255,240,0)");
+  light.addColorStop(1, "rgba(20,40,30,0.18)");
+  context.fillStyle = light;
+  context.fillRect(0, 0, width, height);
   const key = `ground-texture-${serial += 1}`;
   scene.textures.addCanvas(key, canvas);
   const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);

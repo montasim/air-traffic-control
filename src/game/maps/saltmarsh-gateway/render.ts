@@ -27,9 +27,10 @@ import { paintControlTower, paintForests, paintHedgerows, paintMarkedRunway, pai
 
 /** Brighter, warmer greens with clear field contrast, blue water and plain grey asphalt. */
 export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
-  terrain: 0x86a84f,
-  terrainLight: 0xa9c25f,
-  terrainDark: 0x6a8c3d,
+  // A calm sage meadow: less yellow and saturated than lime, so long sessions are easy on the eye.
+  terrain: 0x8fae7c,
+  terrainLight: 0x9cb888,
+  terrainDark: 0x7a9a6a,
   fieldLine: 0xc9d39a,
   water: 0x3f93b8,
   waterEdge: 0xe2dcae,
@@ -43,8 +44,8 @@ export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
   building: 0xa99f8a,
   buildingRoof: 0xece1c6,
   shadow: 0x2d4433,
-  vegetation: 0x4d7a30,
-  vegetationLight: 0x93bb4c
+  vegetation: 0x426b3c,
+  vegetationLight: 0x7ea365
 };
 
 function paintSaltmarshGateway(
@@ -92,10 +93,12 @@ export function renderSaltmarshGateway(
   detailLevel: WorldDetailLevel
 ): void {
   const palette = SALTMARSH_GATEWAY_PALETTE;
-  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons, angle: layout.runways[0].angle }, {
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons }, {
     base: palette.terrain,
     // Close shades only: with crisp edges a dark field would read as a shadow.
-    fields: [palette.terrainLight, 0x97b456, 0xb3c463, 0x8fae50, 0x9cba58]
+    fields: [palette.terrainLight, 0x94b281, 0xa3b685, 0x8aa978, 0x98b585],
+    light: 0xd4e4bc,
+    dark: 0x4f6e48
   });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics}) => paintSaltmarshGateway(graphics, layout, detailLevel),
