@@ -2,7 +2,7 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, paintControlTower, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
@@ -178,9 +178,10 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
   const u = Math.min(w,h);
   const sea = 0x5e93a2;
   const palette = { ...RIVER_BEND_PALETTE, terrain: 0x8fa87b, water: sea, waterEdge: 0xd9cfa2, waterShallow: 0x8cbcc4, vegetation: 0x4a7448, vegetationLight: 0x86aa6c };
-  const islands = rescueIslands(layout);
+  // Each island's shore broken into a ragged line, as on Carrier Coast.
+  const islands = rescueIslands(layout).map(outline => raggedOutline(outline, u));
   // Each island as three rings of the painted ground: pale shallows, a sandy beach, then grass.
-  const rings = islands.flatMap(outline => [scaledAbout(outline, 1.16), outline, scaledAbout(outline, outline === islands[0] ? .94 : .8)]);
+  const rings = islands.flatMap(outline => [raggedOutline(scaledAbout(outline, 1.16), u), outline, raggedOutline(scaledAbout(outline, outline === islands[0] ? .94 : .8), u)]);
   paintGroundTexture(scene, { width: w, height: h, fieldPolygons: rings }, {
     base: sea,
     fields: islands.flatMap(() => [palette.waterShallow, 0xd9cfa2, palette.terrain]),
@@ -191,8 +192,16 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
   const grass = islands.map((outline, i) => scaledAbout(outline, i ? .7 : .88));
   composeStaticMap(scene,layout,detailLevel,{
     scenery:({graphics:g}) => {
-      // The sea and islands are painted underneath by paintGroundTexture; this layer adds whitecaps and palms.
+      // The sea and islands are painted underneath by paintGroundTexture; this layer adds surf, rocks, whitecaps and palms.
       paintWhitecaps(g, layout, detailLevel === 'mobile' ? 40 : 90, u, point => !onLand(point));
+      islands.forEach((outline, i) => {
+        // Surf breaking on the beach, and a fainter line where the swell first lifts offshore.
+        g.lineStyle(Math.max(1.5, u * .004), 0xf6fbfb, .8);
+        strokePolyline(g, [...outline, outline[0]]);
+        g.lineStyle(Math.max(1, u * .0025), 0xf6fbfb, .35);
+        strokePolyline(g, [...scaledAbout(outline, 1.08), scaledAbout(outline, 1.08)[0]]);
+        paintShoreRocks(g, outline, u, (i ? 10 : 34) * (detailLevel === 'mobile' ? .5 : 1), 751 + i * 7);
+      });
       const crowns: { x: number; y: number; r: number }[] = [];
       for (let i = 0; i < MAP_DETAIL_BUDGETS[detailLevel].trees * 6; i++) {
         const island = grass[i % grass.length];

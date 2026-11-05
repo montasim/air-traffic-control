@@ -114,7 +114,7 @@ export function fieldPatchwork(width: number, height: number, cell: number): Vec
 }
 
 /** Breaks a smooth outline into a ragged one: each edge cut into short steps nudged in and out. */
-function jagged(outline: readonly Vector2[], unit: number): Vector2[] {
+export function raggedOutline(outline: readonly Vector2[], unit: number): Vector2[] {
   const step = unit * 0.025;
   return outline.flatMap((a, i) => {
     const b = outline[(i + 1) % outline.length];
@@ -142,7 +142,7 @@ export function paintBrokenShore(
 ): void {
   const unit = Math.min(bounds.width, bounds.height);
   waters.forEach((water, w) => {
-    const shore = jagged(water, unit);
+    const shore = raggedOutline(water, unit);
     const closed = [...shore, shore[0]];
     const strokeShore = (width: number, color: number, alpha: number) => {
       graphics.lineStyle(width, color, alpha);
@@ -179,6 +179,46 @@ export function paintBrokenShore(
       graphics.fillPath();
     }
   });
+}
+
+/**
+ * Surf-washed rocks along a shore, seen from above: dark boulders lit on top, each ringed by white
+ * foam, scattered just off the outline (outside it) and thickest close in.
+ */
+export function paintShoreRocks(graphics: Phaser.GameObjects.Graphics, outline: readonly Vector2[], unit: number, count: number, seed: number): void {
+  const perimeter = outline.map((point, i) => Math.hypot(outline[(i + 1) % outline.length].x - point.x, outline[(i + 1) % outline.length].y - point.y));
+  const total = perimeter.reduce((sum, length) => sum + length, 0);
+  const middle = outline.reduce((sum, point) => ({ x: sum.x + point.x / outline.length, y: sum.y + point.y / outline.length }), { x: 0, y: 0 });
+  for (let n = 0; n < count; n += 1) {
+    // Walk the outline to a random point on it, then step outward off the beach.
+    let left = deterministicUnit(n, seed) * total;
+    let i = 0;
+    while (left > perimeter[i]) left -= perimeter[i++];
+    const [a, b] = [outline[i], outline[(i + 1) % outline.length]];
+    const t = perimeter[i] ? left / perimeter[i] : 0;
+    const onShore = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    const outward = { x: onShore.x - middle.x, y: onShore.y - middle.y };
+    const reach = Math.hypot(outward.x, outward.y) || 1;
+    const offset = unit * (0.008 + deterministicUnit(n, seed + 1) ** 2 * 0.045);
+    const center = { x: onShore.x + (outward.x / reach) * offset, y: onShore.y + (outward.y / reach) * offset };
+    const size = unit * (0.004 + deterministicUnit(n, seed + 2) * 0.008);
+    const rock = Array.from({ length: 6 }, (_, k) => {
+      const turn = (k / 6) * Math.PI * 2 + deterministicUnit(n, seed + 3);
+      const r = size * (0.7 + deterministicUnit(n * 6 + k, seed + 4) * 0.5);
+      return { x: center.x + Math.cos(turn) * r, y: center.y + Math.sin(turn) * r * 0.8 };
+    });
+    const grown = (share: number) => rock.map((point) => ({ x: center.x + (point.x - center.x) * share, y: center.y + (point.y - center.y) * share }));
+    for (const [points, color, alpha] of [
+      [grown(1.9), 0xf2f9fa, 0.35],
+      [grown(1.35), 0xf2f9fa, 0.55],
+      [rock, 0x55534b, 1],
+      [grown(0.65).map((point) => ({ x: point.x - size * 0.18, y: point.y - size * 0.22 })), 0x86827a, 1],
+    ] as const) {
+      graphics.fillStyle(color, alpha);
+      tracePolygon(graphics, points);
+      graphics.fillPath();
+    }
+  }
 }
 
 /** Whether a circle comes within the banks of a river of the given width along `river`. */
