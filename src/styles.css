@@ -26,8 +26,10 @@
   --safe-block: max(var(--safe-top), var(--safe-bottom));
   --safe-inline: max(var(--safe-left), var(--safe-right));
   /* One type scale for every modal and page title, and for headings inside pages. Phones override below. */
-  /* One size and one icon-to-label gap for every action button. */
+  /* One size and one icon-to-label gap for every action button; the size steps down on medium and small screens below. */
   --button-height: 48px;
+  --button-font: 1.125rem;
+  --button-pad-x: 20px;
   --icon-gap: 8px;
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
@@ -167,11 +169,11 @@ h3 {
 .primary-button,
 .secondary-button {
   min-height: var(--button-height);
-  padding: 10px 20px;
+  padding: 8px var(--button-pad-x);
   border: 0;
   border-radius: 10px;
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: var(--button-font);
   line-height: 1.2;
   font-weight: 700;
 }
@@ -451,7 +453,7 @@ h3 {
 }
 .resume-shift small {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 400;
 }
 /* Mirrors pause in the bottom-left corner, which every map keeps clear as its speed zone. */
@@ -1107,10 +1109,10 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 :is(#pause-panel, #gameover-panel) .menu-more summary { text-align: center; background: transparent; }
 /* Restart and Settings share one row; How to play takes the row below. */
 :is(#pause-panel, #gameover-panel) .menu-more-actions { display: flex; flex-wrap: wrap; }
-:is(#pause-panel, #gameover-panel) .menu-more-actions button { flex: 1 1 0; width: auto; min-height: 44px; margin: 0; padding-inline: 10px; justify-content: center; white-space: nowrap; }
+:is(#pause-panel, #gameover-panel) .menu-more-actions button { flex: 1 1 0; width: auto; min-height: var(--button-height); margin: 0; padding-inline: 10px; justify-content: center; white-space: nowrap; }
 #pause-panel .menu-more-actions button[data-screen="help"] { flex-basis: 100%; }
 /* The outlined links match the filled buttons beside them in type and height. */
-:is(#pause-panel, #gameover-panel) .menu-more-actions .text-button { min-height: var(--button-height); font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
+:is(#pause-panel, #gameover-panel) .menu-more-actions .text-button { min-height: var(--button-height); font-family: var(--font-display); font-size: var(--button-font); font-weight: 700; }
 
 /* Action icons use Hugeicons; text carries the accessible name. */
 .home-tools button, .menu-more-actions button, #utility-close {
@@ -1121,7 +1123,7 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 }
 /* Back: a cream button on the dark page headers. */
 /* The tall title's letters sit low in their box; the top margin centres Back on them at any title size. */
-#utility-close { min-height: 44px; margin-top: calc(var(--title-size) * 0.19); padding: 10px 14px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
+#utility-close { min-height: var(--button-height); margin-top: calc(var(--title-size) * 0.19); padding: 10px 14px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
 /* Lifts the arrow onto the middle of the word rather than the middle of its box. */
 #utility-close .button-icon { transform: translateY(-0.06em); }
 #utility-close:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
@@ -1442,7 +1444,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .flight-actions { display: flex; gap: 12px; }
 #start-panel .flight-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
 /* The shift details stay on one line beside Start; the full text is on hover. */
-#start-panel .resume-shift { padding-block: 6px; }
+#start-panel .resume-shift { padding-block: 4px; }
 #start-panel .resume-shift .button-label { display: block; min-width: 0; }
 #start-panel .resume-shift small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0; }
@@ -1532,7 +1534,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
   #start-panel .flight-switches { gap: 16px; padding: 0; border: 0; }
-  #start-panel #start-button { min-height: 44px; padding-block: 8px; }
   #start-panel .flight-actions { justify-content: flex-end; }
   #start-panel .flight-actions > button { flex: 0 1 240px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
@@ -1585,7 +1586,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   .compact-panel h2, dialog h2 { margin-bottom: 8px; }
   .compact-panel p, dialog p { font-size: 0.875rem; line-height: 1.45; margin: 10px 0; }
   .compact-panel .panel-actions, dialog .panel-actions { gap: 8px; }
-  .compact-panel .panel-actions button, dialog .panel-actions button { min-height: 44px; padding: 10px 18px; font-size: 1.1rem; }
   dialog { padding: 22px 20px; }
   dialog .panel-actions { margin-top: 16px; }
   #pause-panel { padding: 22px 20px; }
@@ -1647,4 +1647,15 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 @supports (text-box: trim-both ex alphabetic) {
   .utility-top h2, #utility-close > span:last-child { text-box: trim-both ex alphabetic; }
   #utility-close { margin-top: 0; }
+}
+
+/* Action buttons step down with the screen: large keeps 48px, medium 44px, small 40px, each with
+   a matching label size, so every button on one screen is the same size. Resume shift's two lines
+   are trimmed on small screens to stay within the same height. */
+@media (max-width: 900px) {
+  :root { --button-height: 44px; --button-font: 1.0625rem; --button-pad-x: 18px; }
+}
+@media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
+  :root { --button-height: 40px; --button-font: 1rem; --button-pad-x: 16px; }
+  #start-panel .resume-shift { padding-block: 2px; }
 }
