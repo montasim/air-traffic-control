@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
   addMovingWaves,
+  addShipWash,
   clearOfAirfield,
   composeStaticMap,
   paintAirfieldGround,
@@ -66,6 +67,21 @@ const ESCORTS = [
   { x: -0.3, y: -0.42, length: 0.24, kind: 'supply' },
 ] as const;
 
+/** Where each escort sails this time: only those fully on screen and clear of the approaches. */
+function escortPlacements(layout: BlueWaterLayout) {
+  const { carrier } = layout;
+  const [cos, sin] = [Math.cos(carrier.angle), Math.sin(carrier.angle)];
+  return ESCORTS.flatMap((escort) => {
+    const [dx, dy] = [escort.x * carrier.length, escort.y * carrier.length];
+    const center = { x: carrier.center.x + dx * cos - dy * sin, y: carrier.center.y + dx * sin + dy * cos };
+    const length = carrier.length * escort.length;
+    const reach = length * 0.55;
+    if (center.x < reach || center.y < reach || center.x > layout.width - reach || center.y > layout.height - reach) return [];
+    if (!clearOfAirfield(layout, center, reach)) return [];
+    return [{ center, length, kind: escort.kind }];
+  });
+}
+
 /** A broad, soft band of sun glint across the sea, brightest along its middle. */
 function paintSunGlint(graphics: Phaser.GameObjects.Graphics, layout: BlueWaterLayout, unit: number): void {
   graphics.fillStyle(0xe8f6f8, 0.03);
@@ -80,6 +96,7 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
     light: 0x9fd0dc,
     dark: 0x1d4d5d,
   });
+  const escorts = escortPlacements(layout);
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics, unit }) => {
       paintDepthPatches(graphics, layout, unit);
@@ -87,18 +104,7 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
       paintWhitecaps(graphics, layout, detailLevel === 'mobile' ? 50 : 130, unit, (point) => clearOfAirfield(layout, point, unit * 0.04));
       paintSunGlint(graphics, layout, unit);
       paintCarrierWake(graphics, layout.carrier);
-      const { carrier } = layout;
-      const [cos, sin] = [Math.cos(carrier.angle), Math.sin(carrier.angle)];
-      for (const escort of ESCORTS) {
-        const [dx, dy] = [escort.x * carrier.length, escort.y * carrier.length];
-        const center = { x: carrier.center.x + dx * cos - dy * sin, y: carrier.center.y + dx * sin + dy * cos };
-        // Only escorts that sit fully on screen and clear of the approaches are drawn.
-        const length = carrier.length * escort.length;
-        const reach = length * 0.55;
-        if (center.x < reach || center.y < reach || center.x > layout.width - reach || center.y > layout.height - reach) continue;
-        if (!clearOfAirfield(layout, center, reach)) continue;
-        paintEscortShip(graphics, center, carrier.angle, length, unit, escort.kind);
-      }
+      for (const escort of escorts) paintEscortShip(graphics, escort.center, layout.carrier.angle, escort.length, unit, escort.kind);
     },
     operational: ({ graphics, unit }) => {
       paintCarrierDeck(graphics, layout.carrier, unit);
@@ -113,6 +119,12 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
   });
   // Wave crests drifting across the swell bands, so the open sea moves.
   addMovingWaves(scene, layout, layout.carrier.angle + 0.5 + Math.PI / 2);
+  // Moving spray at every bow and churned water behind every stern, so the group is under way.
+  const { carrier } = layout;
+  addShipWash(scene, [
+    { center: carrier.center, angle: carrier.angle, length: carrier.length, halfBeam: carrier.beam * 0.5 },
+    ...escorts.map((escort) => ({ center: escort.center, angle: carrier.angle, length: escort.length, halfBeam: escort.length * (escort.kind === 'supply' ? 0.08 : 0.06) })),
+  ]);
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
   paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
 }
