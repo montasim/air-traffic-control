@@ -113,7 +113,7 @@ function groundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T,
     hud: layout.hudExclusionZones,
   };
   const apronMarkings = createApronMarkings({ ...markingInput, squareRows });
-  return settleHelipadsOnApron({ ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) }, unit);
+  return { ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) };
 }
 
 /**
@@ -134,7 +134,10 @@ export function defineMap<Layout extends PlayableMapLayout>(
       requirePositiveDimension(input.height, 'height');
       const approaches = withBidirectionalApproaches(adapter.createLayout(input), input.twoEndLanding);
       // Apron stands and ground routes follow the final landing zones, so they cover both runway-end modes.
-      const layout = hasGroundNetwork(approaches) ? withGroundTraffic(approaches, input) : approaches;
+      // Helipads settle once, onto the apron layout that was chosen.
+      const layout = hasGroundNetwork(approaches)
+        ? settleHelipadsOnApron(withGroundTraffic(approaches, input), Math.min(input.width, input.height))
+        : approaches;
       assertPreparedLayout(layout, input, adapter.id);
       const prepared: PreparedMap = {
         mapId: adapter.id,

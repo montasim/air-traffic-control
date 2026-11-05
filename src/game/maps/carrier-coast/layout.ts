@@ -59,7 +59,6 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     center: frame.point(CARRIER.x, CARRIER.y),
     length: frame.length(CARRIER.length),
     angle: frame.angle(CARRIER.heading),
-    lanes: ['axial'],
     pads: 1,
     padRadius: unit * 0.032,
     taxiwayWidth: unit * 0.012,

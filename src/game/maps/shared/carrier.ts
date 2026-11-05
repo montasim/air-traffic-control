@@ -1,8 +1,8 @@
 import type { Vector2 } from '../../../core/types';
 import type { MapHelipad, MapRunway, MapTaxiway } from './airfield';
 
-/** Which deck lanes take landings: the axial lane along the hull, the angled lane off to port, or both. */
-export type CarrierLane = 'axial' | 'angled';
+/** The deck's one landing lane, along the port side. */
+export type CarrierLane = 'axial';
 
 export interface CarrierSpec {
   readonly id: string;
@@ -11,8 +11,7 @@ export interface CarrierSpec {
   readonly length: number;
   /** Heading from stern to bow. */
   readonly angle: number;
-  readonly lanes: readonly CarrierLane[];
-  /** Deck helipads: one at the bow, a second forward of the island. */
+  /** Deck helipads: one at the bow, a second at the aft starboard corner. */
   readonly pads: 1 | 2;
   readonly padRadius: number;
   readonly taxiwayWidth: number;
@@ -89,61 +88,37 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   ].map(([x, y]) => at(x, y));
 
   const laneWidth = beam * 0.16;
-  // Axial lane along the centre line; the second lane parallel to it, off to port.
-  // The second lane (still called "angled") runs parallel to the axial one on the port side with a
-  // clear gap, rather than crossing it at an angle, so the two never overlap.
-  const axialStart = { x: -0.48 * length, y: 0 };
-  const angledStart = { x: -0.46 * length, y: -0.25 * beam };
+  // One landing lane along the port side, as on a real carrier; the starboard side keeps the island
+  // and a single row of parked aircraft along its edge.
+  const laneStart = { x: -0.48 * length, y: -0.12 * beam };
   const localDeck = DECK.map(([x, y]) => ({ x: x * length, y: y * beam }));
-  // Each lane runs only as far as the deck allows, its painted shoulder included, so no part of
-  // a runway or its outline hangs over the sea.
-  const fitted = (start: Vector2, wanted: number, localAngle: number) => {
-    const along = { x: Math.cos(localAngle), y: Math.sin(localAngle) };
-    const margin = laneWidth * 0.5 + Math.max(2, laneWidth * 0.08) + 1;
-    const fits = (s: number) => [-margin, margin].every((side) =>
-      insidePolygon({ x: start.x + along.x * s - along.y * side, y: start.y + along.y * s + along.x * side }, localDeck));
-    let from = 0;
-    let to = wanted;
-    const step = length * 0.005;
-    while (from < to && !fits(from - Math.max(2, laneWidth * 0.08))) from += step;
-    while (to > from && !fits(to + Math.max(2, laneWidth * 0.08))) to -= step;
-    const middle = (from + to) / 2;
-    return { center: world(start.x + along.x * middle, start.y + along.y * middle), length: to - from, forwardEnd: start.x + along.x * to };
-  };
-  const axial = fitted(axialStart, 0.7 * length, 0);
-  const angled = fitted(angledStart, 0.6 * length, 0);
-  const lanes: CarrierLanePaint[] = [
-    { kind: 'axial', center: axial.center, length: axial.length, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
-    { kind: 'angled', center: angled.center, length: angled.length, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('angled') },
-  ];
-  const runways: MapRunway[] = lanes.filter((lane) => lane.operational).map((lane) => ({
-    id: `${spec.id}-${lane.kind}`,
-    accepts: 'commuter',
-    center: lane.center,
-    length: lane.length,
-    width: lane.width,
-    angle: lane.angle,
-    zoneId: `${spec.id}-${lane.kind}-zone`,
-    // Axial and angled lanes read apart at a glance on the approach labels.
-    designators: lane.kind === 'axial' ? ['AX', 'AX'] : ['AN', 'AN'],
-  }));
+  // The lane runs only as far as the deck allows, its painted shoulder included, so no part of it
+  // hangs over the sea.
+  const shoulder = Math.max(2, laneWidth * 0.08);
+  const margin = laneWidth * 0.5 + shoulder + 1;
+  const fits = (x: number) => [-margin, margin].every((side) => insidePolygon({ x, y: laneStart.y + side }, localDeck));
+  const step = length * 0.005;
+  let from = laneStart.x;
+  let to = laneStart.x + 0.8 * length;
+  while (from < to && !fits(from - shoulder)) from += step;
+  while (to > from && !fits(to + shoulder)) to -= step;
+  const lane: CarrierLanePaint = { kind: 'axial', center: world((from + to) / 2, laneStart.y), length: to - from, width: laneWidth, angle: spec.angle, operational: true };
+  const runways: MapRunway[] = [{
+    id: `${spec.id}-axial`, accepts: 'commuter', center: lane.center, length: lane.length, width: lane.width, angle: lane.angle,
+    zoneId: `${spec.id}-axial-zone`, designators: ['AX', 'AX'],
+  }];
 
-  // Parking is the aft starboard shelf. The axial lane taxis straight across to it; the port lane
-  // taxis forward round the axial lane's end and back, so no taxi line crosses a landing lane.
-  const parking = world(-0.15 * length, 0.2 * beam);
-  const around = axial.forwardEnd + laneWidth * 1.2;
-  const taxiways: MapTaxiway[] = runways.map((runway) => {
-    const path = runway.id.endsWith('angled')
-      ? [world(angled.forwardEnd - laneWidth, angledStart.y), world(around, -0.14 * beam), world(around, 0.2 * beam), parking]
-      : [world(-0.15 * length, axialStart.y), parking];
-    return { id: `${runway.id}-taxi`, path, width: spec.taxiwayWidth, connects: [runway.id, `${spec.id}-deck`] };
-  });
+  // A short taxi line straight up from the lane to the parking row along the starboard edge, between
+  // the island and the aft helicopter spot.
+  const parking = world(-0.2 * length, 0.3 * beam);
+  const taxiways: MapTaxiway[] = [{ id: `${runways[0].id}-taxi`, path: [world(-0.2 * length, laneStart.y), parking], width: spec.taxiwayWidth, connects: [runways[0].id, `${spec.id}-deck`] }];
 
-  // Helicopter spots at the bow, ahead of the lanes and clear of the taxi route round them.
-  const padSpots = spec.pads === 2 ? [[0.4, -0.02], [0.4, 0.2]] : [[0.38, 0.04]];
+  // Helicopter spots well apart: one at the bow, a second at the aft starboard corner.
+  const padSpots = spec.pads === 2 ? [[0.4, 0.04], [-0.4, 0.3]] : [[0.4, 0.04]];
   const helipads: MapHelipad[] = padSpots.map(([x, y], index) => ({ center: at(x, y), radius: spec.padRadius, zoneId: `${spec.id}-pad-${index + 1}` }));
 
-  const island = { center: at(0.05, 0.4), width: length * 0.14, height: beam * 0.12, angle: spec.angle };
+  // The island stands on the starboard edge toward the bow.
+  const island = { center: at(0.17, 0.5), width: length * 0.14, height: beam * 0.12, angle: spec.angle };
 
   // Two wake trails spreading from the stern, and a faint broad wash between them.
   const stern = (y: number) => at(-0.5, y);
@@ -154,5 +129,5 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     [stern(-0.3), astern(length * 1.4, -beam * 1.5), astern(length * 1.4, beam * 1.5), stern(0.3)],
   ];
 
-  return { id: spec.id, center: spec.center, length, beam, angle: spec.angle, hull, deck, runways, paintedLanes: lanes, helipads, island, taxiways, wake };
+  return { id: spec.id, center: spec.center, length, beam, angle: spec.angle, hull, deck, runways, paintedLanes: [lane], helipads, island, taxiways, wake };
 }

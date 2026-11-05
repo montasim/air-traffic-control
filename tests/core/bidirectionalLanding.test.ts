@@ -59,7 +59,9 @@ describe('all playable map runway ends', () => {
         const ends=layout.landingZones.filter(z=>z.approach);
         // Carrier deck lanes are one-way: landed from the stern only.
         const oneWay=new Set(layout.guidanceSurfaces.flatMap(s=>s.kind==='runway'&&s.oneWay&&s.runwayId?[s.runwayId]:[]));
-        expect(ends.length).toBeGreaterThanOrEqual(2);
+        // One target per one-way deck lane, two per ordinary runway (Blue Water has a single deck lane).
+        const runwayCount=(layout as unknown as {runways:unknown[]}).runways.length;
+        expect(ends.length).toBeGreaterThanOrEqual(oneWay.size+(runwayCount-oneWay.size)*2);
         const ids=new Set(ends.map(z=>z.approach!.runwayId));
         for(const id of ids) {
           const pair=ends.filter(z=>z.approach!.runwayId===id);

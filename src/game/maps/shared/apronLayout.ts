@@ -197,9 +197,10 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
     const step = span * 0.35;
     // Square rows run only along or across this type's own taxiway, so its guide goes straight on and
     // turns at most once, at a right angle, as on Saltmarsh Gateway; other runways' angles do not apply.
-    // On a carrier deck, rows run across the ship so each parked aircraft lies along it, as on a real deck.
+    // On a carrier deck the row runs along the ship, so aircraft park one deep, side by side along
+    // the deck edge, as on a real carrier; a deck too small for that falls back to a row across it.
     const deckLane = deck ? runways.find((rect) => rect.clearance !== undefined) : undefined;
-    const typeAngles = deckLane ? [normalizeAngle(deckLane.angle + Math.PI / 2)]
+    const typeAngles = deckLane ? [normalizeAngle(deckLane.angle), normalizeAngle(deckLane.angle + Math.PI / 2)]
       : input.squareRows ? rowAngles([{ center: start, width: 0, height: 0, angle: exit.heading }], [], true) : angles;
 
     // A first pass keeps the groups well apart; if nothing fits, a second accepts a tighter apron.
@@ -220,6 +221,11 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
         && !otherMouths.some(([m0, m1]) => segmentsCross(from, b, m0, m1));
     };
 
+    // Stands on the far side of the row from the taxiway first, so the path into them keeps turning
+    // the same way instead of doubling back towards the runway. Fixed per row angle, so worked out once.
+    const ahead = unitVector(exit.heading);
+    const facing = (angle: number, side: number) => { const v = unitVector(angle + (side * Math.PI) / 2); return v.x * ahead.x + v.y * ahead.y; };
+    const sidesFor = new Map(typeAngles.map((angle) => [angle, [1, -1].sort((a, b) => facing(angle, b) - facing(angle, a))]));
     let best: Row | undefined;
     // Passes: full rows, then single stands; each first with wide spacing, then relaxed.
     // A last pass lets one stand reach further off the authored apron; the painter paves under it.
@@ -256,13 +262,15 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
               const near = nearEnd(ends);
               const far = near === ends[0] ? ends[1] : ends[0];
               const connector = distance(near, start);
-              if (connector > unit * (relaxed ? 0.6 : 0.4) || (best && connector >= best.score)) continue;
+              // Any row along a carrier deck beats any row across it.
+              const score = connector + (deckLane && angle !== typeAngles[0] ? unit : 0);
+              if (connector > unit * (relaxed ? 0.6 : 0.4) || (best && score >= best.score)) continue;
               if (!ends.every((point) => onApron(point, aprons, deck ? 0 : reach))) continue;
               if (!pathClear(start, near, span * 0.6) || !pathClear(near, far, 0)) continue;
               // Guide lines flow on from the taxiway: no turn along the way doubles back.
               const legs = [exit.heading, ...(connector > 1 ? [Math.atan2(near.y - start.y, near.x - start.x)] : []), angle0(near, far)];
               if (legs.some((heading, i) => i > 0 && turnBetween(legs[i - 1], heading) > MAX_GUIDE_TURN)) continue;
-              for (const side of [1, -1]) {
+              for (const side of sidesFor.get(angle)!) {
                 const standAngle = angle + (side * Math.PI) / 2;
                 const trial: ApronStand[] = [];
                 for (let i = 0; i < count; i += 1) {
@@ -286,7 +294,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
                 // Number stands from the connector side so the nearest is first.
                 const ordered = [...trial].sort((a, b) => distance(a.entry, near) - distance(b.entry, near))
                   .map((stand, index) => ({ ...stand, id: `${type}-stand-${index + 1}`, label: `${LABEL[type]}${index + 1}` }));
-                best = { stands: ordered, lane: { id: `${type}-lane`, path: [start, near, far] }, score: connector };
+                best = { stands: ordered, lane: { id: `${type}-lane`, path: [start, near, far] }, score };
                 break;
               }
             }
