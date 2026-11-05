@@ -1476,7 +1476,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .departure-board { overflow: hidden; background: linear-gradient(transparent 40px, var(--paper) 40px); }
   #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px; border-radius: 0; }
   #start-panel #home-map-preview { object-fit: cover; }
-  #start-panel .home-assignment { margin: 0; }
+  #start-panel .home-assignment { margin: 0; align-items: center; }
   #start-panel #choose-airfield { min-height: 44px; font-size: 13px; }
   #choose-airfield .label-long { display: none; }
   #choose-airfield .label-short { display: inline; }
