@@ -177,7 +177,7 @@ export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: Spe
 
 /**
  * A solar farm on the largest open ground: rows of dark panels catching the light, a gravel track
- * through the middle, inverter sheds, and a fence around it all. Returns where it lies.
+ * through the middle, and inverter sheds. Returns where it lies.
  */
 export function paintSolarFarm(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
   const unit = unitOf(layout);
@@ -206,10 +206,6 @@ export function paintSolarFarm(graphics: Graphics, layout: SpecialistLayout, pal
     const shed = at(length / 2 - unit * 0.02, side * unit * 0.012);
     paintRaisedBuilding(graphics, { id: `solar-${side}`, center: shed, width: unit * 0.016, height: unit * 0.011, angle, kind: 'operations' }, { ...palette, building: 0xb9b6a8, buildingRoof: 0xdedbd0 }, unit * 0.7);
   }
-  // The perimeter fence.
-  graphics.lineStyle(Math.max(1, unit * 0.0018), 0x5d6658, 0.8);
-  tracePolygon(graphics, box(center, length + unit * 0.03, depth + unit * 0.03, angle));
-  graphics.strokePath();
   return (point, r) => Math.abs((point.x - center.x) * c + (point.y - center.y) * s2) < length / 2 + unit * 0.03 + r
     && Math.abs(-(point.x - center.x) * s2 + (point.y - center.y) * c) < depth / 2 + unit * 0.03 + r;
 }
