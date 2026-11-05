@@ -188,48 +188,69 @@ export interface WashingShip {
   readonly halfBeam: number;
 }
 
+/** A small white ellipse, drawn once per game, that every wash fleck reuses. */
+function washFleckTexture(scene: Phaser.Scene): string {
+  const key = "wash-fleck";
+  if (scene.textures.exists(key)) return key;
+  const canvas = document.createElement("canvas");
+  canvas.width = 32;
+  canvas.height = 16;
+  const context = canvas.getContext("2d")!;
+  context.fillStyle = "#ffffff";
+  context.beginPath();
+  context.ellipse(16, 8, 16, 8, 0, 0, Math.PI * 2);
+  context.fill();
+  addCanvasTexture(scene, key, canvas);
+  return key;
+}
+
 /**
  * Moving foam around ships under way: spray peeling off each bow and running aft along both
- * sides, and churned water streaming out behind each stern and spreading as it fades. Redrawn
- * every frame just above the scenery, so it sits over the painted wakes and under the decks;
- * drawn once, still, when the player prefers reduced motion.
+ * sides, and churned water streaming out behind each stern and spreading as it fades. Drawn
+ * just above the scenery, so it sits over the painted wakes and under the decks; still when the
+ * player prefers reduced motion. Each fleck is a reused image that only moves, fades and grows:
+ * redrawing them as vector ellipses every frame was the heaviest cost on the carrier maps.
  */
 export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], depth = -19.95): void {
-  if (!scene.add?.graphics || !ships.length) return;
-  const graphics = scene.add.graphics().setDepth(depth);
-  const still = prefersStillMotion();
+  if (!scene.add?.image || !scene.textures || typeof document === "undefined" || !ships.length) return;
+  const key = washFleckTexture(scene);
+  const BOW = 36;
+  const STERN = 34;
+  const flecks = ships.map(() => Array.from({ length: BOW + STERN }, () => scene.add.image(0, 0, key).setTint(0xf2f9fa).setDepth(depth)));
   const noise = (index: number, salt: number) => {
     const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
     return value - Math.floor(value);
   };
+  const place = (image: Phaser.GameObjects.Image, x: number, y: number, width: number, height: number, alpha: number) =>
+    image.setPosition(x, y).setDisplaySize(width, height).setAlpha(alpha);
   const draw = (seconds: number) => {
-    graphics.clear();
-    for (const ship of ships) {
+    ships.forEach((ship, s) => {
       const [cos, sin] = [Math.cos(ship.angle), Math.sin(ship.angle)];
       const at = (along: number, across: number) => ({ x: ship.center.x + along * cos - across * sin, y: ship.center.y + along * sin + across * cos });
       const fleck = Math.max(1.4, ship.length * 0.006);
       // Bow spray: each fleck is born at the stem and is carried aft and outward along the hull.
-      for (let i = 0; i < 36; i += 1) {
+      for (let i = 0; i < BOW; i += 1) {
         const phase = (seconds * 0.3 + noise(i, 11)) % 1;
         const side = i % 2 ? 1 : -1;
         const along = ship.length * (0.52 - phase * 0.85);
         const across = side * ship.halfBeam * (Math.min(1, phase * 4) * 1.05 + phase * 0.9 + noise(i, 13) * 0.15);
         const point = at(along, across);
-        graphics.fillStyle(0xf2f9fa, 0.7 * (1 - phase));
-        graphics.fillEllipse(point.x, point.y, fleck * (2.6 + phase * 2.4), fleck * (1.2 + phase));
+        place(flecks[s][i], point.x, point.y, fleck * (2.6 + phase * 2.4), fleck * (1.2 + phase), 0.7 * (1 - phase));
       }
       // Stern wash: churned water leaving the stern, spreading and thinning as it drifts astern.
-      for (let i = 0; i < 34; i += 1) {
+      for (let i = 0; i < STERN; i += 1) {
         const phase = (seconds * 0.22 + noise(i, 17)) % 1;
         const along = -ship.length * (0.5 + phase * 1.4);
         const across = (noise(i, 19) - 0.5) * ship.halfBeam * (1.4 + phase * 3.2);
         const point = at(along, across);
-        graphics.fillStyle(0xf2f9fa, 0.5 * (1 - phase));
-        graphics.fillEllipse(point.x, point.y, fleck * (3.4 + phase * 3), fleck * (1.6 + phase * 1.4));
+        place(flecks[s][BOW + i], point.x, point.y, fleck * (3.4 + phase * 3), fleck * (1.6 + phase * 1.4), 0.5 * (1 - phase));
       }
-    }
+    });
   };
-  animateDrawing(scene, graphics, draw, 2.5);
+  draw(2.5);
+  if (prefersStillMotion()) return;
+  let clock = 2.5;
+  animateWhileAlive(scene, () => !!flecks[0][0].scene, (delta) => draw(clock += delta / 1000));
 }
 
 
