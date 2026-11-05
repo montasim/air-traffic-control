@@ -240,3 +240,95 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
   scene.events.once("shutdown", () => scene.events.off("update", step));
 }
 
+
+let cloudSerial = 0;
+
+/** One soft cloud: overlapping puffs, each a radial fade, so it has no hard edge anywhere. */
+function cloudTexture(scene: Phaser.Scene, seed: number): string {
+  const key = `cloud-${(cloudSerial += 1)}`;
+  const [width, height] = [320, 200];
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d")!;
+  const noise = (index: number, salt: number) => {
+    const value = Math.sin((index + 1) * 12.9898 + (seed + salt) * 78.233) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  for (let i = 0; i < 11; i += 1) {
+    // Puffs gather along a gentle horizontal band, biggest in the middle.
+    const along = noise(i, 1);
+    const x = width * (0.18 + along * 0.64);
+    const y = height * (0.42 + (noise(i, 2) - 0.5) * 0.3);
+    const radius = height * (0.18 + noise(i, 3) * 0.16) * (1 - Math.abs(along - 0.5) * 0.8);
+    const puff = context.createRadialGradient(x, y, 0, x, y, radius);
+    puff.addColorStop(0, "rgba(255,255,255,0.55)");
+    puff.addColorStop(0.6, "rgba(255,255,255,0.3)");
+    puff.addColorStop(1, "rgba(255,255,255,0)");
+    context.fillStyle = puff;
+    context.fillRect(0, 0, width, height);
+  }
+  scene.textures.addCanvas(key, canvas);
+  return key;
+}
+
+/**
+ * Clouds drifting slowly across the map on the wind, each with its shadow sliding over the ground
+ * below and to the side. The clouds sit above the scenery and parked traffic but under routes,
+ * aircraft and landing circles, so they never hide play; when one drifts off, it returns on the
+ * far side. Drawn once, still, when the player prefers reduced motion.
+ */
+export function addDriftingClouds(
+  scene: Phaser.Scene,
+  bounds: { readonly width: number; readonly height: number },
+  { count = 7, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5 }: { count?: number; wind?: number; speed?: number; depth?: number; shadowDepth?: number } = {},
+): void {
+  if (typeof document === "undefined" || !scene.textures || !scene.add?.image) return;
+  const unit = Math.min(bounds.width, bounds.height);
+  const still = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const along = { x: Math.cos(wind), y: Math.sin(wind) };
+  const across = { x: -along.y, y: along.x };
+  const centre = { x: bounds.width / 2, y: bounds.height / 2 };
+  const reach = Math.hypot(bounds.width, bounds.height) / 2 + unit * 0.4;
+  // Paths across the wind stay within the map, so most clouds are on screen at any moment.
+  const span = Math.abs(bounds.width * across.x) + Math.abs(bounds.height * across.y);
+  const keys = [0, 1, 2].map((seed) => cloudTexture(scene, seed * 7 + 3));
+  const noise = (index: number, salt: number) => {
+    const value = Math.sin((index + 1) * 91.73 + salt * 37.71) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  const clouds = Array.from({ length: count }, (_, i) => {
+    const key = keys[i % keys.length];
+    const scale = (unit * (0.4 + noise(i, 1) * 0.35)) / 320;
+    const shadow = scene.add.image(0, 0, key).setScale(scale).setTint(0x1d3a2a).setAlpha(0.22).setDepth(shadowDepth);
+    const cloud = scene.add.image(0, 0, key).setScale(scale).setAlpha(0.75 + noise(i, 2) * 0.25).setDepth(depth);
+    // Spread evenly along the wind, scattered across it.
+    return { cloud, shadow, distance: -reach + ((i + noise(i, 3)) / count) * reach * 2, offset: (noise(i, 4) - 0.5) * span, pace: 0.7 + noise(i, 5) * 0.6, laps: 0 };
+  });
+  const shadowShift = { x: unit * 0.07, y: unit * 0.09 };
+  const place = () => {
+    for (const item of clouds) {
+      const x = centre.x + along.x * item.distance + across.x * item.offset;
+      const y = centre.y + along.y * item.distance + across.y * item.offset;
+      item.cloud.setPosition(x, y);
+      item.shadow.setPosition(x + shadowShift.x, y + shadowShift.y);
+    }
+  };
+  place();
+  for (const key of keys) scene.events.once("shutdown", () => scene.textures.remove(key));
+  if (still) return;
+  const step = (_time: number, delta: number) => {
+    for (const [index, item] of clouds.entries()) {
+      item.distance += speed * item.pace * (delta / 1000);
+      if (item.distance > reach) {
+        // Back in from the far side, on a fresh line across the wind.
+        item.laps += 1;
+        item.distance = -reach;
+        item.offset = (noise(index + item.laps * 17, 6) - 0.5) * span;
+      }
+    }
+    place();
+  };
+  scene.events.on("update", step);
+  scene.events.once("shutdown", () => scene.events.off("update", step));
+}

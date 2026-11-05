@@ -8,6 +8,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 */
 import type Phaser from 'phaser';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   paintAirfieldGround,
   paintAirfieldGuides,
@@ -114,4 +115,6 @@ export function renderSaltmarshGateway(
     detail: () => {}
   });
   paintSurfaceTexture(scene, layout, { raisedBuildings: true });
+  // Clouds drifting over the marsh on the wind, their shadows sliding across the fields.
+  addDriftingClouds(scene, layout);
 }
