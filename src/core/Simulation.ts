@@ -38,6 +38,8 @@ function turnToward(current: number, target: number, delta: number): number {
 const MAX_FRAME_DELTA = 0.1;
 /** Every type flies the same circle; one radius stays inside the 82-unit exit margin. */
 export const HOLD_RADIUS = 48;
+/** At most this many aircraft may hold at once; a tap on another is refused until one leaves. */
+export const MAX_HOLDING = 2;
 const MIN_SPAWN_SEPARATION = 180;
 const MIN_DESTINATION_DISTANCE = 480;
 const SAFE_SPAWN_HORIZON = 8;
@@ -221,6 +223,8 @@ export class Simulation {
 
     target.approachZoneId = destinationZoneId;
     target.holding = undefined;
+    target.holdTurned = undefined;
+    target.holdHeading = undefined;
     target.route = {
       points: smoothPath(points, 2),
       segmentIndex: 1,
@@ -229,10 +233,21 @@ export class Simulation {
     return { accepted: true, aircraftId, destinationZoneId };
   }
 
-  /** Drops any route and circles in place; this is also the go-around. */
+  /** Aircraft circling in a hold right now. */
+  holdingCount(): number {
+    return this.aircraft.filter((item) => item.holding && !item.route).length;
+  }
+
+  /**
+   * Drops any route and circles in place for the difficulty's number of loops, then resumes
+   * the heading it had; this is also the go-around. Refused while MAX_HOLDING others hold.
+   */
   holdAircraft(aircraftId: number): boolean {
     const target = this.aircraft.find((item) => item.id === aircraftId);
     if (this.phase !== 'running' || !target || target.state === 'landing' || !target.hasEntered) return false;
+    // Already holding: the hold carries on with its loops counted so far.
+    if (target.holding && !target.route) return true;
+    if (this.holdingCount() >= MAX_HOLDING) return false;
     // Turning toward the airspace centre keeps the whole circle on the inside.
     const toCentreX = this.bounds.width / 2 - target.position.x;
     const toCentreY = this.bounds.height / 2 - target.position.y;
@@ -240,6 +255,8 @@ export class Simulation {
     target.route = undefined;
     target.approachZoneId = undefined;
     target.holding = cross < 0 ? -1 : 1;
+    target.holdTurned = 0;
+    target.holdHeading = target.heading;
     return true;
   }
 
@@ -284,7 +301,16 @@ export class Simulation {
     let routeHeading = aircraft.heading;
 
     if (aircraft.holding && !aircraft.route) {
-      aircraft.heading += aircraft.holding * (aircraft.speed / HOLD_RADIUS) * delta;
+      const turn = (aircraft.speed / HOLD_RADIUS) * delta;
+      aircraft.holdTurned = (aircraft.holdTurned ?? 0) + turn;
+      aircraft.heading += aircraft.holding * turn;
+      if (aircraft.holdTurned >= this.trafficProfile.holdLoops * Math.PI * 2) {
+        // The loops are flown: straighten out on the heading the hold began with.
+        aircraft.heading = aircraft.holdHeading ?? aircraft.heading;
+        aircraft.holding = undefined;
+        aircraft.holdTurned = undefined;
+        aircraft.holdHeading = undefined;
+      }
       aircraft.position.x += Math.cos(aircraft.heading) * remaining;
       aircraft.position.y += Math.sin(aircraft.heading) * remaining;
       return;

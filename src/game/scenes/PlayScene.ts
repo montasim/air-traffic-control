@@ -12,7 +12,7 @@ import { GroundTraffic } from "../ground/groundTraffic";
 import { aircraftPresentationScale } from "../rendering/aircraft/visualTokens";
 import { ROUTE_OUTLINE_COLOR } from "../palette";
 import Phaser from "phaser";
-import { HOLD_RADIUS, Simulation, type SimulationState } from "../../core/Simulation";
+import { HOLD_RADIUS, MAX_HOLDING, Simulation, type SimulationState } from "../../core/Simulation";
 import { clamp, distance } from "../../core/geometry";
 import {
   resolveLandingTarget,
@@ -405,6 +405,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.isTap()) {
       this.cancelDrawing();
       if (this.simulation.holdAircraft(aircraft.id)) this.announce("Holding");
+      else if (this.simulation.holdingCount() >= MAX_HOLDING) this.announce(`Only ${MAX_HOLDING} aircraft can hold at once`);
       return;
     }
     this.evaluateLandingTarget(aircraft);
