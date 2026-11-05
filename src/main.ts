@@ -1,5 +1,4 @@
 import { LIVERIES } from './progression/liveries';
-import { AIRPORT_CATEGORIES } from './game/maps/categories';
 import { DIFFICULTY_LABELS, isDifficulty, type DifficultyId } from './core/difficulty';
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
 import { renderCareer as renderCareerPage } from "./ui/career";
@@ -9,7 +8,7 @@ import type { FeedbackEvent } from "./app/feedbackEvents";
 import { GameAudio, WebAudioBackend } from "./audio";
 import type { GameOverReason, SimulationSnapshot } from "./core/types";
 import { DEFAULT_MAP_ID, MAP_IDS, type MapId } from "./game/maps/mapIds";
-import { MAP_DEFINITIONS, mapDefinitionById } from "./game/maps/registry";
+import { mapDefinitionById } from "./game/maps/registry";
 import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
@@ -41,6 +40,8 @@ import { el, formatScore } from "./ui/dom";
 import { shiftTags } from "./ui/shiftTags";
 import { createConfirmDialog, LEAVE_SHIFT, RESTART_SHIFT } from "./ui/confirmDialog";
 import { createAnnouncer } from "./ui/announcer";
+import { mountAudioSettings } from "./ui/audioSettings";
+import { bestOnAirfield, mountAirfieldList } from "./ui/airfieldList";
 import { DIFFICULTY_CHOICES, mountSegmentedChoices } from "./ui/segmentedChoices";
 import { mountPractice } from "./ui/practice";
 import { createPreviewLibrary } from "./ui/previewLibrary";
@@ -125,16 +126,22 @@ const elements = {
   gameoverCode: document.querySelector<HTMLElement>("#gameover-code")!,
   gameoverCopy: document.querySelector<HTMLElement>("#gameover-copy")!,
   routeStatus: document.querySelector<HTMLElement>("#route-status")!,
-  audioToggles: [
-    ...document.querySelectorAll<HTMLButtonElement>("[data-audio-toggle]"),
-  ],
-  audioIcons: [...document.querySelectorAll<HTMLElement>("[data-audio-icon]")],
-  volumeInputs: [
-    ...document.querySelectorAll<HTMLInputElement>("[data-audio-volume]"),
-  ],
 };
 const { announce, flash: showFlightMessage } = createAnnouncer(elements.routeStatus, document.querySelector<HTMLElement>("#flight-message")!);
 const confirmShift = createConfirmDialog(document.querySelector<HTMLDialogElement>("#confirm-dialog")!);
+// Choosing an airfield mid-shift asks first, since it discards the paused shift.
+const airfieldList = mountAirfieldList(() => ({ save: currentSave, selectedId: activeMapId, pictures: previews }), mapId => {
+  const choose = async () => {
+    const discardSameMap = mapId === activeMapId && playScene()?.getPhase() === 'paused';
+    await selectMap(mapId);
+    if (discardSameMap) rebuildForTarget(activeProfile, activeMapId, false);
+    utilityReturnPanel = elements.startPanel;
+    utilityReturnFocus = document.querySelector('#choose-airfield');
+    history.back();
+  };
+  if (playScene()?.getPhase() === 'paused') confirmShift(LEAVE_SHIFT, () => void choose());
+  else void choose();
+});
 
 mountHugeIcon(elements.pauseIcon, "pause", 22);
 // Every segmented switch comes from one builder, before anything reads its inputs.
@@ -197,6 +204,7 @@ if (
 }
 
 const audio = new GameAudio(new WebAudioBackend(), currentSave.settings.audio);
+const audioSettings = mountAudioSettings(audio, async patch => (currentSave = await updateAudioSettings(patch)).settings.audio);
 await audio.prepare();
 // iPhone Safari starts audio only while it handles the end of a tap, so each tap and key press unlocks it
 // right there (free once it is running), before any await in a handler lets that permission lapse.
@@ -211,7 +219,6 @@ function layoutChanged(): boolean {
     needsNewShiftLayout(activeProfile, profileForViewport())
   );
 }
-let categoryFilter = 'all';
 let activeMapId: MapId = currentSave.selectedMapId;
 let activeDifficulty: DifficultyId = currentSave.selectedDifficulty;
 let activeLivery = currentSave.settings.livery;
@@ -247,7 +254,6 @@ function worldSize(): { width: number; height: number } {
 function fieldPlayable(): boolean {
   return isFieldPlayable(worldSize(), availableViewport());
 }
-let volumeSaveTimer = 0;
 let promotionAudioTimer = 0;
 let focusBeforePanel: HTMLElement | null = null;
 let routeCoachCompleted = routeCoachWasCompleted();
@@ -494,100 +500,11 @@ function renderCareer(): void {
   elements.rankProgress.textContent = rankProgressCopy();
 }
 
-function mapBest(mapId: MapId): number {
-  const scores = currentSave.mapRecords[mapId].difficultyScores[currentSave.selectedDifficulty];
-  return Math.max(scores.portrait, scores.landscape);
-}
-
-/** Fills the airfield chooser for the selected difficulty: its switch, status line and cards. */
-function showAirfieldDifficulty(): void {
-  document.querySelectorAll<HTMLInputElement>('input[name="airfield-difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
-  renderMapOptions();
-  document.querySelector('#airfield-selection-status')!.textContent = `${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} difficulty · Choose an available airfield to return to Play.`;
-}
-
-function renderMapOptions(): void {
-  const buttons = MAP_DEFINITIONS.filter(map => categoryFilter === 'all' || map.metadata.category === categoryFilter).map((definition) => {
-    const unlocked = isMapUnlocked(
-      definition.id,
-      currentSave.career.earnedRankId,
-    );
-    const selected = definition.id === activeMapId;
-    const button = el("button", "map-option");
-    button.type = "button";
-    button.dataset.mapId = definition.id;
-    button.setAttribute("aria-pressed", String(selected));
-    button.setAttribute("aria-disabled", String(!unlocked));
-    button.setAttribute(
-      "aria-label",
-      `${definition.metadata.name}${unlocked ? "" : `, locked. Requires ${rankDefinition(definition.metadata.unlockRankId).name}`}`,
-    );
-    const preview = previews.get(definition.id);
-    if (preview) button.style.setProperty("--map-preview", `url("${preview}")`);
-    button.style.setProperty("--map-preview-position", `var(--map-focus-${definition.id}, center)`);
-    if (selected) button.classList.add("is-selected");
-    if (!unlocked) button.classList.add("is-locked");
-    button.append(
-      el("strong", "", definition.metadata.name),
-      el("span", "", unlocked
-        ? `${AIRPORT_CATEGORIES[definition.metadata.category]} · ${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best ${formatScore(mapBest(definition.id))}`
-        : `Unlock at ${rankDefinition(definition.metadata.unlockRankId).name}`),
-      el("small", "", definition.metadata.description),
-    );
-    button.addEventListener("click", () => {
-      if (!unlocked) {
-        document.querySelector('#airfield-selection-status')!.textContent = `${definition.metadata.name} unlocks at ${rankDefinition(definition.metadata.unlockRankId).name}. Complete career objectives to earn that clearance.`;
-        return;
-      }
-      const choose = async () => {
-        const discardSameMap = definition.id === activeMapId && playScene()?.getPhase() === 'paused';
-        await selectMap(definition.id);
-        if (discardSameMap) rebuildForTarget(activeProfile, activeMapId, false);
-        utilityReturnPanel = elements.startPanel;
-        utilityReturnFocus = document.querySelector('#choose-airfield');
-        history.back();
-      };
-      if (playScene()?.getPhase() === 'paused') confirmShift(LEAVE_SHIFT, () => void choose());
-      else void choose();
-    });
-    return button;
-  });
-  elements.mapOptions.replaceChildren(...buttons);
-
-}
-
-function syncAudioControls(): void {
-  const settings = currentSave.settings.audio;
-  audio.setSettings(settings);
-  elements.audioToggles.forEach((button) => {
-    button.setAttribute("aria-pressed", String(settings.enabled));
-    button.setAttribute("aria-label", "Sound effects");
-    button.querySelector<HTMLElement>("[data-audio-label]")!.textContent =
-      settings.enabled ? "Sound on" : "Sound off";
-  });
-  elements.audioIcons.forEach((icon) => {
-    mountHugeIcon(icon, settings.enabled ? "volume" : "mute", 19);
-  });
-  document
-    .querySelectorAll<HTMLOutputElement>("[data-audio-value]")
-    .forEach((output) => {
-      output.value = `${Math.round(settings.volume * 100)}%`;
-    });
-  elements.volumeInputs.forEach((input) => {
-    input.value = String(Math.round(settings.volume * 100));
-    input.style.setProperty("--volume-level", `${Math.round(settings.volume * 100)}%`);
-    input.setAttribute(
-      "aria-valuetext",
-      `${Math.round(settings.volume * 100)} percent`,
-    );
-  });
-}
-
 function renderShell(): void {
   renderCareer();
-  renderMapOptions();
+  airfieldList.render();
   updateBestDisplays();
-  syncAudioControls();
+  audioSettings.show(currentSave.settings.audio);
 }
 
 function beginRun(): void {
@@ -849,38 +766,13 @@ async function handleGameOver({
   elements.chooseMapButton.disabled = false;
 }
 
-async function toggleAudio(): Promise<void> {
-  await audio.unlock();
-  const enabled = !currentSave.settings.audio.enabled;
-  currentSave = await updateAudioSettings({ enabled });
-  syncAudioControls();
-  if (enabled) audio.handle({ type: "ui-confirm", action: "resume" });
-}
-
-function setLocalVolume(volume: number): void {
-  const normalized = Math.min(1, Math.max(0, volume));
-  currentSave = {
-    ...currentSave,
-    settings: {
-      ...currentSave.settings,
-      audio: { ...currentSave.settings.audio, volume: normalized },
-    },
-  };
-  syncAudioControls();
-  window.clearTimeout(volumeSaveTimer);
-  volumeSaveTimer = window.setTimeout(async () => {
-    currentSave = await updateAudioSettings({ volume: normalized });
-    syncAudioControls();
-  }, 140);
-}
-
 document.querySelectorAll<HTMLInputElement>('input[name="difficulty"], input[name="airfield-difficulty"]').forEach(input => input.addEventListener('change', async () => {
   if (!input.checked || !isDifficulty(input.value)) return;
   currentSave = await gameStore.selectDifficulty(input.value);
   activeDifficulty = currentSave.selectedDifficulty;
   renderShell();
   // On the airfield chooser, its cards and status follow the new difficulty at once.
-  if (!document.querySelector<HTMLElement>('#airfields-content')!.hidden) showAirfieldDifficulty();
+  if (!document.querySelector<HTMLElement>('#airfields-content')!.hidden) airfieldList.show();
 }));
 landingModeInput.addEventListener('change', async () => {
   if (savingLandingMode || elements.startPanel.hidden || !utilityScreen.hidden) return;
@@ -937,14 +829,6 @@ elements.speedButton.addEventListener("click", () => {
 elements.pauseButton.addEventListener("click", () => {
   if (playScene()?.getPhase() === "paused") void resumeRun();
   else pauseRun();
-});
-elements.audioToggles.forEach((button) =>
-  button.addEventListener("click", () => void toggleAudio()),
-);
-elements.volumeInputs.forEach((input) => {
-  input.addEventListener("input", () =>
-    setLocalVolume(Number(input.value) / 100),
-  );
 });
 
 // Dismiss secondary menus without consuming the outside click or tap.
@@ -1023,7 +907,7 @@ function renderFieldDetail(): void {
   document.querySelector("#field-description")!.textContent =
     definition.metadata.description;
   document.querySelector("#field-record")!.textContent =
-    `Best · ${formatScore(mapBest(activeMapId))} landings`;
+    `Best · ${formatScore(bestOnAirfield(currentSave, activeMapId))} landings`;
   document.querySelectorAll<HTMLInputElement>('input[name="difficulty"]').forEach(input => { input.checked = input.value === currentSave.selectedDifficulty; });
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   landingModeInput.checked = currentSave.settings.twoEndLanding;
@@ -1101,7 +985,7 @@ function openUtility(screen: string, pushHistory = true): void {
   const title = document.querySelector<HTMLElement>("#utility-title")!;
   title.textContent = { help: "How to play", career: "Your career", settings: "Settings", practice: "Practice flight", airfields: "Choose airfield" }[screen];
   if (screen === "career") renderCareerDetail();
-  if (screen === 'airfields') showAirfieldDifficulty();
+  if (screen === 'airfields') airfieldList.show();
   // These screens list every airfield, so their pictures are drawn now rather than at startup.
   if (screen === 'airfields' || screen === 'career') void previewLibrary.request(allPreviewIds());
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
@@ -1132,16 +1016,6 @@ document.querySelectorAll<HTMLElement>("[data-screen]").forEach(button =>
 );
 document.querySelector("#utility-close")!.addEventListener("click", () => history.back());
 
-for (const [id, label] of Object.entries({ all: 'All airfields', ...AIRPORT_CATEGORIES })) {
-  const button = el('button', '', label); button.type = 'button';
-  button.setAttribute('aria-pressed', String(id === categoryFilter));
-  button.addEventListener('click', () => {
-    categoryFilter = id;
-    document.querySelectorAll('#category-filters button').forEach(b => b.setAttribute('aria-pressed', String(b === button)));
-    renderMapOptions();
-  });
-  document.querySelector('#category-filters')!.append(button);
-}
 renderShell();
 showOnly(elements.startPanel);
 const initialUtility = location.hash.slice(1);
@@ -1233,23 +1107,6 @@ document.addEventListener("keydown", (event) => {
     first?.focus();
   }
 });
-elements.mapOptions.addEventListener("keydown", (event) => {
-  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
-  event.preventDefault();
-  const choices = [
-    ...elements.mapOptions.querySelectorAll<HTMLButtonElement>("button"),
-  ];
-  const current = choices.indexOf(document.activeElement as HTMLButtonElement);
-  const next =
-    event.key === "Home"
-      ? 0
-      : event.key === "End"
-        ? choices.length - 1
-        : (current + (event.key === "ArrowRight" ? 1 : -1) + choices.length) %
-          choices.length;
-  choices[next]?.focus();
-});
-
 /** Read-only development seam; never exposes the live game or simulation. */
 export function inspectShift() {
   if (!import.meta.env.DEV) throw new Error("Shift inspection is development-only");
