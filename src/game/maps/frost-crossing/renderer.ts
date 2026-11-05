@@ -6,13 +6,15 @@ import {
   MAP_DETAIL_BUDGETS,
   paintAirfieldGround,
   paintAirfieldGuides,
-  paintBuilding,
+  paintControlTower,
+  paintGroundTexture,
   paintHelipad,
+  paintRaisedBuilding,
   paintRockRidge,
   paintMarkedRunway,
+  paintShoredPool,
   paintSurfaceTexture,
   paintSnowyPine,
-  paintWaterPolygon,
   type CivilMapPalette,
 } from '../../rendering/shared-map';
 import type { FrostCrossingLayout } from './layout';
@@ -40,9 +42,7 @@ export const FROST_CROSSING_PALETTE: CivilMapPalette = {
 };
 
 function paintSnowfield(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossingLayout, unit: number): void {
-  graphics.fillStyle(FROST_CROSSING_PALETTE.terrain, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  // Soft drifts: wide pale and shaded ellipses that break up the white.
+  // The snow itself is painted underneath by paintGroundTexture. Soft drifts: wide pale and shaded ellipses that break up the white.
   for (let i = 0; i < 14; i += 1) {
     const a = Math.sin((i + 1) * 45.1) * 43758.5453;
     const b = Math.sin((i + 1) * 17.3 + 4) * 43758.5453;
@@ -51,10 +51,18 @@ function paintSnowfield(graphics: Phaser.GameObjects.Graphics, layout: FrostCros
     graphics.fillStyle(i % 2 ? FROST_CROSSING_PALETTE.terrainLight : FROST_CROSSING_PALETTE.terrainDark, 0.45);
     graphics.fillEllipse(x, y, unit * (0.3 + (i % 4) * 0.08), unit * (0.1 + (i % 3) * 0.04));
   }
-  for (const water of layout.water) paintWaterPolygon(graphics, water, FROST_CROSSING_PALETTE);
+  // Lakes with an icy shore, a pale shallow band and a deeper centre.
+  for (const water of layout.water) paintShoredPool(graphics, water, FROST_CROSSING_PALETTE);
 }
 
 export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossingLayout, detailLevel: WorldDetailLevel): void {
+  // Bare snow with a fine sparkle of white and blue-grey shade.
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [] }, {
+    base: FROST_CROSSING_PALETTE.terrain,
+    fields: [],
+    light: 0xffffff,
+    dark: 0xa3b7bf
+  });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics, unit }) => {
       paintSnowfield(graphics, layout, unit);
@@ -70,10 +78,11 @@ export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossin
       paintAirfieldGuides(graphics, layout, FROST_CROSSING_PALETTE, detailLevel);
       paintHelipad(graphics, layout.helipad, FROST_CROSSING_PALETTE);
     },
-    detail: ({ graphics }) => {
-      for (const building of layout.buildings) paintBuilding(graphics, building, FROST_CROSSING_PALETTE, layout.runways);
+    detail: ({ graphics, unit }) => {
+      for (const building of layout.buildings) paintRaisedBuilding(graphics, building, FROST_CROSSING_PALETTE, unit, layout.runways);
+      paintControlTower(graphics, layout, FROST_CROSSING_PALETTE);
     },
-  }, { materialTextureKey: 'terrain:arcade:mineral' });
+  });
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
-  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
+  paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined }, { raisedBuildings: true });
 }
