@@ -7,7 +7,7 @@ import Phaser from "phaser";
 import type { FeedbackEvent } from "./app/feedbackEvents";
 import { GameAudio, WebAudioBackend } from "./audio";
 import type { GameOverReason, SimulationSnapshot } from "./core/types";
-import { DEFAULT_MAP_ID, MAP_IDS, type MapId } from "./game/maps/mapIds";
+import { DEFAULT_MAP_ID, type MapId } from "./game/maps/mapIds";
 import { mapDefinitionById } from "./game/maps/registry";
 import { PlayScene } from "./game/scenes/PlayScene";
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
@@ -44,8 +44,7 @@ import { mountAudioSettings } from "./ui/audioSettings";
 import { bestOnAirfield, mountAirfieldList } from "./ui/airfieldList";
 import { DIFFICULTY_CHOICES, mountSegmentedChoices } from "./ui/segmentedChoices";
 import { mountPractice } from "./ui/practice";
-import { createPreviewLibrary } from "./ui/previewLibrary";
-import { airfieldFocus, shrink } from "./ui/mapPreviews";
+import { mountMenuPictures } from "./ui/menuPictures";
 import { renderAchievementBadges, renderPromotion, resetCareerResult } from "./ui/shiftCelebration";
 
 const reviewParams = new URLSearchParams(window.location.search);
@@ -184,19 +183,13 @@ async function loadGameFonts(timeoutMilliseconds = 1_600): Promise<void> {
 
 await loadGameFonts();
 let currentSave: GameSaveV3 = await loadCareerSave();
-const previews = new Map<MapId, string>();
-// Airfield pictures are drawn on demand and cached; each one that arrives updates every place it shows.
-const previewLibrary = createPreviewLibrary((id, { url, focus }) => {
-  previews.set(id, url);
-  // Every picture of this airfield crops around the airfield itself, whatever its box shape.
-  document.documentElement.style.setProperty(`--map-focus-${id}`, `${(focus.x * 100).toFixed(1)}% ${(focus.y * 100).toFixed(1)}%`);
-  if (id === activeMapId) document.querySelector<HTMLImageElement>("#home-map-preview")!.src = url;
-  const careerImage = document.querySelector<HTMLImageElement>(`[data-career-map="${id}"]`);
-  if (careerImage) careerImage.src = url;
-  elements.mapOptions.querySelector<HTMLElement>(`[data-map-id="${id}"]`)?.style.setProperty("--map-preview", `url("${url}")`);
+// Airfield pictures: drawn on demand, cached, and pushed into every place that shows them.
+const menuPictures = mountMenuPictures({
+  settings: () => currentSave.settings,
+  selectedId: () => activeMapId,
+  listing: () => !utilityScreen.hidden && (utilityScreen.dataset.page === "airfields" || utilityScreen.dataset.page === "career"),
 });
-let previewKey = "";
-configurePreviews();
+const previews = menuPictures.pictures;
 if (
   !isMapUnlocked(currentSave.selectedMapId, currentSave.career.earnedRankId)
 ) {
@@ -300,7 +293,7 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
     playScene()?.setNight(currentSave.settings.night);
     playScene()?.setWeather(currentSave.settings.weather);
     if (!restore) offerLivePreview(nextGame);
-    void previewLibrary.request([activeMapId]);
+    menuPictures.showSelected();
     const focusLandingMode = restoreLandingModeFocus;
     restoreLandingModeFocus = false;
     landingModeInput.disabled = savingLandingMode || !isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
@@ -783,7 +776,7 @@ landingModeInput.addEventListener('change', async () => {
   try {
     currentSave = await gameStore.setTwoEndLanding(landingModeInput.checked);
     resetPractice();
-    refreshPreviews();
+    menuPictures.refresh();
   } finally {
     savingLandingMode = false;
   }
@@ -794,7 +787,7 @@ nightModeInput.addEventListener("change", () => {
   playScene()?.setNight(nightModeInput.checked);
   void gameStore.setNight(nightModeInput.checked).then(save => {
     currentSave = save;
-    refreshPreviews();
+    menuPictures.refresh();
   });
 });
 // Weather only changes the look too: the live map shows or hides its clouds at once.
@@ -802,7 +795,7 @@ weatherInput.addEventListener("change", () => {
   playScene()?.setWeather(weatherInput.checked);
   void gameStore.setWeather(weatherInput.checked).then(save => {
     currentSave = save;
-    refreshPreviews();
+    menuPictures.refresh();
   });
 });
 elements.startButton.addEventListener("click", () => void startRun());
@@ -872,8 +865,7 @@ window.addEventListener("resize", () => {
       rebuildForTarget(profileForViewport(), activeMapId, false);
     }
     // A new window size can change the layout a new shift gets, so redraw the pictures to match.
-    const { world, detailLevel } = previewWorld();
-    if (`${world.width}x${world.height}:${detailLevel}` !== previewKey) refreshPreviews();
+    menuPictures.resized();
     updateResizeNotice();
   }, 160);
 });
@@ -896,7 +888,7 @@ function renderFieldDetail(): void {
   if (previewUrl) preview.src = previewUrl;
   else {
     preview.removeAttribute('src');
-    void previewLibrary.request([activeMapId]);
+    menuPictures.showSelected();
   }
   preview.style.objectPosition = `var(--map-focus-${activeMapId}, center)`;
   const unlocked = isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
@@ -987,7 +979,7 @@ function openUtility(screen: string, pushHistory = true): void {
   if (screen === "career") renderCareerDetail();
   if (screen === 'airfields') airfieldList.show();
   // These screens list every airfield, so their pictures are drawn now rather than at startup.
-  if (screen === 'airfields' || screen === 'career') void previewLibrary.request(allPreviewIds());
+  if (screen === 'airfields' || screen === 'career') menuPictures.showAll();
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
   utilityScreen.hidden = false;
@@ -1024,40 +1016,12 @@ if (isUtilityName(initialUtility)) {
   history.replaceState(null, "", location.pathname + location.search);
   openUtility(initialUtility);
 }
-/** The world a new shift would get on this window; previews are drawn at it so they match play. */
-function previewWorld(): { world: { width: number; height: number }; detailLevel: ViewportProfile["detailLevel"] } {
-  return { world: worldSizeForViewport(window.innerWidth, window.innerHeight), detailLevel: profileForViewport().detailLevel };
-}
-/** Every airfield, the selected one first so its picture arrives soonest. */
-function allPreviewIds(): MapId[] {
-  return [activeMapId, ...MAP_IDS.filter(id => id !== activeMapId)];
-}
-/** Points the pictures at the current night, weather and runway-end settings; old pictures stay until replaced. */
-function configurePreviews(): void {
-  const { world, detailLevel } = previewWorld();
-  previewKey = `${world.width}x${world.height}:${detailLevel}`;
-  previewLibrary.configure({ night: currentSave.settings.night, weather: currentSave.settings.weather, twoEndLanding: currentSave.settings.twoEndLanding, world, detailLevel });
-}
-/** Settings changed: shows the pictures for them where they are on screen. */
-function refreshPreviews(): void {
-  configurePreviews();
-  const listing = !utilityScreen.hidden && (utilityScreen.dataset.page === "airfields" || utilityScreen.dataset.page === "career");
-  void previewLibrary.request(listing ? allPreviewIds() : [activeMapId]);
-}
-window.addEventListener("pagehide", () => previewLibrary.dispose(), { once: true });
 /** The selected airfield is already on screen at startup, so its picture is cut from that frame instead of drawn again. */
 function offerLivePreview(source: Phaser.Game): void {
   const scene = playScene();
-  const { world } = previewWorld();
   // Only a frame that matches what a fresh picture would show: same window, runway mode, and settings.
   if (!scene || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight || activeTwoEndLanding !== currentSave.settings.twoEndLanding) return;
-  const deliver = previewLibrary.expect(activeMapId);
-  // Once the first frames are out of the way, so cutting the picture never delays startup.
-  const idle = window.requestIdleCallback ?? ((callback: () => void) => window.setTimeout(callback, 600));
-  idle(() => source.events.once(Phaser.Core.Events.POST_RENDER, () => {
-    if (playScene() !== scene) return deliver();
-    deliver({ url: shrink(source.canvas, world.width, world.height), focus: airfieldFocus(scene.getLayout().landingZones, world.width, world.height) });
-  }));
+  menuPictures.takeFromFrame(source, scene.getLayout().landingZones, () => playScene() === scene);
 }
 // Inline MODE checks let Vite drop the unused PWA and Android imports per edition.
 if (import.meta.env.MODE !== "desktop" && import.meta.env.MODE !== "android") {
