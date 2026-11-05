@@ -17,7 +17,8 @@ import {
   paintBuilding,
   paintHelipad,
   paintRiver,
-  paintRunway,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintTree,
   smoothPath,
   strokePolyline,
@@ -86,7 +87,7 @@ function paintOperational(
 
   paintAirfieldGround(graphics, layout, palette, detailLevel);
   for (const runway of layout.runways) {
-    paintRunway(graphics, runway, palette, budget.surfaceWear);
+    paintMarkedRunway(graphics, runway, palette, layout.landingZones);
   }
   paintAirfieldGuides(graphics, layout, palette, detailLevel);
   paintHelipad(graphics, layout.helipad, palette);
@@ -176,4 +177,5 @@ export function renderRiverBend(
   }, {
     materialTextureKey: 'terrain:arcade:meadow'
   });
+  paintSurfaceTexture(scene, layout);
 }

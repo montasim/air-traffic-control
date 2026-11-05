@@ -6,11 +6,13 @@ import {
   paintAirfieldGuides,
   paintBuilding,
   paintHelipad,
-  paintRunway,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintWaterPolygon,
   rotatedRectangle,
   tracePolygon,
-  type CivilMapPalette
+  type CivilMapPalette,
+  type MapBuilding
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import {
@@ -126,20 +128,30 @@ function paintTerrain(
   }
 }
 
+const landmarkBuilding = (layout: DesertParallelLayout): MapBuilding => {
+  const landmark = layout.serviceLandmark;
+  return { id: 'field-ops-main', center: landmark.center, width: landmark.width, height: landmark.height, angle: landmark.angle, kind: 'operations' };
+};
+const propBuilding = (prop: DesertParallelLayout['propAnchors'][number]): MapBuilding => ({
+  id: prop.id,
+  center: prop.position,
+  width: prop.size,
+  height: prop.size * (prop.kind === 'hangar' ? 0.5 : 0.7),
+  angle: prop.angle,
+  kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
+});
+/** Every building paintFacilities draws, so the surface texture can keep off them. */
+const facilityBuildings = (layout: DesertParallelLayout): MapBuilding[] => [
+  landmarkBuilding(layout),
+  ...layout.propAnchors.filter((prop) => prop.id !== 'desert-ops' && prop.kind !== 'windsock').map(propBuilding)
+];
+
 function paintFacilities(
   graphics: Phaser.GameObjects.Graphics,
   layout: DesertParallelLayout,
   unit: number
 ): void {
-  const landmark = layout.serviceLandmark;
-  paintBuilding(graphics, {
-    id: 'field-ops-main',
-    center: landmark.center,
-    width: landmark.width,
-    height: landmark.height,
-    angle: landmark.angle,
-    kind: 'operations'
-  }, CIVIL_PALETTE, layout.runways);
+  paintBuilding(graphics, landmarkBuilding(layout), CIVIL_PALETTE, layout.runways);
 
   for (const [index, prop] of layout.propAnchors.entries()) {
     if (prop.id === 'desert-ops') continue;
@@ -156,14 +168,7 @@ function paintFacilities(
       graphics.fillPath();
       continue;
     }
-    paintBuilding(graphics, {
-      id: prop.id,
-      center: prop.position,
-      width: prop.size,
-      height: prop.size * (prop.kind === 'hangar' ? 0.5 : 0.7),
-      angle: prop.angle,
-      kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
-    }, CIVIL_PALETTE, layout.runways);
+    paintBuilding(graphics, propBuilding(prop), CIVIL_PALETTE, layout.runways);
     if (index % 2 === 0) {
       graphics.lineStyle(Math.max(1, unit * 0.0015), DESERT_PARALLEL_PALETTE.runwayMarking, 0.24);
       const roof = rotatedRectangle(prop.position, prop.size * 0.72, prop.size * 0.18, prop.angle);
@@ -184,7 +189,7 @@ export function renderDesertParallelMap(
     operational: ({graphics, unit, detailLevel}) => {
     paintAirfieldGround(graphics, layout, CIVIL_PALETTE, detailLevel);
     for (const runway of layout.runways) {
-      paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.strata);
+      paintMarkedRunway(graphics, runway, CIVIL_PALETTE, layout.landingZones);
     }
     paintAirfieldGuides(graphics, layout, CIVIL_PALETTE, detailLevel);
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
@@ -192,4 +197,5 @@ export function renderDesertParallelMap(
     },
     detail: () => {}
   }, {materialTextureKey: 'terrain:arcade:mineral'});
+  paintSurfaceTexture(scene, { ...layout, buildings: facilityBuildings(layout) });
 }

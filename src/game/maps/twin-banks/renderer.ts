@@ -7,12 +7,14 @@ import {
   paintBuilding,
   paintHelipad,
   paintRiver,
-  paintRunway,
+  paintMarkedRunway,
+  paintSurfaceTexture,
   paintTree,
   runwayCorners,
   smoothPath,
   tracePolygon,
-  type CivilMapPalette
+  type CivilMapPalette,
+  type MapBuilding
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import {
@@ -178,6 +180,18 @@ function paintScenicRunways(
   }
 }
 
+const propBuilding = (prop: TwinBanksLayout['propAnchors'][number]): MapBuilding => ({
+  id: prop.id,
+  center: prop.position,
+  width: prop.size,
+  height: prop.size * (prop.kind === 'hangar' ? 0.52 : 0.68),
+  angle: prop.angle,
+  kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
+});
+/** Every building paintFacilities draws, so the surface texture can keep off them. */
+const facilityBuildings = (layout: TwinBanksLayout): MapBuilding[] =>
+  layout.propAnchors.filter((prop) => prop.kind !== 'windsock').map(propBuilding);
+
 function paintFacilities(
   graphics: Phaser.GameObjects.Graphics,
   layout: TwinBanksLayout,
@@ -189,14 +203,7 @@ function paintFacilities(
       graphics.lineBetween(prop.position.x, prop.position.y, prop.position.x, prop.position.y - prop.size);
       continue;
     }
-    paintBuilding(graphics, {
-      id: prop.id,
-      center: prop.position,
-      width: prop.size,
-      height: prop.size * (prop.kind === 'hangar' ? 0.52 : 0.68),
-      angle: prop.angle,
-      kind: prop.kind === 'hangar' ? 'hangar' : 'operations'
-    }, CIVIL_PALETTE, layout.runways);
+    paintBuilding(graphics, propBuilding(prop), CIVIL_PALETTE, layout.runways);
   }
 
   for (const sign of visibleTwinBanksLabels(layout)) {
@@ -224,7 +231,7 @@ export function renderTwinBanksMap(
     paintScenicRunways(graphics, layout);
     paintAirfieldGround(graphics, layout, CIVIL_PALETTE, detailLevel);
     for (const runway of layout.runways) {
-      paintRunway(graphics, runway, CIVIL_PALETTE, layout.detailBudget.fieldBands);
+      paintMarkedRunway(graphics, runway, CIVIL_PALETTE, layout.landingZones);
     }
     paintAirfieldGuides(graphics, layout, CIVIL_PALETTE, detailLevel);
     paintHelipad(graphics, layout.helipad, CIVIL_PALETTE);
@@ -232,4 +239,5 @@ export function renderTwinBanksMap(
     },
     detail: () => {}
   }, {materialTextureKey: 'terrain:arcade:meadow'});
+  paintSurfaceTexture(scene, { ...layout, extraAprons: [layout.westApron], buildings: facilityBuildings(layout) });
 }
