@@ -1,14 +1,18 @@
-import type Phaser from 'phaser';
-import type { Vector2 } from '../../../core/types';
-import {
-  clearOfAirfield,
-  convexHull,
-  deterministicUnit,
-  mixColor,
-  tracePolygon,
-  type CivilMapPalette
-} from '../../rendering/shared-map';
-import type { SaltmarshGatewayLayout } from './layout';
+import type Phaser from "phaser";
+import type { Vector2 } from "../../../core/types";
+import type { PlayableMapLayout } from "../../maps/types";
+import type { MapRunway } from "../../maps/shared/airfield";
+import { convexHull, type MapBuilding } from "./airfieldPainter";
+import { clearOfAirfield, mixColor } from "./apronPainter";
+import { deterministicUnit, tracePolygon } from "./geometry";
+import type { CivilMapPalette } from "./types";
+
+/**
+ * Landscape pieces first made for Saltmarsh Gateway and shared by every land map: shored ponds,
+ * shaded canopies, edge forests, hedgerows and a control tower, all coloured from the map palette.
+ */
+type Airfield = PlayableMapLayout & { readonly runways: readonly MapRunway[] };
+type TowerAirfield = Airfield & { readonly apron: readonly Vector2[]; readonly buildings: readonly MapBuilding[] };
 
 /** A pond with a sandy shore, a pale shallow band and a deeper centre. */
 export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: readonly Vector2[], palette: CivilMapPalette): void {
@@ -22,7 +26,7 @@ export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: r
 }
 
 /** Overlapping crowns painted in passes (shadows, dark base, crown, highlight) so a clump reads as one canopy. */
-function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
+export function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
   graphics.fillStyle(palette.shadow, 0.3);
   for (const c of crowns) graphics.fillCircle(c.x + c.r * 0.6, c.y + c.r * 0.5, c.r);
   graphics.fillStyle(mixColor(palette.vegetation, palette.shadow, 0.35), 1);
@@ -33,11 +37,16 @@ function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x
   for (const c of crowns) graphics.fillCircle(c.x - c.r * 0.38, c.y - c.r * 0.38, c.r * 0.36);
 }
 
-/** Forest clumps in the band along the map edges, wherever they stay clear of the airfield and ponds. */
-export function paintForests(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette, clumps: number): void {
+/** Forest clumps in the band along the map edges, wherever they stay clear of the airfield and of `avoid` (water). */
+export function paintForests(
+  graphics: Phaser.GameObjects.Graphics,
+  layout: Airfield,
+  palette: CivilMapPalette,
+  clumps: number,
+  avoid: (point: Vector2, radius: number) => boolean = () => false,
+): void {
   const unit = Math.min(layout.width, layout.height);
   const band = unit * 0.16;
-  const ponds = layout.tidalPools.map((pool) => pool.reduce((sum, point) => ({ x: sum.x + point.x / pool.length, y: sum.y + point.y / pool.length }), { x: 0, y: 0 }));
   const crowns: { x: number; y: number; r: number }[] = [];
   for (let i = 0, placed = 0; i < clumps * 6 && placed < clumps; i += 1) {
     // Walk the perimeter, then step inward by up to the band width.
@@ -49,7 +58,7 @@ export function paintForests(graphics: Phaser.GameObjects.Graphics, layout: Salt
       : { x: inward, y: around - 2 * layout.width - layout.height };
     const radius = unit * (0.035 + deterministicUnit(i, 419) * 0.035);
     if (!clearOfAirfield(layout, edge, radius + unit * 0.04)) continue;
-    if (ponds.some((pond) => Math.hypot(pond.x - edge.x, pond.y - edge.y) < radius + unit * 0.08)) continue;
+    if (avoid(edge, radius)) continue;
     placed += 1;
     for (let k = 0; k < 9; k += 1) {
       const angle = deterministicUnit(i * 13 + k, 431) * Math.PI * 2;
@@ -61,10 +70,16 @@ export function paintForests(graphics: Phaser.GameObjects.Graphics, layout: Salt
 }
 
 /** Loose hedgerows along some field edges: uneven bushes with gaps, nudged off the line, off the airfield. */
-export function paintHedgerows(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette): void {
+export function paintHedgerows(
+  graphics: Phaser.GameObjects.Graphics,
+  layout: Airfield,
+  fieldPolygons: readonly (readonly Vector2[])[],
+  palette: CivilMapPalette,
+  avoid: (point: Vector2, radius: number) => boolean = () => false,
+): void {
   const unit = Math.min(layout.width, layout.height);
   const bushes: { x: number; y: number; r: number }[] = [];
-  layout.fieldPolygons.forEach((field, f) => {
+  fieldPolygons.forEach((field, f) => {
     field.forEach((a, i) => {
       if ((i + f) % 3) return;
       const b = field[(i + 1) % field.length];
@@ -79,7 +94,7 @@ export function paintHedgerows(graphics: Phaser.GameObjects.Graphics, layout: Sa
         const point = { x: a.x + ((b.x - a.x) * s) / length + normal.x * nudge, y: a.y + ((b.y - a.y) * s) / length + normal.y * nudge };
         if (point.x < 0 || point.y < 0 || point.x > layout.width || point.y > layout.height) continue;
         const r = unit * (0.005 + deterministicUnit(seed, 457) * 0.006);
-        if (clearOfAirfield(layout, point, r + unit * 0.03)) bushes.push({ ...point, r });
+        if (clearOfAirfield(layout, point, r + unit * 0.03) && !avoid(point, r)) bushes.push({ ...point, r });
       }
     });
   });
@@ -90,7 +105,7 @@ export function paintHedgerows(graphics: Phaser.GameObjects.Graphics, layout: Sa
  * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a square
  * shaft with shaded walls, an octagonal glazed cab on top, and one shadow cast from both.
  */
-export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, palette: CivilMapPalette): void {
+export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout: TowerAirfield, palette: CivilMapPalette): void {
   const unit = Math.min(layout.width, layout.height);
   const terminal = layout.buildings.find((building) => building.kind === 'terminal');
   if (!terminal || !layout.apron.length) return;

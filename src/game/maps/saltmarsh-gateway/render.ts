@@ -13,7 +13,11 @@ import {
   paintAirfieldGuides,
   MAP_DETAIL_BUDGETS,
   composeStaticMap,
+  paintControlTower,
+  paintForests,
+  paintHedgerows,
   paintRaisedBuilding,
+  paintShoredPool,
   paintShadedTree,
   paintSurfaceTexture,
   paintGroundTexture,
@@ -24,7 +28,6 @@ import {
 } from '../../rendering/shared-map';
 import type { WorldDetailLevel } from '../../palette';
 import type { SaltmarshGatewayLayout } from './layout';
-import { paintControlTower, paintForests, paintHedgerows, paintShoredPool } from './scenery';
 
 /** Brighter, warmer greens with clear field contrast, blue water and plain grey asphalt. */
 export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
@@ -60,7 +63,7 @@ function paintSaltmarshGateway(
 
   // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
   for (const pool of layout.tidalPools) paintShoredPool(graphics, pool, palette);
-  paintHedgerows(graphics, layout, palette);
+  paintHedgerows(graphics, layout, layout.fieldPolygons, palette);
 
   graphics.lineStyle(Math.max(2, Math.min(layout.width, layout.height) * 0.006), palette.fieldLine, 0.18);
   for (const road of layout.serviceRoads) strokePolyline(graphics, road);
@@ -69,7 +72,10 @@ function paintSaltmarshGateway(
     const tree = layout.treeBelt[index];
     if (clearOfAirfield(layout, tree.center, tree.radius)) paintShadedTree(graphics, tree.center, tree.radius, palette, index);
   }
-  paintForests(graphics, layout, palette, Math.round(budget.trees / 3));
+  const unit = Math.min(layout.width, layout.height);
+  const ponds = layout.tidalPools.map((pool) => pool.reduce((sum, point) => ({ x: sum.x + point.x / pool.length, y: sum.y + point.y / pool.length }), { x: 0, y: 0 }));
+  paintForests(graphics, layout, palette, Math.round(budget.trees / 3),
+    (point, radius) => ponds.some((pond) => Math.hypot(pond.x - point.x, pond.y - point.y) < radius + unit * 0.08));
 
  }
 
