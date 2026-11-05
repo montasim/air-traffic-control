@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import type { Vector2 } from '../../../core/types';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   addShipWash,
   clearOfAirfield,
   composeStaticMap,
@@ -127,4 +128,6 @@ export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastL
   addShipWash(scene, [{ center: carrier.center, angle: carrier.angle, length: carrier.length, halfBeam: carrier.beam * 0.5 }]);
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
   paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined }, { raisedBuildings: true });
+  // Clouds drifting in over the coast.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

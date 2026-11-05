@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   addMovingWaves,
   addShipWash,
   clearOfAirfield,
@@ -125,4 +126,6 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
   ]);
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
   paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined });
+  // Clouds drifting over the open ocean.
+  addDriftingClouds(scene, layout, { count: 5, thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

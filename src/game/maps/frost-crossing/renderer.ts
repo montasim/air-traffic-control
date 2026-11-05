@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   composeStaticMap,
   MAP_DETAIL_BUDGETS,
@@ -100,4 +101,6 @@ export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossin
   });
   // Runways only: the asphalt grain and rubber, with no apron or taxiway texture on this map.
   paintSurfaceTexture(scene, { ...layout, taxiways: [], apron: [], extraAprons: [], helipadApron: undefined }, { raisedBuildings: true });
+  // Clouds drifting over the snow and the sea.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

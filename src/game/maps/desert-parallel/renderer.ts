@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import {
+  addDriftingClouds,
   composeStaticMap,
   clearOfAirfield,
   paintAirfieldGround,
@@ -243,4 +244,6 @@ export function renderDesertParallelMap(
     detail: () => {}
   });
   paintSurfaceTexture(scene, { ...layout, buildings: facilityBuildings(layout) }, { raisedBuildings: true });
+  // A few clouds over the dry country; desert skies stay mostly clear.
+  addDriftingClouds(scene, layout, { count: 3, thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

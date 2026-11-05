@@ -9,6 +9,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 import type Phaser from 'phaser';
 import type { WorldDetailLevel } from '../../palette';
 import {
+  addDriftingClouds,
   clearOfAirfield,
   paintAirfieldGround,
   paintAirfieldGuides,
@@ -178,4 +179,6 @@ export function renderRiverBend(
     }
   });
   paintSurfaceTexture(scene, layout, { raisedBuildings: true });
+  // Clouds drifting over the river country.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

@@ -2,7 +2,7 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, addMovingWaves, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, addDriftingClouds, addMovingWaves, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
@@ -138,6 +138,8 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
     }
   });
   paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
+  // Clouds drifting over the field, thinning to a haze over its runways and apron.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }
 
 /** The small apron fixtures in a row by the terminal: shelters, containers, gates or kiosks. */
@@ -233,5 +235,7 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
     }
   });
   paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
+  // Clouds drifting over the field, thinning to a haze over its runways and apron.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
   layout.helipads.forEach((pad,i) => scene.add.text(pad.center.x, pad.center.y+pad.radius+u*.008, `H${i+1}`, { ...PHASER_TEXT_STYLES.airfieldMarking, fontSize: `${Math.max(10,u*.021)}px`, color: '#203d39', backgroundColor: '#fff5df', padding: { x: 3, y: 1 } }).setOrigin(.5,0).setDepth(-19));
 }

@@ -1,5 +1,6 @@
 import type Phaser from 'phaser';
 import {
+  addDriftingClouds,
   composeStaticMap,
   clearOfAirfield,
   paintAirfieldGround,
@@ -270,4 +271,6 @@ export function renderTwinBanksMap(
     detail: () => {}
   });
   paintSurfaceTexture(scene, { ...layout, extraAprons: [layout.westApron], buildings: facilityBuildings(layout) }, { raisedBuildings: true });
+  // Clouds drifting across both banks.
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }
