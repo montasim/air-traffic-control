@@ -26,6 +26,9 @@
   --safe-block: max(var(--safe-top), var(--safe-bottom));
   --safe-inline: max(var(--safe-left), var(--safe-right));
   /* One type scale for every modal and page title, and for headings inside pages. Phones override below. */
+  /* One size and one icon-to-label gap for every action button. */
+  --button-height: 48px;
+  --icon-gap: 8px;
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
   font-family: "Atkinson Hyperlegible", sans-serif;
@@ -159,21 +162,17 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-}
-/* Barlow Condensed sits low in its line box; drop the icon to the text's optical centre. */
-.primary-button.button-with-icon .button-icon,
-.secondary-button.button-with-icon .button-icon {
-  transform: translateY(0.08em);
+  gap: var(--icon-gap);
 }
 .primary-button,
 .secondary-button {
-  min-height: 50px;
-  padding: 12px 22px;
+  min-height: var(--button-height);
+  padding: 10px 20px;
   border: 0;
   border-radius: 10px;
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.2;
   font-weight: 700;
 }
 .primary-button {
@@ -446,6 +445,23 @@ h3 {
   display: grid;
   place-items: center;
 }
+.resume-shift {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.resume-shift small {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+/* Mirrors pause in the bottom-left corner, which every map keeps clear as its speed zone. */
+#speed-button {
+  right: auto;
+  left: max(18px, var(--safe-left));
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+}
 .hud[inert] {
   visibility: hidden;
 }
@@ -480,6 +496,11 @@ dialog h2 {
 .compact-panel h2 {
   margin-bottom: 12px;
 }
+/* Pause and result: the airfield name, then the shift settings as small tags. */
+.shift-context { margin: 8px 0 0; }
+.shift-context-name { display: block; font-family: var(--font-display); font-size: 1.1rem; }
+.shift-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: #e8e6d4; font-size: 0.8rem; line-height: 1.4; }
 .compact-panel p {
   font-size: 0.95rem;
   margin: 12px 0;
@@ -548,6 +569,13 @@ dialog h2 {
   font-size: 0.95rem;
   line-height: 1.5;
 }
+/* Next-rank progress on the result card: three small meters. */
+.rank-next { margin: 0 0 8px; font-size: 0.8rem; }
+.rank-meters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rank-meters li { display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; line-height: 1.3; }
+.rank-meters strong { font-family: var(--font-display); font-size: 1.1rem; }
+.rank-meter { display: block; height: 4px; margin-top: 4px; border-radius: 2px; background: linear-gradient(90deg, #28766d var(--fill), #e2e0cc var(--fill)); }
+.rank-meters .is-met strong { color: #28766d; }
 #resize-notice {
   padding: 12px;
   background: #f6deb1;
@@ -557,10 +585,11 @@ dialog h2 {
   position: fixed;
   z-index: 6;
   bottom: max(18px, var(--safe-bottom));
-  left: max(16px, var(--safe-left));
-  right: calc(var(--pause-right) + var(--pause-size) + 12px);
-  width: auto;
-  max-width: 380px;
+  /* Centred between the speed and pause buttons, clear of both corners. */
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(380px, calc(100% - 2 * (max(18px, var(--safe-inline)) + var(--pause-size) + 12px)));
   display: flex;
   align-items: center;
   gap: 8px;
@@ -633,13 +662,38 @@ dialog::backdrop {
 .help-steps strong {
   display: block;
 }
+/* How to play: one line per control or option. */
+/* Practice: a lesson switch styled like the difficulty choices; How to play opens either lesson. */
+/* Practice: lesson tabs, a short brief, then the field with its live instruction on top. */
+.practice-lessons { display: flex; gap: 6px; max-width: 360px; margin: 8px 0 20px; padding: 4px; border: 0; border-radius: 12px; background: #203d39; }
+.practice-lessons label { position: relative; flex: 1; cursor: pointer; }
+.practice-lessons input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.practice-lessons label > span { display: flex; align-items: center; justify-content: center; gap: var(--icon-gap); min-height: 44px; border-radius: 9px; color: #c9d7bc; font: 700 16px/1 var(--font-display); }
+.practice-lessons input:checked + span { background: var(--paper); color: var(--ink); }
+.practice-lessons input:focus-visible + span { outline: 3px solid #ffcc72; outline-offset: 2px; }
+.practice-lesson h3 { margin: 0; font: 700 26px/1.15 var(--font-display); }
+.practice-lesson p { margin: 6px 0 0; color: #d2ddc7; }
+/* Sized by the window height too, so the buttons below stay on screen; the field is 600×320. */
+.practice-stage { position: relative; max-width: min(100%, calc(52vh * 1.875)); margin: 18px 0 14px; }
+.practice-stage #practice-field { margin: 0; border-radius: 16px; }
+.practice-stage #practice-status { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 24px); min-height: 0; margin: 0; padding: 8px 14px; border-radius: 10px; background: #fff5dff0; color: var(--ink); font-weight: 600; box-shadow: 0 4px 12px #203d3930; pointer-events: none; }
+/* On narrow screens the field is too small to cover, so the instruction sits just above it. */
+@media (max-width: 600px) { .practice-stage #practice-status { position: static; display: block; width: fit-content; max-width: 100%; margin: 0 0 8px; } }
+.help-controls-title { margin: 28px 0 12px; font: 700 24px/1.2 var(--font-display); }
+.help-controls { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.help-controls li { display: grid; grid-template-columns: minmax(120px, 160px) 1fr; gap: 12px; align-items: baseline; }
+.help-controls strong { font-family: var(--font-display); }
+@media (max-width: 520px) { .help-controls li { grid-template-columns: 1fr; gap: 2px; } }
 .flight-key {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
   margin: 20px 0;
 }
-.flight-key span {
+/* Practice sits at the far end of the aircraft key row. */
+.flight-key button { margin: 0 0 0 auto; }
+.flight-key > span {
   padding: 7px 10px;
   border-radius: 6px;
   font-size: 0.83rem;
@@ -966,9 +1020,6 @@ dialog::backdrop {
   .map-selection {
     bottom: 12px;
   }
-  .primary-button {
-    min-height: 46px;
-  }
   .departure-heading h2 {
     font-size: 1.65rem;
   }
@@ -1036,15 +1087,36 @@ dialog::backdrop {
   padding: 10px; background: var(--paper); border-radius: 12px;
   box-shadow: 0 6px 16px #203d3926;
 }
+/* Resume and Main menu share one row; More options keeps the full width below. */
+#pause-panel .panel-actions, #confirm-dialog .panel-actions { flex-direction: row; flex-wrap: wrap; }
+#confirm-dialog .panel-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
+#gameover-panel .result-actions { flex-direction: row; }
+#gameover-panel .result-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
+/* One dialog on screen at a time: the pause menu steps aside while a leave or restart is confirmed. */
+body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
+#pause-panel .panel-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
+#pause-panel .panel-actions > .menu-more { flex-basis: 100%; }
 #pause-panel .menu-more summary { text-align: center; background: transparent; }
+/* Restart and Settings share one row; How to play takes the row below. */
+#pause-panel .menu-more-actions { display: flex; flex-wrap: wrap; }
+#pause-panel .menu-more-actions button { flex: 1 1 0; width: auto; min-height: 44px; margin: 0; padding-inline: 10px; justify-content: center; white-space: nowrap; }
+#pause-panel .menu-more-actions button[data-screen="help"] { flex-basis: 100%; }
+/* The outlined links match the filled buttons beside them in type and height. */
+#pause-panel .menu-more-actions .text-button { min-height: var(--button-height); font-family: var(--font-display); font-size: 1.125rem; font-weight: 700; }
 
 /* Action icons use Hugeicons; text carries the accessible name. */
 .home-tools button, .menu-more-actions button, #utility-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--icon-gap);
 }
+/* Back: a cream button on the dark page headers. */
+/* The tall title's letters sit low in their box; the top margin centres Back on them at any title size. */
+#utility-close { min-height: 44px; margin-top: calc(var(--title-size) * 0.19); padding: 10px 14px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
+/* Lifts the arrow onto the middle of the word rather than the middle of its box. */
+#utility-close .button-icon { transform: translateY(-0.06em); }
+#utility-close:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
 .menu-more-actions button {
   justify-content: flex-start;
   text-align: left;
@@ -1056,7 +1128,7 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--icon-gap);
   list-style: none;
 }
 .menu-more summary::-webkit-details-marker { display: none; }
@@ -1192,7 +1264,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #developer-link { flex-shrink: 0; text-decoration: none; }
 #developer-link:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
 /* Utility-page actions sit beside the Back button, so they share its compact scale. */
-.utility-screen .primary-button, .utility-screen .secondary-button { min-height: 44px; padding: 10px 18px; gap: 8px; font-size: 1rem; border-radius: 8px; }
+.utility-screen .primary-button, .utility-screen .secondary-button { gap: var(--icon-gap); }
 #help-content > .primary-button { width: fit-content; }
 #support-button { flex-shrink: 0; text-decoration: none; }
 #support-button:focus-visible { outline: 3px solid #ffcc72; outline-offset: 4px; }
@@ -1211,7 +1283,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 
 .utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) .utility-top { border-color: #fff5df30; }
 
-.utility-screen:is([data-page="career"], [data-page="settings"], [data-page="help"], [data-page="practice"]) #utility-close { background: var(--paper); border-color: transparent; }
 
 /* Illustrated flight briefing uses the same cream panels as the other game pages. */
 #help-content .help-lead { color: var(--paper); }
@@ -1306,7 +1377,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 .utility-screen[data-page="airfields"] { background: #29483e; color: var(--paper); }
 .utility-screen[data-page="airfields"] .utility-page { max-width: 1120px; }
 .utility-screen[data-page="airfields"] .utility-top { border-color: #fff5df30; }
-.utility-screen[data-page="airfields"] #utility-close { background: var(--paper); }
 #airfield-selection-status { color: #c9d7bc; font-size: 14px; margin: 12px 0 20px; line-height: 1.5; }
 .category-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; }
 .category-filters button { padding: 10px 14px; min-height: 44px; color: var(--paper); background: #38594c; border: 1px solid #738b78; border-radius: 8px; }
@@ -1324,11 +1394,13 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Start screen: choose an airfield, set the challenge, then take control. */
 #start-panel.intro-panel { background: #29483e; overflow-y: auto; pointer-events: auto; scroll-padding: 24px; scrollbar-color: #819b87 #29483e; }
 #start-panel .intro-content { position: relative; width: min(100%, 1080px); min-height: 100%; height: auto; margin: 0 auto; padding: 48px 40px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 28px; }
-#start-panel .home-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+/* The menu sits on the tagline's line; flex-end is the fallback where last-baseline is unsupported. */
+#start-panel .home-header { display: flex; align-items: flex-end; align-items: last baseline; justify-content: space-between; gap: 24px; }
 #start-panel #start-title { font-size: clamp(36px, 4.4vw, 52px); line-height: 1.05; letter-spacing: -.025em; text-align: left; text-shadow: none; margin: 0; }
 #start-panel #start-title em { display: inline; }
 #start-panel #start-description { position: static; width: auto; margin: 10px 0 0; text-align: left; font-size: 14px; line-height: 1.5; color: #d2ddc7; text-shadow: none; }
-#start-panel .home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0; flex-shrink: 0; }
+/* Pulled out by the buttons' own padding so their labels line up with the card edge and the tagline. */
+#start-panel .home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 -10px -10px 0; flex-shrink: 0; }
 #start-panel .home-tools button { min-height: 44px; padding: 10px; background: transparent; color: var(--paper); font-size: 16px; font-weight: 600; border: 1px solid transparent; }
 #start-panel .home-tools button:hover { background: #38594c; }
 #start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
@@ -1343,7 +1415,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { #home-map-preview[src] { animation: none; } }
 #start-panel .airfield-details { display: flex; flex-direction: column; gap: 4px; }
 #start-panel .home-assignment { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 0; }
-#start-panel #choose-airfield { font-size: 14px; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: 8px; background: transparent; border-color: transparent; color: var(--ink); }
+#start-panel #choose-airfield { font-size: 14px; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: var(--icon-gap); background: transparent; border-color: transparent; color: var(--ink); }
 #start-panel #choose-airfield:hover { text-decoration: underline; text-underline-offset: 4px; }
 #start-panel .departure-heading { display: block; min-width: 0; color: var(--ink); }
 #start-panel #field-title { font-size: 32px; line-height: 1.1; margin: 0; }
@@ -1354,10 +1426,18 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .difficulty-options { margin: 0; }
 #start-panel .difficulty-choices { gap: 20px; }
 #start-panel .difficulty-options legend { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; font-size: 14px; margin-bottom: 12px; }
-#start-panel .runway-option { padding-top: 24px; border-top: 1px solid var(--line); margin: 0; gap: 12px; }
+#start-panel .flight-switches { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
+#start-panel .runway-option { margin: 0; gap: 12px; min-height: 44px; }
 #start-panel .runway-option small { color: var(--muted); }
-#start-panel #start-button { margin: 0; min-height: 52px; }
-#start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0 4px; }
+#start-panel #start-button { margin: 0; }
+/* Resume and Start share one row; Start fills it when there is no shift to resume. */
+#start-panel .flight-actions { display: flex; gap: 12px; }
+#start-panel .flight-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
+/* The shift details stay on one line beside Start; the full text is on hover. */
+#start-panel .resume-shift { padding-block: 6px; }
+#start-panel .resume-shift .button-label { display: block; min-width: 0; }
+#start-panel .resume-shift small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 16px; color: var(--paper); }
 #start-panel .store-links { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 #start-panel .store-links a { display: inline-flex; align-items: center; border-radius: 4px; scroll-margin-block: 24px; }
@@ -1377,12 +1457,15 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #start-title { font-size: 38px; text-align: center; }
   #start-panel #start-title em { display: inline; }
   #start-panel #start-description { font-size: 13px; margin-top: 12px; text-align: center; }
-  #start-panel .home-tools { order: 2; justify-content: center; gap: 8px; }
-  #start-panel .home-tools button { min-height: 44px; padding: 8px; background: transparent; font-size: 16px; gap: 6px; }
+  #start-panel .home-tools { order: 2; justify-content: center; gap: 8px; margin: 0; }
+  #start-panel .home-tools button { min-height: 44px; padding: 8px; background: transparent; font-size: 16px; }
   #start-panel .home-tools button:first-child { padding-left: 8px; }
   #start-panel .departure-board { order: 1; grid-template-columns: minmax(0, 1fr); padding: 0 20px 20px; gap: 16px; }
   #start-panel .home-airfield { min-width: 0; }
-  #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px; border-radius: 16px 16px 0 0; }
+  /* The card clips the picture to its corners, and its cream starts below them: cream drawn under a curved,
+     blended edge shows through as a light line. The picture is always taller than the clear strip. */
+  #start-panel .departure-board { overflow: hidden; background: linear-gradient(transparent 40px, var(--paper) 40px); }
+  #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px; border-radius: 0; }
   #start-panel #home-map-preview { object-fit: cover; }
   #start-panel .home-assignment { margin: 0; }
   #start-panel #choose-airfield { min-height: 44px; font-size: 13px; }
@@ -1392,9 +1475,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .flight-settings { gap: 16px; border: 0; padding: 0; }
   #start-panel .difficulty-options legend { font-size: 14px; margin-bottom: 8px; }
   #start-panel .difficulty-choices label span { min-height: 44px; font-size: 14px; }
-  #start-panel .runway-option { border: 0; margin: 0; padding: 0; min-height: 44px; }
-  #start-panel .runway-option small { font-size: 13px; line-height: 1.4; }
-  #start-panel #start-button { min-height: 52px; }
+  #start-panel .flight-switches { gap: 16px; padding: 0; border: 0; }
   #start-panel .home-stores { order: 3; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0; }
   #start-panel .home-stores p { font-size: 14px; }
   #start-panel .store-links { width: 100%; justify-content: center; gap: 12px; }
@@ -1432,9 +1513,10 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .flight-settings { gap: 4px; padding: 0; border: 0; }
   #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
-  #start-panel .runway-option { min-height: 44px; padding: 0; margin: 0; border: 0; }
-  #start-panel .runway-option small { font-size: 12px; }
-  #start-panel #start-button { width: min(100%, 240px); align-self: flex-end; min-height: 44px; padding-block: 8px; }
+  #start-panel .flight-switches { gap: 16px; padding: 0; border: 0; }
+  #start-panel #start-button { min-height: 44px; padding-block: 8px; }
+  #start-panel .flight-actions { justify-content: flex-end; }
+  #start-panel .flight-actions > button { flex: 0 1 240px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
   #start-panel .home-stores p { margin: 0; font-size: 13px; }
   #start-panel .store-links { width: auto; flex-wrap: wrap; gap: 10px; }
@@ -1462,11 +1544,10 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #dismiss-route-coach:hover { background: #e5e6d3; }
 
 /* Result details scroll; actions always retain their own space. */
-#gameover-panel { padding: 0; overflow: hidden; }
+#gameover-panel { width: min(480px, calc(100% - 32px)); padding: 0; overflow: hidden; }
 #gameover-panel .panel-content { display: flex; flex-direction: column; max-height: calc(100dvh - 32px); min-height: 0; }
 #gameover-panel .result-body { min-height: 0; overflow-y: auto; padding: 24px 24px 0; }
 #gameover-panel .result-actions { flex: 0 0 auto; margin: 0; padding: 16px 24px 20px; background: var(--paper); border-top: 1px solid #203d3920; }
-#gameover-panel .result-actions button { min-height: 44px; }
 @media (min-width: 600px) and (max-height: 500px) {
   #gameover-panel .result-body { padding: 16px 20px 0; }
   #gameover-panel .result-actions { flex-direction: row; padding: 12px 20px; }
@@ -1478,6 +1559,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Phones and short windows use the compact title scale everywhere. */
 @media (max-width: 650px), (max-height: 600px) {
   :root { --title-size: 1.9rem; --section-title-size: 1.4rem; }
+  /* The smaller title needs a smaller nudge to centre Back on its lowercase letters. */
+  #utility-close { margin-top: 3px; }
 }
 /* Portrait phones get a compact scale for the pause, result, and confirmation cards so they fit without dominating the screen. */
 @media (max-width: 650px) {
@@ -1541,3 +1624,9 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 }
 
 .livery-legend { margin-bottom: 8px; font-weight: 700; }
+/* Where supported, trim the page title and the Back label to their lowercase letters, so plain centring
+   lines Back up with the body of a mostly lowercase title at any size or zoom; the top margin above is the fallback. */
+@supports (text-box: trim-both ex alphabetic) {
+  .utility-top h2, #utility-close > span:last-child { text-box: trim-both ex alphabetic; }
+  #utility-close { margin-top: 0; }
+}

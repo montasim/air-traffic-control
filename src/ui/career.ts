@@ -35,6 +35,7 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
     totals.append(item);
   }
   identity.append(totals);
+  if (save.modified) identity.append(node('p', 'clearance-level', 'Records on this device were changed outside the game.'));
   const promotion = node('section', 'promotion-card');
   promotion.append(node('p', 'career-eyebrow', next ? 'Your next clearance' : 'Career complete'), node('h3', '', next?.name ?? 'Chief of the airspace'));
   if (next) {
@@ -114,7 +115,7 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
   const airfields = node('section', 'career-airfields');
   airfields.append(node('h3', 'career-section-title', 'Your airfield records'));
   const filter = node('fieldset', 'difficulty-options career-mode');
-  filter.append(node('legend', '', 'Record difficulty'));
+  filter.append(node('legend', '', 'Show records for'));
   const choices = node('div', 'difficulty-choices');
   for (const mode of DIFFICULTIES) {
     const label = node('label', '');
@@ -177,7 +178,8 @@ export function renderCareer(container: HTMLElement, save: GameSaveV3, previews:
     card.append(progress, node('small', '', earned ? 'Completed' : `${progress.value} / ${achievement.goal}`)); badges.append(card);
   }
   achievements.append(badges);
-  container.replaceChildren(overview, liveries, airfields, achievements, ladder);
+  // Status, then what's next, then what's done, then detail, then cosmetics.
+  container.replaceChildren(overview, ladder, achievements, airfields, liveries);
 }
 
 /** Use the same airframe outlines, class colors and paint treatments as the in-game fleet. */

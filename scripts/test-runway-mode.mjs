@@ -59,7 +59,7 @@ try {
   await page.locator('#pause-button').click();
   const before=await snapshot();
   assert.equal(before.twoEndLanding,true); assert.equal(before.landingZones.filter(z=>z.approach).length,4);
-  await expect(page.locator('#pause-context')).toContainText('Both landing ends');
+  await expect(page.locator('#pause-context')).toContainText('Both ends');
   await page.setViewportSize({width:500,height:850});
   await expect(page.locator('#resume-button')).toBeEnabled();
   assert.deepEqual(await snapshot(),before);
@@ -82,7 +82,7 @@ try {
   await page.locator('#start-button').click(); await page.locator('#pause-button').click();
   assert.equal((await snapshot()).twoEndLanding,false);
   assert.equal((await snapshot()).landingZones.filter(z=>z.approach).length,2);
-  await expect(page.locator('#pause-context')).toContainText('One landing end');
+  await expect(page.locator('#pause-context')).toContainText('One end');
   // Unlock maps only in this disposable test profile, then switch through the UI.
   await page.evaluate(async () => {
     const { IndexedDbSavePersistence } = await import('/src/storage/persistence.ts');
