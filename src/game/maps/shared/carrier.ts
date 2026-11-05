@@ -51,7 +51,6 @@ export interface Carrier {
 
 /** Beam as a share of the deck length: wide enough for parking beside the lanes. */
 const BEAM = 0.34;
-const ANGLED_DECK = (-9 * Math.PI) / 180;
 /** The deck outline as shares of length and beam; the aft starboard parking shelf fits full stand footprints even in compact layouts. */
 const DECK = [
   [-0.5, -0.34], [-0.5, 0.6], [0.1, 0.7], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
@@ -90,9 +89,11 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   ].map(([x, y]) => at(x, y));
 
   const laneWidth = beam * 0.16;
-  // Axial lane along the hull, port of the centre line; angled lane from the stern off to port.
-  const axialStart = { x: -0.48 * length, y: -0.04 * beam };
-  const angledStart = { x: -0.46 * length, y: -0.08 * beam };
+  // Axial lane along the centre line; the second lane parallel to it, off to port.
+  // The second lane (still called "angled") runs parallel to the axial one on the port side with a
+  // clear gap, rather than crossing it at an angle, so the two never overlap.
+  const axialStart = { x: -0.48 * length, y: 0 };
+  const angledStart = { x: -0.46 * length, y: -0.25 * beam };
   const localDeck = DECK.map(([x, y]) => ({ x: x * length, y: y * beam }));
   // Each lane runs only as far as the deck allows, its painted shoulder included, so no part of
   // a runway or its outline hangs over the sea.
@@ -110,10 +111,10 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     return { center: world(start.x + along.x * middle, start.y + along.y * middle), length: to - from };
   };
   const axial = fitted(axialStart, 0.7 * length, 0);
-  const angled = fitted(angledStart, 0.6 * length, ANGLED_DECK);
+  const angled = fitted(angledStart, 0.6 * length, 0);
   const lanes: CarrierLanePaint[] = [
     { kind: 'axial', ...axial, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
-    { kind: 'angled', ...angled, width: laneWidth, angle: spec.angle + ANGLED_DECK, operational: spec.lanes.includes('angled') },
+    { kind: 'angled', ...angled, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('angled') },
   ];
   const runways: MapRunway[] = lanes.filter((lane) => lane.operational).map((lane) => ({
     id: `${spec.id}-${lane.kind}`,
@@ -129,12 +130,11 @@ export function createCarrier(spec: CarrierSpec): Carrier {
 
   // Both lanes taxi to one parking point aft of the island, on the starboard side.
   const parking = world(-0.15 * length, 0.18 * beam);
-  const angledAtParking = (-0.15 * length - angledStart.x) / Math.cos(ANGLED_DECK);
   const taxiways: MapTaxiway[] = runways.map((runway) => {
     const kind = runway.id.endsWith('angled') ? 'angled' : 'axial';
     const from = kind === 'axial'
       ? world(-0.15 * length, axialStart.y)
-      : world(-0.15 * length, angledStart.y + Math.sin(ANGLED_DECK) * angledAtParking);
+      : world(-0.15 * length, angledStart.y);
     return { id: `${runway.id}-taxi`, path: [from, parking], width: spec.taxiwayWidth, connects: [runway.id, `${spec.id}-deck`] };
   });
 
