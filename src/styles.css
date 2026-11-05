@@ -210,7 +210,7 @@ h3 {
 .intro-content {
   height: 100%;
   position: relative;
-  padding: 44px 48px;
+  padding: 40px 48px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -248,14 +248,14 @@ h3 {
 .home-tools {
   display: flex;
   gap: 8px;
-  margin: 22px 0;
+  margin: 20px 0;
 }
 .home-tools button {
   background: #fff5df;
   color: var(--ink);
   border: 0;
   min-height: 42px;
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 8px;
   font-family: var(--font-display);
   font-weight: 600;
@@ -293,7 +293,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 .departure-heading h2 {
   font-size: 2rem;
@@ -310,7 +310,7 @@ h3 {
 }
 #field-record {
   font-size: 0.8rem;
-  margin: 10px 0;
+  margin: 8px 0;
   color: #59654f;
 }
 #field-lock {
@@ -320,7 +320,7 @@ h3 {
 }
 #start-button {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 12px;
 }
 .map-selection {
   position: absolute;
@@ -336,13 +336,13 @@ h3 {
   font-family: var(--font-display);
   font-size: var(--section-title-size);
   color: #fff5df;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   text-shadow: 0 2px 5px #203d39;
 }
 .map-options {
   display: flex;
   gap: 12px;
-  padding: 5px;
+  padding: 4px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
 }
@@ -368,13 +368,13 @@ h3 {
   background-image: var(--map-preview);
   background-size: cover;
   background-position: var(--map-preview-position, center);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 .map-option strong,
 .map-option span,
 .map-option small {
   display: block;
-  margin: 0 10px;
+  margin: 0 8px;
 }
 .map-option strong {
   font-family: var(--font-display);
@@ -382,7 +382,7 @@ h3 {
 }
 .map-option span {
   font-size: max(10.6px, 0.66rem);
-  margin-top: 5px;
+  margin-top: 4px;
   text-transform: uppercase;
   line-height: 1.3;
 }
@@ -410,7 +410,7 @@ h3 {
   position: absolute;
   top: max(16px, var(--safe-top));
   background: #fff5dfee;
-  padding: 8px 15px;
+  padding: 8px 16px;
   border-radius: 10px;
   min-width: 64px;
   box-shadow: 0 3px 10px #203d3920;
@@ -451,7 +451,7 @@ h3 {
 }
 .resume-shift {
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 /* Mirrors pause in the bottom-left corner, which every map keeps clear as its speed zone. */
 #speed-button {
@@ -470,7 +470,7 @@ h3 {
   transform: translate(-50%, -50%);
   width: min(430px, calc(100% - 32px));
   background: var(--paper);
-  padding: 30px;
+  padding: 32px;
   border-radius: 16px;
   box-shadow: 0 16px 60px #132f3966;
   max-height: calc(100dvh - 32px);
@@ -497,8 +497,8 @@ dialog h2 {
 }
 /* Pause and result: the airfield name, then the shift settings as small tags. */
 .shift-context { margin: 8px 0 0; }
-.shift-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
-.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; background: #e8e6d4; font-size: 0.8rem; line-height: 1.4; }
+.shift-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; padding: 0; list-style: none; }
+.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #e8e6d4; font-size: 0.8rem; line-height: 1.4; }
 .compact-panel p {
   font-size: 0.95rem;
   margin: 12px 0;
@@ -506,21 +506,21 @@ dialog h2 {
 .panel-actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin-top: 20px;
 }
 .audio-settings {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  margin: 22px 0;
+  gap: 16px;
+  margin: 20px 0;
 }
 .audio-toggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-height: 44px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: #e7e8d5;
   border: 0;
   border-radius: 8px;
@@ -529,7 +529,7 @@ dialog h2 {
 .audio-settings label {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 .audio-settings label span {
   font-size: 0.8rem;
@@ -547,7 +547,7 @@ dialog h2 {
   margin: 24px 0;
 }
 .result-grid > div {
-  padding: 14px;
+  padding: 12px;
   background: #e8e9d7;
   border-radius: 10px;
 }
@@ -562,7 +562,7 @@ dialog h2 {
 }
 .career-result {
   margin: 12px 0;
-  padding-top: 14px;
+  padding-top: 12px;
   border-top: 1px solid var(--line);
   font-size: 0.95rem;
   line-height: 1.5;
@@ -619,7 +619,7 @@ dialog {
   border: 0;
   border-radius: 16px;
   width: min(560px, calc(100% - 32px));
-  padding: 30px;
+  padding: 32px;
   max-height: calc(100dvh - 32px);
   overflow: auto;
   box-shadow: 0 16px 60px #142f3955;
@@ -638,23 +638,23 @@ dialog::backdrop {
   background: transparent;
   border: 1px solid #b5bda5;
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 8px 12px;
   min-height: 44px;
   color: var(--ink);
 }
 .fine-copy {
   font-size: 0.85rem;
   color: #59664f;
-  margin-top: 22px;
+  margin-top: 20px;
 }
 .help-lead {
   font-size: 1.2rem;
 }
 .help-steps {
-  padding-left: 22px;
+  padding-left: 20px;
 }
 .help-steps li {
-  padding: 10px 0;
+  padding: 8px 0;
   line-height: 1.5;
 }
 .help-steps strong {
@@ -663,22 +663,22 @@ dialog::backdrop {
 /* How to play: one line per control or option. */
 /* Practice: a lesson switch styled like the difficulty choices; How to play opens either lesson. */
 /* Practice: lesson tabs, a short brief, then the field with its live instruction on top. */
-.practice-lessons { display: flex; gap: 6px; max-width: 360px; margin: 8px 0 20px; padding: 4px; border: 0; border-radius: 12px; background: #203d39; }
+.practice-lessons { display: flex; gap: 4px; max-width: 360px; margin: 8px 0 20px; padding: 4px; border: 0; border-radius: 12px; background: #203d39; }
 .practice-lessons label { position: relative; flex: 1; cursor: pointer; }
 .practice-lessons input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .practice-lessons label > span { display: flex; align-items: center; justify-content: center; gap: var(--icon-gap); min-height: 44px; border-radius: 9px; color: #c9d7bc; font: 700 1rem/1 var(--font-display); }
 .practice-lessons input:checked + span { background: var(--paper); color: var(--ink); }
 .practice-lessons input:focus-visible + span { outline: 3px solid #ffcc72; outline-offset: 2px; }
 .practice-lesson h3 { margin: 0; font: 700 1.625rem/1.15 var(--font-display); }
-.practice-lesson p { margin: 6px 0 0; color: #d2ddc7; }
+.practice-lesson p { margin: 4px 0 0; color: #d2ddc7; }
 /* Sized by the window height too, so the buttons below stay on screen; the field is 600×320. */
-.practice-stage { position: relative; max-width: min(100%, calc(52vh * 1.875)); margin: 18px 0 14px; }
+.practice-stage { position: relative; max-width: min(100%, calc(52vh * 1.875)); margin: 16px 0 12px; }
 .practice-stage #practice-field { margin: 0; border-radius: 16px; }
-.practice-stage #practice-status { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 24px); min-height: 0; margin: 0; padding: 8px 14px; border-radius: 10px; background: #fff5dff0; color: var(--ink); font-weight: 600; box-shadow: 0 4px 12px #203d3930; pointer-events: none; }
+.practice-stage #practice-status { position: absolute; top: 12px; left: 12px; max-width: calc(100% - 24px); min-height: 0; margin: 0; padding: 8px 12px; border-radius: 10px; background: #fff5dff0; color: var(--ink); font-weight: 600; box-shadow: 0 4px 12px #203d3930; pointer-events: none; }
 /* On narrow screens the field is too small to cover, so the instruction sits just above it. */
 @media (max-width: 600px) { .practice-stage #practice-status { position: static; display: block; width: fit-content; max-width: 100%; margin: 0 0 8px; } }
-.help-controls-title { margin: 28px 0 12px; font: 700 1.5rem/1.2 var(--font-display); }
-.help-controls { display: grid; gap: 10px; margin: 0 0 16px; padding: 0; list-style: none; }
+.help-controls-title { margin: 24px 0 12px; font: 700 1.5rem/1.2 var(--font-display); }
+.help-controls { display: grid; gap: 8px; margin: 0 0 16px; padding: 0; list-style: none; }
 .help-controls li { display: grid; grid-template-columns: minmax(120px, 160px) 1fr; gap: 12px; align-items: baseline; }
 .help-controls strong { font-family: var(--font-display); }
 @media (max-width: 520px) { .help-controls li { grid-template-columns: 1fr; gap: 2px; } }
@@ -692,7 +692,7 @@ dialog::backdrop {
 /* Practice sits at the far end of the aircraft key row. */
 .flight-key button { margin: 0 0 0 auto; }
 .flight-key > span {
-  padding: 7px 10px;
+  padding: 8px 8px;
   border-radius: 6px;
   font-size: 0.83rem;
 }
@@ -709,14 +709,14 @@ dialog::backdrop {
   color: #873d31;
 }
 .career-requirement {
-  margin: 18px 0;
+  margin: 16px 0;
 }
 .career-requirement label {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   font-size: 0.92rem;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 .career-requirement progress {
   display: block;
@@ -746,7 +746,7 @@ dialog::backdrop {
   transform: translateX(-50%);
   z-index: 7;
   max-width: calc(100% - 170px);
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-radius: 8px;
   background: var(--paper);
   font-size: 0.88rem;
@@ -778,7 +778,7 @@ dialog::backdrop {
 }
 @media (max-width: 1000px) and (min-height: 601px) {
   .intro-content {
-    padding: 28px;
+    padding: 24px;
   }
   .departure-board {
     width: 330px;
@@ -824,12 +824,12 @@ dialog::backdrop {
     margin: 0;
   }
   .home-tools {
-    gap: 6px;
-    margin: 18px 0 0;
+    gap: 4px;
+    margin: 16px 0 0;
   }
   .home-tools button {
     min-height: 36px;
-    padding: 6px 11px;
+    padding: 4px 12px;
     font-size: 0.88rem;
   }
   .career-summary {
@@ -838,7 +838,7 @@ dialog::backdrop {
   }
   .departure-board {
     width: 100%;
-    padding: 18px;
+    padding: 16px;
     margin-top: auto;
     margin-bottom: 135px;
   }
@@ -869,7 +869,7 @@ dialog::backdrop {
   }
   .map-option::before {
     height: 43px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .map-option strong {
     font-size: 1rem;
@@ -885,23 +885,23 @@ dialog::backdrop {
   }
   .compact-panel,
   dialog {
-    padding: 23px;
+    padding: 24px;
   }
   .utility-top {
-    gap: 10px;
+    gap: 8px;
   }
   .text-button {
-    padding: 8px 10px;
+    padding: 8px 8px;
     font-size: 0.85rem;
   }
   .hud-stat {
     min-width: 56px;
-    padding: 7px 11px;
+    padding: 8px 12px;
   }
 }
 @media (max-height: 600px) and (min-width: 651px) {
   .intro-content {
-    padding: 22px 26px;
+    padding: 20px 24px;
   }
   #start-title {
     font-size: 3.4rem;
@@ -915,12 +915,12 @@ dialog::backdrop {
     margin-top: 12px;
   }
   .home-tools {
-    margin: 14px 0;
-    gap: 6px;
+    margin: 12px 0;
+    gap: 4px;
   }
   .home-tools button {
     min-height: 36px;
-    padding: 5px 10px;
+    padding: 4px 8px;
   }
   .career-summary {
     font-size: 0.8rem;
@@ -930,7 +930,7 @@ dialog::backdrop {
     right: 26px;
     top: 22px;
     width: 340px;
-    padding: 18px;
+    padding: 16px;
   }
   .departure-heading h2 {
     font-size: 1.7rem;
@@ -951,7 +951,7 @@ dialog::backdrop {
   }
   .map-option::before {
     height: 35px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .map-option strong {
     font-size: 1rem;
@@ -960,7 +960,7 @@ dialog::backdrop {
     font-size: max(10.4px, 0.65rem);
   }
   .map-options {
-    gap: 9px;
+    gap: 8px;
   }
   .compact-panel {
     padding: 20px;
@@ -986,13 +986,13 @@ dialog::backdrop {
     margin: 8px 0;
   }
   .result-grid {
-    margin: 10px 0;
+    margin: 8px 0;
   }
   .result-grid dd {
     font-size: 2rem;
   }
   .result-grid > div {
-    padding: 8px 14px;
+    padding: 8px 12px;
   }
 }
 @media (max-width: 650px) and (max-height: 700px) {
@@ -1009,7 +1009,7 @@ dialog::backdrop {
     display: none;
   }
   .departure-board {
-    padding: 14px;
+    padding: 12px;
     margin-bottom: 125px;
   }
   #field-description {
@@ -1071,18 +1071,18 @@ dialog::backdrop {
 .menu-more { position: relative; }
 .menu-more summary {
   cursor: pointer;
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 10px;
   font: inherit;
   color: var(--ink);
   background: var(--paper);
 }
 .menu-more summary:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
-.menu-more-actions { display: grid; gap: 8px; padding-top: 10px; }
+.menu-more-actions { display: grid; gap: 8px; padding-top: 8px; }
 .home-tools { align-items: start; }
 .home-tools .menu-more-actions {
   position: absolute; z-index: 10; min-width: 160px;
-  padding: 10px; background: var(--paper); border-radius: 12px;
+  padding: 8px; background: var(--paper); border-radius: 12px;
   box-shadow: 0 6px 16px #203d3926;
 }
 /* Resume and Main menu share one row; More options keeps the full width below. */
@@ -1090,13 +1090,13 @@ dialog::backdrop {
 #confirm-dialog .panel-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
 #gameover-panel .result-actions { flex-direction: row; flex-wrap: wrap; }
 /* Result card: a header (label, reason, airfield tags), one score panel, one rank panel, then actions. */
-.result-eyebrow { margin: 0 0 6px; color: var(--muted); font-size: max(11px, 0.75rem); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.result-eyebrow { margin: 0 0 4px; color: var(--muted); font-size: max(11px, 0.75rem); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 #gameover-panel .shift-context { margin: 12px 0 0; }
 .shift-tags .shift-tag-name { background: #203d39; color: var(--paper); font-weight: 700; }
 #gameover-panel .result-grid { gap: 0; margin: 20px 0 0; border-radius: 12px; background: #e8e6d4; }
 #gameover-panel .result-grid > div { border-radius: 0; background: transparent; }
 #gameover-panel .result-grid > div + div { border-left: 1px solid #203d3920; }
-#gameover-panel .career-result:not(.is-promotion) { margin: 12px 0 0; padding: 14px 16px; border: 0; border-radius: 12px; background: #e8e6d4; }
+#gameover-panel .career-result:not(.is-promotion) { margin: 12px 0 0; padding: 12px 16px; border: 0; border-radius: 12px; background: #e8e6d4; }
 #gameover-panel .career-result.is-promotion { margin: 12px 0 0; }
 #gameover-panel .result-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
 /* One dialog on screen at a time: the pause menu steps aside while a leave or restart is confirmed. */
@@ -1108,8 +1108,7 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 :is(#pause-panel, #gameover-panel) .menu-more summary { text-align: center; background: transparent; }
 /* Restart and Settings share one row; How to play takes the row below. */
 :is(#pause-panel, #gameover-panel) .menu-more-actions { display: flex; flex-wrap: wrap; }
-:is(#pause-panel, #gameover-panel) .menu-more-actions button { flex: 1 1 0; width: auto; min-height: var(--button-height); margin: 0; padding-inline: 10px; justify-content: center; white-space: nowrap; }
-#pause-panel .menu-more-actions button[data-screen="help"] { flex-basis: 100%; }
+:is(#pause-panel, #gameover-panel) .menu-more-actions button { flex: 1 1 0; width: auto; min-height: var(--button-height); margin: 0; padding-inline: 8px; justify-content: center; white-space: nowrap; }
 /* The outlined links match the filled buttons beside them in type and height. */
 :is(#pause-panel, #gameover-panel) .menu-more-actions .text-button { min-height: var(--button-height); font-family: var(--font-display); font-size: var(--button-font); font-weight: 700; }
 
@@ -1122,7 +1121,7 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
 }
 /* Back: a cream button on the dark page headers. */
 /* The tall title's letters sit low in their box; the top margin centres Back on them at any title size. */
-#utility-close { min-height: var(--button-height); margin-top: calc(var(--title-size) * 0.19); padding: 10px 14px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
+#utility-close { min-height: var(--button-height); margin-top: calc(var(--title-size) * 0.19); padding: 8px 12px; border: 1px solid transparent; background: var(--paper); color: var(--ink); }
 /* Lifts the arrow onto the middle of the word rather than the middle of its box. */
 #utility-close .button-icon { transform: translateY(-0.06em); }
 #utility-close:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
@@ -1130,7 +1129,7 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
   justify-content: flex-start;
   text-align: left;
   width: 100%;
-  padding-inline: 14px;
+  padding-inline: 12px;
 }
 .button-icon { flex: 0 0 auto; }
 .menu-more summary {
@@ -1152,17 +1151,17 @@ body:has(#confirm-dialog[open]) #pause-panel { visibility: hidden; }
   overscroll-behavior: contain;
   background: var(--paper);
   color: var(--ink);
-  padding: max(28px, var(--safe-top)) max(24px, var(--safe-right)) max(28px, var(--safe-bottom)) max(24px, var(--safe-left));
+  padding: max(24px, var(--safe-top)) max(24px, var(--safe-right)) max(24px, var(--safe-bottom)) max(24px, var(--safe-left));
 }
 .utility-page { max-width: 1040px; margin: 0 auto; }
-.utility-screen .utility-top { border-bottom: 1px solid var(--line); padding-bottom: 22px; margin-bottom: 30px; }
+.utility-screen .utility-top { border-bottom: 1px solid var(--line); padding-bottom: 20px; margin-bottom: 32px; }
 .utility-screen .utility-top h2 { font-size: var(--title-size); margin: 0; }
 .utility-screen #utility-title:focus { outline: none; }
 
-.utility-screen .help-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 0; list-style: none; margin: 28px 0; }
+.utility-screen .help-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 0; list-style: none; margin: 24px 0; }
 .utility-screen .help-steps li { padding: 0; }
-.utility-screen .help-steps strong { font: 700 1.5rem/1.2 var(--font-display); margin-top: 18px; }
-.utility-screen .help-steps p { margin-top: 10px; }
+.utility-screen .help-steps strong { font: 700 1.5rem/1.2 var(--font-display); margin-top: 16px; }
+.utility-screen .help-steps p { margin-top: 8px; }
 .lesson-art { display: block; width: 100%; border-radius: 14px; background: #dce3ca; }
 #practice-field { display: block; width: 100%; touch-action: none; user-select: none; margin: 20px 0; }
 #practice-status { min-height: 3em; }
@@ -1177,21 +1176,21 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 
 /* Career: a controller's service record, using the same materials as the airfield HUD. */
 .career-overview { display: grid; grid-template-columns: .85fr 1.4fr; gap: 24px; }
-.controller-card, .promotion-card { border-radius: 18px; padding: 28px; }
+.controller-card, .promotion-card { border-radius: 18px; padding: 24px; }
 .controller-card { background: #173b33; border: 1px solid #688372; text-align: center; position: relative; }
 .controller-badge { width: 94px; height: 94px; margin: 0 auto 20px; display: grid; place-items: center; background: #ebaa44; color: #203d39; border: 6px solid #173b33; outline: 2px solid #ebaa44; border-radius: 50%; }
 .career-eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .controller-card .career-eyebrow { color: #c9d7bc; }
-.controller-card h3, .promotion-card h3 { font: 700 var(--section-title-size)/1.08 var(--font-display); margin: 8px 0 10px; }
+.controller-card h3, .promotion-card h3 { font: 700 var(--section-title-size)/1.08 var(--font-display); margin: 8px 0 8px; }
 .clearance-level { color: #c9d7bc; font-size: 0.875rem; }
 .career-totals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 24px 0 0; padding-top: 20px; border-top: 1px solid #fff5df30; }
 .career-totals dt { font-size: 13px; color: #c9d7bc; }
-.career-totals dd { margin: 5px 0 0; font: 700 2.5rem/1 var(--font-display); color: #ffcc78; }
+.career-totals dd { margin: 4px 0 0; font: 700 2.5rem/1 var(--font-display); color: #ffcc78; }
 .promotion-card { background: var(--paper); color: var(--ink); box-shadow: 0 5px 0 #142f292e; }
 .promotion-card .career-eyebrow { color: #627258; }
 .promotion-caption { font-size: 0.875rem; line-height: 1.5; }
-.promotion-objectives { display: grid; gap: 18px; margin: 24px 0; }
-.objective-label { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; margin-bottom: 8px; font-size: 0.9375rem; }
+.promotion-objectives { display: grid; gap: 16px; margin: 24px 0; }
+.objective-label { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 8px; font-size: 0.9375rem; }
 .objective-label strong { white-space: nowrap; font-size: 0.875rem; }
 .promotion-objective progress { display: block; width: 100%; height: 10px; border: 0; border-radius: 8px; overflow: hidden; background: #dedfc8; appearance: none; }
 .promotion-objective progress::-webkit-progress-bar { background: #dedfc8; border-radius: 8px; }
@@ -1208,15 +1207,15 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .airfield-record-picture img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .airfield-record-picture img:not([src]) { visibility: hidden; }
 .airfield-record.is-locked img { filter: saturate(.35); opacity: .7; }
-.airfield-record-status { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 5px; background: #203d39; color: #fff5df; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
-.airfield-record-detail { padding: 14px; }
+.airfield-record-status { position: absolute; left: 10px; top: 10px; display: flex; align-items: center; gap: 4px; background: #203d39; color: #fff5df; border-radius: 6px; padding: 4px 8px; font-size: 11px; }
+.airfield-record-detail { padding: 12px; }
 .airfield-record h4 { font: 700 1.4375rem/1.15 var(--font-display); margin: 0 0 12px; }
 .airfield-best { display: flex; align-items: baseline; gap: 8px; }
 .airfield-best strong { font: 700 2.25rem/1 var(--font-display); }
 .airfield-best span { font-size: 12px; }
-.record-orientations, .airfield-unlock { color: #53644c; font-size: 12px; line-height: 1.5; margin-top: 10px; }
-.clearance-path { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; padding: 0; margin: 0 0 20px; list-style: none; }
-.clearance-path li { padding: 14px 10px; border-radius: 10px; border: 1px solid #698274; display: flex; flex-direction: column; gap: 8px; }
+.record-orientations, .airfield-unlock { color: #53644c; font-size: 12px; line-height: 1.5; margin-top: 8px; }
+.clearance-path { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 0; margin: 0 0 20px; list-style: none; }
+.clearance-path li { padding: 12px 8px; border-radius: 10px; border: 1px solid #698274; display: flex; flex-direction: column; gap: 8px; }
 .clearance-number { color: #bfccad; font: 700 1.5rem/1 var(--font-display); }
 .clearance-path strong { font: 700 1.125rem/1.15 var(--font-display); }
 .clearance-path small { color: #bdceb9; font-size: 11px; margin-top: auto; }
@@ -1228,10 +1227,10 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .clearance-path { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 600px) {
-  .career-overview { grid-template-columns: 1fr; gap: 18px; }
+  .career-overview { grid-template-columns: 1fr; gap: 16px; }
   .controller-card, .promotion-card { padding: 24px 20px; }
   .clearance-path { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .airfield-record-detail { padding: 10px; }
+  .airfield-record-detail { padding: 8px; }
   .airfield-record h4 { font-size: 1.25rem; }
   .objective-label { font-size: 0.875rem; }
 }
@@ -1241,14 +1240,14 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 
 /* Settings shares the controller record palette, with one focused sound console. */
 .sound-panel { background: var(--paper); color: var(--ink); border-radius: 18px; overflow: hidden; box-shadow: 0 5px 0 #142f2940; }
-.sound-panel-heading { display: flex; align-items: center; gap: 18px; padding: 28px 32px; background: #efe4c7; border-bottom: 1px solid var(--line); }
+.sound-panel-heading { display: flex; align-items: center; gap: 16px; padding: 24px 32px; background: #efe4c7; border-bottom: 1px solid var(--line); }
 .sound-emblem { width: 54px; height: 54px; display: grid; place-items: center; border-radius: 14px; background: #203d39; color: #ffcc78; }
 .sound-emblem svg { width: 28px; height: 28px; }
-.settings-eyebrow { margin: 0 0 5px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.settings-eyebrow { margin: 0 0 4px; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
 .sound-panel h3 { margin: 0; font: 700 var(--section-title-size)/1.1 var(--font-display); }
-.sound-panel .audio-settings { margin: 0; padding: 28px 32px; gap: 26px; }
+.sound-panel .audio-settings { margin: 0; padding: 24px 32px; gap: 24px; }
 .sound-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-.sound-toggle-row h4 { margin: 0 0 6px; font: 700 1.5rem/1.2 var(--font-display); }
+.sound-toggle-row h4 { margin: 0 0 4px; font: 700 1.5rem/1.2 var(--font-display); }
 .sound-toggle-row p { margin: 0; font-size: 0.875rem; color: var(--muted); }
 .sound-panel .audio-toggle { background: #e5e6d3; flex-shrink: 0; font-size: 0.875rem; }
 .sound-switch { width: 38px; height: 22px; padding: 3px; background: #7b8174; border-radius: 20px; }
@@ -1281,7 +1280,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .utility-support, .developer-info { align-items: flex-start; flex-direction: column; gap: 16px; }
 }
 @media (max-width: 600px) {
-  .sound-panel-heading { padding: 24px 20px; gap: 14px; }
+  .sound-panel-heading { padding: 24px 20px; gap: 12px; }
   .sound-panel .audio-settings { padding: 24px 20px; }
   .sound-toggle-row { align-items: flex-start; flex-direction: column; gap: 16px; }
   .sound-panel .audio-toggle { width: 100%; }
@@ -1297,7 +1296,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #help-content .help-lead { color: var(--paper); }
 #practice-content > .fine-copy { color: #c9d7bc; }
 .utility-screen #help-content .help-steps li {
-  padding: 16px 16px 22px;
+  padding: 16px 16px 20px;
   background: var(--paper);
   color: var(--ink);
   border-radius: 18px;
@@ -1308,9 +1307,9 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 #help-content > .primary-button + p { max-width: 720px; line-height: 1.6; }
 #help-content > .fine-copy { color: #c9d7bc; max-width: 720px; line-height: 1.6; }
 
-.difficulty-options { border: 0; padding: 0; margin: 14px 0 0; min-width: 0; }
+.difficulty-options { border: 0; padding: 0; margin: 12px 0 0; min-width: 0; }
 .difficulty-options legend { font-size: 13px; margin-bottom: 8px; }
-.difficulty-choices { display: flex; gap: 6px; }
+.difficulty-choices { display: flex; gap: 4px; }
 .difficulty-choices label { position: relative; flex: 1; cursor: pointer; }
 .difficulty-choices input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .difficulty-choices span { display: grid; place-items: center; min-height: 44px; background: #e5e6d3; color: var(--ink); border: 2px solid transparent; border-radius: 8px; font-weight: 700; font-size: 0.875rem; }
@@ -1322,33 +1321,33 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .achievement-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .achievement-card { background: var(--paper); color: var(--ink); border: 2px solid transparent; border-radius: 14px; padding: 20px; }
 .achievement-card.is-earned { border-color: #ebaa44; }
-.achievement-icon { display: inline-flex; padding: 10px; background: #e5e6d3; border-radius: 10px; }
+.achievement-icon { display: inline-flex; padding: 8px; background: #e5e6d3; border-radius: 10px; }
 .is-earned .achievement-icon { background: #ebaa44; }
 .achievement-state { display: block; font-size: 11px; margin-top: 12px; text-transform: uppercase; letter-spacing: .06em; }
-.achievement-card h4 { font: 700 1.5625rem/1.2 var(--font-display); margin: 6px 0 10px; }
+.achievement-card h4 { font: 700 1.5625rem/1.2 var(--font-display); margin: 4px 0 8px; }
 .achievement-card p { font-size: 13px; line-height: 1.5; min-height: 60px; }
 .achievement-card progress { width: 100%; height: 8px; accent-color: #327666; }
 .achievement-card small { display: block; margin-top: 8px; }
 /* Shift-end celebration: achievement badges, a promotion block, and the new-best pill. */
-.achievement-result { margin: 14px 0; }
+.achievement-result { margin: 12px 0; }
 .celebration-eyebrow { display: block; margin: 0 0 8px; font-size: max(11px, 0.72rem); font-weight: 700; line-height: 1.2; letter-spacing: .12em; text-transform: uppercase; color: #627258; }
 .achievement-badges { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.achievement-badge { display: grid; grid-template-columns: 36px 1fr; column-gap: 12px; align-items: center; padding: 10px 12px; border-radius: 10px; background: #efdbac;
+.achievement-badge { display: grid; grid-template-columns: 36px 1fr; column-gap: 12px; align-items: center; padding: 8px 12px; border-radius: 10px; background: #efdbac;
   animation: celebrate-pop 300ms cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: calc(200ms + var(--badge-index, 0) * 90ms); }
 .achievement-badge strong { font-size: 0.95rem; line-height: 1.25; }
 .achievement-badge-copy { grid-column: 2; font-size: 0.8rem; line-height: 1.4; color: #59664f; }
 .achievement-badge-icon { grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #ebaa44; color: #203d39;
   animation: celebrate-pulse 800ms ease-out both; animation-delay: calc(380ms + var(--badge-index, 0) * 90ms); }
-.career-result.is-promotion { display: grid; grid-template-columns: 44px 1fr; gap: 10px 12px; align-items: center; padding: 14px; border: 0; border-radius: 12px; background: #173b33; color: var(--paper);
+.career-result.is-promotion { display: grid; grid-template-columns: 44px 1fr; gap: 8px 12px; align-items: center; padding: 12px; border: 0; border-radius: 12px; background: #173b33; color: var(--paper);
   animation: celebrate-pop 360ms cubic-bezier(.2, .9, .3, 1.25) both; animation-delay: var(--celebrate-delay, 0ms); }
 .promotion-icon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #ebaa44; color: #203d39;
   animation: celebrate-pulse 900ms ease-out both; animation-delay: calc(var(--celebrate-delay, 0ms) + 200ms); }
 .promotion-heading .celebration-eyebrow { margin-bottom: 4px; color: #c9d7bc; }
 .promotion-heading strong { display: block; font: 700 1.35rem/1.15 var(--font-display); }
-.promotion-unlocks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
-.promotion-unlocks li { padding: 4px 10px; border: 1px solid #fff5df40; border-radius: 999px; background: #fff5df14; font-size: max(11px, 0.78rem); }
+.promotion-unlocks { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.promotion-unlocks li { padding: 4px 8px; border: 1px solid #fff5df40; border-radius: 999px; background: #fff5df14; font-size: max(11px, 0.78rem); }
 .career-result-note { grid-column: 1 / -1; font-size: 0.8rem; }
-.result-grid dt { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.result-grid dt { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
 .record-badge { padding: 2px 8px; border-radius: 999px; background: #217165; color: var(--paper); font-size: max(11px, 0.7rem); font-weight: 700; white-space: nowrap;
   animation: celebrate-pop 300ms cubic-bezier(.2, .9, .3, 1.25) both 150ms; }
 @keyframes celebrate-pop { from { opacity: 0; transform: translateY(6px) scale(.85); } }
@@ -1360,12 +1359,12 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 @media (max-width: 400px) { .achievement-grid { grid-template-columns: 1fr; } .achievement-card p { min-height: 0; } }
 /* Reserve room for the difficulty controls on shorter home screens. */
 @media (min-width: 651px) and (min-height: 601px) and (max-height: 800px) {
-  .intro-content { padding-block: 26px; }
+  .intro-content { padding-block: 24px; }
   #start-title { font-size: 4.5rem; }
   .title-route { margin-block: 16px; }
-  .home-tools { margin-block: 14px; }
+  .home-tools { margin-block: 12px; }
   .career-summary { display: none; }
-  .departure-board { padding: 18px 24px; }
+  .departure-board { padding: 16px 24px; }
   .map-selection { bottom: 26px; }
 }
 #start-button { margin-top: 4px; }
@@ -1374,10 +1373,10 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 .achievement-card progress::-webkit-progress-value { background: #327666; border-radius: 8px; }
 .achievement-card progress::-moz-progress-bar { background: #327666; border-radius: 8px; }
 @media (max-height: 500px) and (min-width: 651px) {
-  .departure-board { padding: 12px 18px; }
+  .departure-board { padding: 12px 16px; }
   #field-description { display: none; }
-  #field-record { margin: 6px 0; }
-  .departure-board .difficulty-options { margin-top: 6px; }
+  #field-record { margin: 4px 0; }
+  .departure-board .difficulty-options { margin-top: 4px; }
   .departure-board .difficulty-options legend { margin-bottom: 4px; }
 }
 /* The full collection lives on its own page; home keeps one clear assignment. */
@@ -1388,12 +1387,12 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 .utility-screen[data-page="airfields"] .utility-top { border-color: #fff5df30; }
 #airfield-selection-status { color: #c9d7bc; font-size: 0.875rem; margin: 12px 0 20px; line-height: 1.5; }
 .category-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 24px; }
-.category-filters button { padding: 10px 14px; min-height: 44px; color: var(--paper); background: #38594c; border: 1px solid #738b78; border-radius: 8px; }
+.category-filters button { padding: 8px 12px; min-height: 44px; color: var(--paper); background: #38594c; border: 1px solid #738b78; border-radius: 8px; }
 .category-filters button[aria-pressed="true"] { background: #ebaa44; color: var(--ink); border-color: #ebaa44; }
 #airfields-content .map-options { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 20px; overflow: visible; padding: 4px; }
-#airfields-content .map-option { max-width: none; width: 100%; padding-bottom: 18px; }
+#airfields-content .map-option { max-width: none; width: 100%; padding-bottom: 16px; }
 #airfields-content .map-option::before { height: auto; aspect-ratio: 16/9; }
-#airfields-content .map-option strong { font-size: 1.625rem; margin: 12px 16px 6px; }
+#airfields-content .map-option strong { font-size: 1.625rem; margin: 12px 16px 4px; }
 #airfields-content .map-option span { margin-inline: 16px; font-size: 12px; }
 #airfields-content .map-option small { display: block; margin: 12px 16px 0; font-size: 0.875rem; line-height: 1.5; font-family: var(--font-interface); font-weight: 400; }
 #airfields-content .map-option[aria-disabled="true"]::before { filter: saturate(.4); opacity: .7; }
@@ -1402,18 +1401,18 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Start screen: choose an airfield, set the challenge, then take control. */
 #start-panel.intro-panel { background: #29483e; overflow-y: auto; pointer-events: auto; scroll-padding: 24px; scrollbar-color: #819b87 #29483e; }
-#start-panel .intro-content { position: relative; width: min(100%, 1080px); min-height: 100%; height: auto; margin: 0 auto; padding: 48px 40px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 28px; }
+#start-panel .intro-content { position: relative; width: min(100%, 1080px); min-height: 100%; height: auto; margin: 0 auto; padding: 48px 40px; display: flex; flex-direction: column; align-items: stretch; justify-content: center; gap: 24px; }
 /* The menu sits on the tagline's line; flex-end is the fallback where last-baseline is unsupported. */
 #start-panel .home-header { display: flex; align-items: flex-end; align-items: last baseline; justify-content: space-between; gap: 24px; }
 #start-panel #start-title { font-size: clamp(2.25rem, 4.4vw, 3.25rem); line-height: 1.05; letter-spacing: -.025em; text-align: left; text-shadow: none; margin: 0; }
 #start-panel #start-title em { display: inline; }
-#start-panel #start-description { position: static; width: auto; margin: 10px 0 0; text-align: left; font-size: 0.875rem; line-height: 1.5; color: #d2ddc7; text-shadow: none; }
+#start-panel #start-description { position: static; width: auto; margin: 8px 0 0; text-align: left; font-size: 0.875rem; line-height: 1.5; color: #d2ddc7; text-shadow: none; }
 /* Pulled out by the buttons' own padding so their labels line up with the card edge and the tagline. */
-#start-panel .home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 -10px -10px 0; flex-shrink: 0; }
-#start-panel .home-tools button { min-height: 44px; padding: 10px; background: transparent; color: var(--paper); font-size: 1rem; font-weight: 600; border: 1px solid transparent; }
+#start-panel .home-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 0 -8px -8px 0; flex-shrink: 0; }
+#start-panel .home-tools button { min-height: 44px; padding: 8px; background: transparent; color: var(--paper); font-size: 1rem; font-weight: 600; border: 1px solid transparent; }
 #start-panel .home-tools button:hover { background: #38594c; }
 #start-panel .home-tools button:focus-visible, #start-panel .store-links a:focus-visible { outline: 3px solid #ffcc72; outline-offset: 3px; }
-#start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 30px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
+#start-panel .departure-board { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; width: 100%; max-height: none; overflow: visible; margin: 0; padding: 32px; flex-shrink: 0; border-radius: 16px; box-shadow: 0 12px 32px #142f2933; }
 #start-panel .home-airfield { min-width: 0; }
 #start-panel .home-preview { margin: 0; overflow: hidden; border-radius: 8px; background: #819667; aspect-ratio: 16 / 9; }
 #home-map-preview { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
@@ -1463,7 +1462,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 }
 /* Mobile launch follows the compact map-first menu. */
 @media (max-width: 700px) {
-  #start-panel .intro-content { width: min(100%, 480px); padding: max(28px, var(--safe-block)) max(20px, var(--safe-inline)); gap: 20px; justify-content: center; }
+  #start-panel .intro-content { width: min(100%, 480px); padding: max(24px, var(--safe-block)) max(20px, var(--safe-inline)); gap: 20px; justify-content: center; }
   #start-panel .home-header { display: contents; }
   #start-panel .home-brand { order: 0; text-align: center; }
   #start-panel #start-title { font-size: 2.375rem; text-align: center; }
@@ -1485,7 +1484,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-record { font-size: 13px; }
   #start-panel #field-description { display: none; }
   #start-panel .flight-settings { gap: 16px; border: 0; padding: 0; }
-  #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
+  #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
   #start-panel .difficulty-choices { gap: 8px; }
   #start-panel .difficulty-choices label span { min-height: 36px; font-size: 13px; }
   #start-panel .flight-switches { padding: 0; border: 0; }
@@ -1506,7 +1505,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-preview { margin-inline: -16px; }
   #start-panel .home-tools { gap: 2px; }
   #start-panel .home-tools button { font-size: 0.9375rem; }
-  #start-panel .store-links { gap: 10px; }
+  #start-panel .store-links { gap: 8px; }
   #start-panel .store-links img { height: 40px; }
 }
 @media (min-width: 701px) and (max-height: 600px) {
@@ -1531,7 +1530,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-record { font-size: 12px; }
   #start-panel .flight-settings { gap: 4px; padding: 0; border: 0; }
   #start-panel #field-description { display: none; }
-  #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 6px; }
+  #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
   /* Short landscape windows have width to spare and no height, so the switches share one row there. */
   #start-panel .flight-switches { grid-template-columns: 1fr 1fr; gap: 16px; padding: 0; border: 0; }
   #start-panel .runway-option + .runway-option { border-top: 0; }
@@ -1539,7 +1538,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .flight-actions > button { flex: 0 1 240px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
   #start-panel .home-stores p { margin: 0; font-size: 13px; }
-  #start-panel .store-links { width: auto; flex-wrap: wrap; gap: 10px; }
+  #start-panel .store-links { width: auto; flex-wrap: wrap; gap: 8px; }
   #start-panel .store-links a { min-height: 44px; }
   #start-panel .store-links img { height: 36px; }
 }
@@ -1553,7 +1552,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Smaller read-only score displays leave more airfield visible on phones. */
 @media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
-  .hud-stat { min-width: 48px; padding: 6px 10px; border-radius: 8px; }
+  .hud-stat { min-width: 48px; padding: 4px 8px; border-radius: 8px; }
   .hud-stat span { font-size: 11px; }
   .hud-stat strong { display: block; font-size: 1.5rem; }
 }
@@ -1585,26 +1584,26 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Portrait phones get a compact scale for the pause, result, and confirmation cards so they fit without dominating the screen. */
 @media (max-width: 650px) {
   .compact-panel h2, dialog h2 { margin-bottom: 8px; }
-  .compact-panel p, dialog p { font-size: 0.875rem; line-height: 1.45; margin: 10px 0; }
+  .compact-panel p, dialog p { font-size: 0.875rem; line-height: 1.45; margin: 8px 0; }
   .compact-panel .panel-actions, dialog .panel-actions { gap: 8px; }
-  dialog { padding: 22px 20px; }
+  dialog { padding: 20px 20px; }
   dialog .panel-actions { margin-top: 16px; }
-  #pause-panel { padding: 22px 20px; }
+  #pause-panel { padding: 20px 20px; }
   #pause-panel .panel-actions { margin-top: 16px; }
   #pause-panel .menu-more summary { padding: 8px 12px; font-size: 0.875rem; }
   #gameover-panel .result-body { padding: 20px 20px 16px; }
-  #gameover-panel .result-grid { gap: 10px; margin: 16px 0; }
-  #gameover-panel .result-grid > div { padding: 10px 14px; }
+  #gameover-panel .result-grid { gap: 8px; margin: 16px 0; }
+  #gameover-panel .result-grid > div { padding: 8px 12px; }
   #gameover-panel .result-grid dt { font-size: 0.8rem; }
   #gameover-panel .result-grid dd { font-size: 1.9rem; line-height: 1.05; }
   #gameover-panel .career-result { font-size: 0.875rem; }
-  #gameover-panel .achievement-badge { padding: 8px 10px; }
+  #gameover-panel .achievement-badge { padding: 8px 8px; }
   #gameover-panel .promotion-heading strong { font-size: 1.15rem; }
   #gameover-panel .result-actions { padding: 12px 20px 16px; }
 }
 
 /* Optional runway rule, separate from the difficulty radio group. */
-.runway-option { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; margin: 10px 0 16px; cursor: pointer; text-align: left; }
+.runway-option { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; margin: 8px 0 16px; cursor: pointer; text-align: left; }
 .runway-option > span { flex: 1; min-width: 0; }
 .runway-option small { display: block; margin-top: 3px; font-size: 0.8rem; line-height: 1.4; }
 .runway-option input { appearance: none; position: relative; flex: 0 0 var(--switch-width); width: var(--switch-width); height: var(--switch-height); margin: 0; border: 2px solid #647870; border-radius: 20px; background: #d9decf; cursor: pointer; }
@@ -1626,7 +1625,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Fleet cosmetics live in Career, away from the active airfield. */
 .livery-options { border: 0; padding: 0; margin: 0; display: grid; gap: 12px; }
-.livery-option { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border: 2px solid transparent; border-radius: 10px; background: var(--paper); color: var(--ink); cursor: pointer; }
+.livery-option { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border: 2px solid transparent; border-radius: 10px; background: var(--paper); color: var(--ink); cursor: pointer; }
 .livery-option:has(input:checked) { border-color: var(--accent); }
 .livery-option:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 3px; }
 .livery-option:has(input:disabled) { cursor: default; }
