@@ -246,7 +246,7 @@ export function paintBuilding(
 }
 
 /** Convex hull of a point set (monotone chain), for shadows cast by boxes. */
-function convexHull(points: readonly Vector2[]): Vector2[] {
+export function convexHull(points: readonly Vector2[]): Vector2[] {
   const sorted = [...points].sort((a, b) => a.x - b.x || a.y - b.y);
   const cross = (o: Vector2, a: Vector2, b: Vector2) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
   const half = (list: Vector2[]) => list.reduce<Vector2[]>((hull, point) => {

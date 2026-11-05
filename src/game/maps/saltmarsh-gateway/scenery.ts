@@ -4,6 +4,7 @@ import { AIRCRAFT_COLORS } from '../../palette';
 import type { MapRunway } from '../shared/airfield';
 import {
   clearOfAirfield,
+  convexHull,
   deterministicUnit,
   localRunwayPoint,
   mixColor,
@@ -218,10 +219,14 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
   const lift = { x: 0, y: -height * 0.5 };
   const cab = { x: base.x + lift.x, y: base.y + lift.y };
   // Long shadow to the south-east, shaft, cab with a glazed band, and a light roof cap.
-  graphics.lineStyle(unit * 0.014, palette.shadow, 0.3);
-  graphics.lineBetween(base.x, base.y, base.x + height * 0.9, base.y + height * 0.7);
+  // One filled hull (shaft shadow running into the cab's), so no overlap paints darker,
+  // cast the same way and at the same strength as the buildings' shadows.
+  const ring = (center: Vector2, radius: number) =>
+    Array.from({ length: 16 }, (_, i) => ({ x: center.x + Math.cos(i * Math.PI / 8) * radius, y: center.y + Math.sin(i * Math.PI / 8) * radius }));
+  const castTip = { x: base.x + height * 0.86, y: base.y + height * 0.68 };
   graphics.fillStyle(palette.shadow, 0.3);
-  graphics.fillCircle(base.x + height * 0.9, base.y + height * 0.7, unit * 0.016);
+  tracePolygon(graphics, convexHull([...ring(base, unit * 0.006), ...ring(castTip, unit * 0.015)]));
+  graphics.fillPath();
   graphics.lineStyle(unit * 0.012, mixColor(palette.building, palette.shadow, 0.3), 1);
   graphics.lineBetween(base.x, base.y, cab.x, cab.y);
   graphics.fillStyle(mixColor(palette.building, palette.shadow, 0.2), 1);
@@ -237,7 +242,8 @@ export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout:
   // Two fuel tanks set back from the tower.
   const across = { x: -axis.y, y: axis.x };
   for (const offset of [-1, 1]) {
-    const tank = { x: base.x + across.x * offset * unit * 0.03 + axis.x * side * unit * 0.012, y: base.y + across.y * offset * unit * 0.03 + axis.y * side * unit * 0.012 };
+    // Far enough out that neither tank touches the raised cab.
+    const tank = { x: base.x + across.x * offset * unit * 0.028 + axis.x * side * unit * 0.036, y: base.y + across.y * offset * unit * 0.028 + axis.y * side * unit * 0.036 };
     if (!clearOfAirfield(layout, tank, unit * 0.012)) continue;
     graphics.fillStyle(palette.shadow, 0.28);
     graphics.fillCircle(tank.x + unit * 0.006, tank.y + unit * 0.005, unit * 0.011);
