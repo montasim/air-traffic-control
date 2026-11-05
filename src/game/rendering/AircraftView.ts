@@ -57,16 +57,28 @@ export interface AircraftViewOptions {
 }
 
 /**
- * The landing lights' beam, in the aircraft's own coordinates: a cone spreading ahead of the nose and
- * ending in a pool of light, built from faint layers so it is brightest along its middle and fades
- * out at its edges and far end. Drawn with additive blending, it lights the ground it falls on.
+ * Each type's night light. A cone's length matches the aircraft's speed, so it shows roughly how far ahead
+ * it will be: long and narrow for the fast airliner, medium for the commuter. The helicopter carries a
+ * searchlight instead: a short, wide spill ending in the brightest pool, just ahead of its nose, which also
+ * tells it apart in the dark.
  */
-function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number): void {
-  const reach = 110;
+const NIGHT_LIGHTS: Readonly<Record<Aircraft["type"], { readonly reach: number; readonly spread: number; readonly glow: number; readonly pool: number }>> = {
+  liner: { reach: 135, spread: 0.24, glow: 0.05, pool: 0.05 },
+  commuter: { reach: 105, spread: 0.3, glow: 0.05, pool: 0.05 },
+  rotor: { reach: 58, spread: 0.55, glow: 0.035, pool: 0.055 },
+};
+
+/**
+ * The aircraft's light, in its own coordinates: a cone spreading ahead of the nose and ending in a pool of
+ * light, built from faint layers so it is brightest along its middle and fades out at its edges and far end.
+ * Drawn with additive blending, it lights the ground it falls on.
+ */
+function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number, type: Aircraft["type"]): void {
+  const { reach, spread: angle, glow, pool } = NIGHT_LIGHTS[type];
   const color = 0xfff4d6;
   for (let layer = 0; layer < 6; layer += 1) {
     const share = 1 - layer * 0.14;
-    const spread = Math.tan(0.3 * share);
+    const spread = Math.tan(angle * share);
     const far = nose + reach * share;
     const points = [new Phaser.Math.Vector2(nose - 2, -2.5)];
     // The far edge is a gentle arc rather than a straight cut.
@@ -75,12 +87,20 @@ function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number)
       points.push(new Phaser.Math.Vector2(far - Math.abs(t) * reach * 0.12 * share, t * 2 * reach * spread));
     }
     points.push(new Phaser.Math.Vector2(nose - 2, 2.5));
-    graphics.fillStyle(color, 0.05);
+    graphics.fillStyle(color, glow);
     graphics.fillPoints(points, true);
+  }
+  if (type === "rotor") {
+    // The searchlight's pool: round, and brightest at its heart; many faint layers so it shades without rings.
+    for (let layer = 0; layer < 6; layer += 1) {
+      graphics.fillStyle(color, pool);
+      graphics.fillCircle(nose + reach * 0.62, 0, reach * (0.55 - layer * 0.075));
+    }
+    return;
   }
   // A brighter pool where the beam meets the ground.
   for (let layer = 0; layer < 3; layer += 1) {
-    graphics.fillStyle(color, 0.05);
+    graphics.fillStyle(color, pool);
     graphics.fillEllipse(nose + reach * 0.72, 0, reach * (0.5 - layer * 0.12), reach * (0.36 - layer * 0.09));
   }
 }
@@ -153,7 +173,7 @@ export class AircraftView {
     // The landing lights' beam lies on the ground ahead, under the airframe, glowing where it falls.
     const nose = Math.max(...outline.map(([x]) => x));
     this.headlight = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
-    paintHeadlightBeam(this.headlight, nose);
+    paintHeadlightBeam(this.headlight, nose, aircraft.type);
     const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body];
     if (aircraft.type === "rotor") {
       // A centered, symmetric rotor avoids the lopsided atlas wobble.
