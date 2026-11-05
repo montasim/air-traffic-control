@@ -653,8 +653,13 @@ function updateResumeOffer(): void {
   const shift = loadActiveShift();
   const offer = !!shift && isMapUnlocked(shift.mapId, currentSave.career.earnedRankId);
   elements.resumeShiftButton.hidden = !offer;
-  if (offer) elements.resumeShiftContext.textContent = elements.resumeShiftButton.title =
-    `${mapDefinitionById(shift.mapId).metadata.name} · ${DIFFICULTY_LABELS[shift.difficulty]} · ${formatScore(shift.simulation.score)} landed`;
+  if (!offer) return;
+  const name = mapDefinitionById(shift.mapId).metadata.name;
+  const landed = formatScore(shift.simulation.score);
+  elements.resumeShiftButton.title = `${name} · ${DIFFICULTY_LABELS[shift.difficulty]} · ${landed} landed`;
+  elements.resumeShiftContext.replaceChildren(shiftTags({
+    name, difficulty: shift.difficulty, landed, orientation: shift.orientation, twoEndLanding: shift.twoEndLanding,
+  }));
 }
 
 async function resumeSavedShift(): Promise<void> {
@@ -1048,21 +1053,31 @@ function updateResizeNotice(): void {
 
 /** The shift's airfield as a heading, then its settings as short tags; the landing count only while paused. */
 function renderShiftContext(target: HTMLElement, landed?: string, withName = true): void {
+  // On the result card the airfield leads the tags; the pause menu shows it as its heading instead.
+  target.replaceChildren(shiftTags({
+    name: withName ? mapDefinitionById(activeMapId).metadata.name : undefined,
+    difficulty: activeDifficulty,
+    landed,
+    orientation: activeProfile.id,
+    twoEndLanding: activeTwoEndLanding,
+  }));
+}
+
+/** The pill tags that sum up a shift, shared by the pause menu, the result card and the saved-shift offer. */
+function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: string; orientation: string; twoEndLanding: boolean }): HTMLUListElement {
   const tags = document.createElement("ul");
   tags.className = "shift-tags";
-  // On the result card the airfield leads the tags; the pause menu shows it as its heading instead.
-  if (withName) {
+  if (shift.name) {
     const name = document.createElement("li");
     name.className = "shift-tag-name";
-    name.textContent = mapDefinitionById(activeMapId).metadata.name;
+    name.textContent = shift.name;
     tags.append(name);
   }
-  const orientation = activeProfile.id.charAt(0).toUpperCase() + activeProfile.id.slice(1);
   const facts: [string, AppIconName?][] = [
-    [DIFFICULTY_LABELS[activeDifficulty]],
-    ...(landed === undefined ? [] : [[`${landed} landed`, "landing"] as [string, AppIconName]]),
-    [orientation],
-    [activeTwoEndLanding ? "Both ends" : "One end"],
+    [DIFFICULTY_LABELS[shift.difficulty]],
+    ...(shift.landed === undefined ? [] : [[`${shift.landed} landed`, "landing"] as [string, AppIconName]]),
+    [shift.orientation.charAt(0).toUpperCase() + shift.orientation.slice(1)],
+    [shift.twoEndLanding ? "Both ends" : "One end"],
   ];
   for (const [text, icon] of facts) {
     const tag = document.createElement("li");
@@ -1075,7 +1090,7 @@ function renderShiftContext(target: HTMLElement, landed?: string, withName = tru
     tag.append(text);
     tags.append(tag);
   }
-  target.replaceChildren(tags);
+  return tags;
 }
 
 function confirmAbandon(title: string, copy: string, action: () => void): void {

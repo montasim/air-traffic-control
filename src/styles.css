@@ -1443,9 +1443,10 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Resume and Start share one row; Start fills it when there is no shift to resume. */
 #start-panel .flight-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; }
 #start-panel .flight-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
-/* The saved shift's details sit on their own line above the buttons, so Resume reads as one line. */
-#start-panel .resume-details { order: -1; flex: 0 0 100%; margin: 0; font-size: 13px; line-height: 1.4; text-wrap: pretty; color: var(--muted); }
-#start-panel .resume-details span:first-child { font-weight: 700; color: var(--ink); }
+/* The saved shift's details sit above the buttons as the same tags the pause menu uses, so Resume reads as one line. */
+#start-panel .resume-details { order: -1; flex: 0 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--ink); }
+#start-panel .resume-details > span { font-weight: 700; }
+#start-panel .resume-details .shift-tags { margin: 0; }
 #start-panel .flight-actions:has(#resume-shift-button[hidden]) .resume-details { display: none; }
 #start-panel .home-stores { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; padding: 0; }
 #start-panel .home-stores p { margin: 0 0 4px; font-size: 1rem; color: var(--paper); }
