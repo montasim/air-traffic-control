@@ -221,7 +221,7 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
       // Stern wash: churned water leaving the stern, spreading and thinning as it drifts astern.
       for (let i = 0; i < 34; i += 1) {
         const phase = (seconds * 0.22 + noise(i, 17)) % 1;
-        const along = -ship.length * (0.5 + phase * 0.9);
+        const along = -ship.length * (0.5 + phase * 1.4);
         const across = (noise(i, 19) - 0.5) * ship.halfBeam * (1.4 + phase * 3.2);
         const point = at(along, across);
         graphics.fillStyle(0xf2f9fa, 0.5 * (1 - phase));
