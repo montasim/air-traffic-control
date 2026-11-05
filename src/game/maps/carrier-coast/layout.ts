@@ -102,7 +102,7 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
     const wobble = 0.8 + unitNoise(i, index) * 0.35;
     return frame.point(x + Math.cos(a) * r * wobble, y + Math.sin(a) * r * 0.62 * wobble);
   }));
-  const scrub = SCRUB.flatMap(([x, y], cluster) => Array.from({ length: 6 }, (_, i) => ({
+  const scrub = SCRUB.flatMap(([x, y], cluster) => Array.from({ length: 10 }, (_, i) => ({
     center: frame.point(x + (unitNoise(i, cluster) - 0.5) * 0.16, y + (unitNoise(i, cluster + 7) - 0.5) * 0.1),
     radius: unit * (0.009 + unitNoise(i, cluster + 13) * 0.006),
   })));
