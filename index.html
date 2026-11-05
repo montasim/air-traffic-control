@@ -192,16 +192,17 @@
             <div class="career-summary" hidden><strong id="current-rank"></strong><small id="rank-progress"></small></div>
             <section class="departure-board" aria-label="Selected airfield">
               <div class="home-airfield">
-              <div class="home-preview"><img id="home-map-preview" alt="" /></div>
+              <!-- A pointer shortcut to the picker; keyboard and screen readers use the airfield name button. -->
+              <div class="home-preview" data-screen="airfields"><img id="home-map-preview" alt="" /></div>
               </div>
               <section class="flight-settings" aria-labelledby="field-title">
               <div class="airfield-details">
               <div class="home-assignment">
                 <div class="departure-heading">
-                  <h2 id="field-title">Saltmarsh Gateway</h2>
+                  <!-- The airfield name is the map picker: chevron beside it, a soft background on hover and press. -->
+                  <h2><button id="choose-airfield" type="button" class="field-picker" data-screen="airfields"><span id="field-title">Saltmarsh Gateway</span><span class="visually-hidden">, change map</span><span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button></h2>
                   <span id="field-difficulty">Beginner</span>
                 </div>
-                <button id="choose-airfield" type="button" class="text-button" data-screen="airfields">Change map<span class="button-icon" data-ui-icon="expand" aria-hidden="true"></span></button>
               </div>
               <p id="field-description"></p>
               <p id="field-lock" hidden></p>

@@ -1381,7 +1381,6 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
   .departure-board .difficulty-options legend { margin-bottom: 4px; }
 }
 /* The full collection lives on its own page; home keeps one clear assignment. */
-#choose-airfield { width: 100%; margin-top: 8px; }
 body[data-screen="home"] .departure-board { margin-bottom: 0; }
 .utility-screen[data-page="airfields"] { background: #29483e; color: var(--paper); }
 .utility-screen[data-page="airfields"] .utility-page { max-width: 1120px; }
@@ -1424,8 +1423,16 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 @media (prefers-reduced-motion: reduce) { #home-map-preview[src] { animation: none; } }
 #start-panel .airfield-details { display: flex; flex-direction: column; gap: 4px; }
 #start-panel .home-assignment { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; color: var(--muted); font-size: 12px; margin: 0; }
-#start-panel #choose-airfield { font-size: 0.875rem; text-decoration: underline; text-underline-offset: 4px; flex-shrink: 0; width: auto; margin: 0; min-height: 44px; padding: 8px 0 8px 12px; display: inline-flex; align-items: center; gap: var(--icon-gap); background: transparent; border-color: transparent; color: var(--ink); }
-#start-panel #choose-airfield:hover { text-decoration: underline; text-underline-offset: 4px; }
+/* The airfield name opens the map picker. The negative margin keeps the text aligned with the card while the
+   hover and press background extends a little around it. */
+#start-panel .departure-heading h2 { margin: 0; min-width: 0; }
+#start-panel .field-picker { display: inline-flex; align-items: center; gap: var(--icon-gap); max-width: calc(100% + 16px); margin: -4px -8px; padding: 4px 8px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color 120ms ease; }
+#start-panel .field-picker:hover { background: #203d391f; }
+#start-panel .field-picker:active { background: #203d392e; }
+#start-panel .field-picker:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+#start-panel .field-picker .button-icon { flex: 0 0 auto; }
+#start-panel .home-preview[data-screen] { cursor: pointer; }
+#start-panel .home-preview[data-screen]:hover #home-map-preview { filter: brightness(1.04); }
 #start-panel .departure-heading { display: block; min-width: 0; color: var(--ink); }
 #start-panel #field-title { font-size: 2rem; line-height: 1.1; margin: 0; }
 #start-panel #field-difficulty { display: none; }
@@ -1482,7 +1489,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-preview { display: block; height: auto; aspect-ratio: 2.6; margin: 0 -20px; border-radius: 0; }
   #start-panel #home-map-preview { object-fit: cover; }
   #start-panel .home-assignment { margin: 0; align-items: center; }
-  #start-panel #choose-airfield { min-height: 44px; font-size: 13px; }
   #start-panel #field-title { font-size: 1.375rem; }
   #start-panel #field-record { font-size: 13px; }
   #start-panel #field-description { display: none; }

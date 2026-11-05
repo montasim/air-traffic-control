@@ -1179,7 +1179,7 @@ window.addEventListener("popstate", () => {
   if (isUtilityName(screen)) openUtility(screen, false);
   else if (!utilityScreen.hidden) closeUtility();
 });
-document.querySelectorAll<HTMLButtonElement>("[data-screen]").forEach(button =>
+document.querySelectorAll<HTMLElement>("[data-screen]").forEach(button =>
   button.addEventListener("click", () => openUtility(button.dataset.screen!))
 );
 document.querySelector("#utility-close")!.addEventListener("click", () => history.back());
