@@ -121,10 +121,9 @@ function paintSnowyGroves(graphics: Phaser.GameObjects.Graphics, crowns: readonl
   const palette = FROST_CROSSING_PALETTE;
   graphics.fillStyle(palette.shadow, 0.3);
   for (const { center, radius } of crowns) graphics.fillCircle(center.x + radius * 0.55, center.y + radius * 0.6, radius);
+  // One deep green for every crown, no lighter highlight.
   graphics.fillStyle(palette.vegetation, 1);
   for (const { center, radius } of crowns) graphics.fillCircle(center.x, center.y, radius);
-  graphics.fillStyle(palette.vegetationLight, 1);
-  for (const { center, radius } of crowns) graphics.fillCircle(center.x - radius * 0.2, center.y - radius * 0.2, radius * 0.7);
   crowns.forEach(({ center, radius }, i) => {
     graphics.fillStyle(0xf4fafc, 0.85);
     graphics.fillCircle(center.x - radius * 0.35, center.y - radius * 0.38, radius * 0.32);
