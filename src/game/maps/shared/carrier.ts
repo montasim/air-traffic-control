@@ -49,11 +49,15 @@ export interface Carrier {
 }
 
 /** Beam as a share of the deck length: wide enough for parking beside the lanes. */
-const BEAM = 0.34;
-/** The deck outline as shares of length and beam; the aft starboard parking shelf fits full stand footprints even in compact layouts. */
+const BEAM = 0.28;
+/**
+ * The deck outline as shares of length and beam, after a real supercarrier: a square stern, the
+ * angled-deck overhang to port aft, a long tapering bow, and the starboard sponson by the island.
+ * The aft starboard parking shelf fits full stand footprints even in compact layouts.
+ */
 const DECK = [
-  [-0.5, -0.34], [-0.5, 0.6], [0.1, 0.7], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
-  [0.2, -0.3], [-0.05, -0.5], [-0.3, -0.5], [-0.42, -0.4],
+  [-0.5, -0.34], [-0.5, 0.72], [0.1, 0.82], [0.36, 0.5], [0.48, 0.2], [0.5, -0.06],
+  [0.22, -0.3], [-0.05, -0.54], [-0.3, -0.54], [-0.43, -0.42],
 ] as const;
 
 function insidePolygon(point: Vector2, polygon: readonly Vector2[]): boolean {
@@ -82,9 +86,11 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   const at = (x: number, y: number) => world(x * length, y * beam);
 
   const deck = DECK.map(([x, y]) => at(x, y));
+  // The waterline hull: narrower than the flight deck it carries, with a long knife bow running
+  // out past the deck's forward edge.
   const hull = [
-    [-0.49, -0.3], [-0.49, 0.36], [0.1, 0.44], [0.36, 0.4], [0.55, 0.02], [0.36, -0.18],
-    [0.2, -0.26], [-0.05, -0.42], [-0.3, -0.42], [-0.42, -0.34],
+    [-0.48, -0.26], [-0.48, 0.3], [-0.2, 0.4], [0.2, 0.38], [0.42, 0.22], [0.58, 0.04],
+    [0.42, -0.12], [0.2, -0.24], [-0.2, -0.32],
   ].map(([x, y]) => at(x, y));
 
   const laneWidth = beam * 0.16;
@@ -110,7 +116,7 @@ export function createCarrier(spec: CarrierSpec): Carrier {
 
   // A short taxi line straight up from the lane to the parking row along the starboard edge, between
   // the island and the aft helicopter spot.
-  const parking = world(-0.18 * length, 0.3 * beam);
+  const parking = world(-0.18 * length, 0.42 * beam);
   const taxiways: MapTaxiway[] = [{ id: `${runways[0].id}-taxi`, path: [world(-0.18 * length, laneStart.y), parking], width: spec.taxiwayWidth, connects: [runways[0].id, `${spec.id}-deck`] }];
 
   // Helicopter spots well apart: one at the bow, a second at the aft starboard corner.
