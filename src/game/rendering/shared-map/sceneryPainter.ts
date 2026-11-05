@@ -262,12 +262,22 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
     const value = Math.sin((index + 1) * 12.9898 + (seed + salt) * 78.233) * 43758.5453;
     return value - Math.floor(value);
   };
-  // Billows: a few big ones near the middle, smaller ones spreading toward a ragged rim.
-  const billows = Array.from({ length: 34 }, (_, i) => {
+  // Each seed its own build: how many billows, how wide and deep the cloud spreads, and whether
+  // it is one heap or a few separate puffs drifting together.
+  const count = 16 + Math.floor(noise(0, 11) * 26);
+  const [spreadX, spreadY] = [0.2 + noise(0, 12) * 0.2, 0.1 + noise(0, 13) * 0.18];
+  const groups = Array.from({ length: 1 + Math.floor(noise(0, 14) * 3) }, (_, g) => ({
+    x: width * (0.5 + (g ? (noise(g, 15) - 0.5) * 0.5 : 0)),
+    y: height * (0.5 + (g ? (noise(g, 16) - 0.5) * 0.35 : 0)),
+    weight: g ? 0.55 : 1,
+  }));
+  // Billows: a few big ones near each group's middle, smaller ones spreading toward a ragged rim.
+  const billows = Array.from({ length: count }, (_, i) => {
+    const group = groups[i % groups.length];
     const angle = noise(i, 1) * Math.PI * 2;
     const reach = Math.sqrt(noise(i, 2));
-    const r = height * (0.2 - reach * 0.12) * (0.75 + noise(i, 3) * 0.5);
-    return { x: width / 2 + Math.cos(angle) * reach * width * 0.32, y: height / 2 + Math.sin(angle) * reach * height * 0.26, r };
+    const r = height * (0.2 - reach * 0.12) * (0.75 + noise(i, 3) * 0.5) * group.weight;
+    return { x: group.x + Math.cos(angle) * reach * width * spreadX * group.weight, y: group.y + Math.sin(angle) * reach * height * spreadY * 1.4 * group.weight, r };
   }).sort((p, q) => q.r - p.r);
   const puff = (x: number, y: number, r: number, inner: string, outer: string, hardness: number) => {
     const gradient = context.createRadialGradient(x, y, 0, x, y, r);
@@ -313,19 +323,42 @@ export function addDriftingClouds(
   const reach = Math.hypot(bounds.width, bounds.height) / 2 + unit * 0.4;
   // Paths across the wind stay within the map, so most clouds are on screen at any moment.
   const span = Math.abs(bounds.width * across.x) + Math.abs(bounds.height * across.y);
-  const keys = [0, 1, 2].map((seed) => cloudTexture(scene, seed * 7 + 3));
-  const noise = (index: number, salt: number) => {
-    const value = Math.sin((index + 1) * 91.73 + salt * 37.71) * 43758.5453;
+  const keys = [0, 1, 2, 3, 4, 5].map((seed) => cloudTexture(scene, seed * 7 + 3));
+  let draws = 0;
+  /** A fresh pseudo-random number in [0, 1); each call moves on to the next. */
+  const random = () => {
+    const value = Math.sin((draws += 1) * 91.73 + 37.71) * 43758.5453;
     return value - Math.floor(value);
   };
-  const clouds = Array.from({ length: count }, (_, i) => {
-    const key = keys[i % keys.length];
-    const scale = (unit * (0.28 + noise(i, 1) * 0.22)) / CLOUD_SIZE.width;
-    const shadow = scene.add.image(0, 0, key).setScale(scale).setTint(0x1d3a2a).setAlpha(0.26).setDepth(shadowDepth);
-    const cloud = scene.add.image(0, 0, key).setScale(scale).setAlpha(0.62 + noise(i, 2) * 0.18).setDepth(depth);
-    // Spread evenly along the wind, scattered across it.
-    const opacity = cloud.alpha;
-    return { cloud, shadow, opacity, haze: 1, radius: scale * CLOUD_SIZE.width * 0.35, distance: -reach + ((i + noise(i, 3)) / count) * reach * 2, offset: (noise(i, 4) - 0.5) * span, pace: 0.7 + noise(i, 5) * 0.6, laps: 0 };
+  type Cloud = {
+    cloud: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image;
+    opacity: number; haze: number; radius: number; distance: number; offset: number; pace: number;
+  };
+  /** Gives a cloud a new build, size, stretch, tilt, line across the wind and pace. */
+  const dress = (item: Cloud) => {
+    const key = keys[Math.floor(random() * keys.length)];
+    // Mostly small and middling clouds, now and then a big one.
+    const size = unit * (0.32 + random() ** 1.3 * 0.68);
+    const scale = size / CLOUD_SIZE.width;
+    const stretch = 0.7 + random() * 0.55;
+    // Only a slight tilt, so the sunlit side baked into each build stays toward the north-west.
+    const tilt = (random() - 0.5) * 0.3;
+    for (const image of [item.cloud, item.shadow]) image.setTexture(key).setScale(scale, scale * stretch).setRotation(tilt);
+    item.opacity = 0.55 + random() * 0.3;
+    item.radius = size * 0.35;
+    item.offset = (random() - 0.5) * span;
+    item.pace = 0.55 + random() * 0.9;
+  };
+  const clouds: Cloud[] = Array.from({ length: count }, (_, i) => {
+    const item: Cloud = {
+      shadow: scene.add.image(0, 0, keys[0]).setTint(0x1d3a2a).setDepth(shadowDepth),
+      cloud: scene.add.image(0, 0, keys[0]).setDepth(depth),
+      opacity: 1, haze: 1, radius: 0, offset: 0, pace: 1,
+      // Spread unevenly along the wind at the start.
+      distance: -reach + ((i + random()) / count) * reach * 2,
+    };
+    dress(item);
+    return item;
   });
   const shadowShift = { x: unit * 0.07, y: unit * 0.09 };
   const place = () => {
@@ -345,13 +378,12 @@ export function addDriftingClouds(
   for (const key of keys) scene.events.once("shutdown", () => scene.textures.remove(key));
   if (still) return;
   const step = (_time: number, delta: number) => {
-    for (const [index, item] of clouds.entries()) {
+    for (const item of clouds) {
       item.distance += speed * item.pace * (delta / 1000);
       if (item.distance > reach) {
-        // Back in from the far side, on a fresh line across the wind.
-        item.laps += 1;
-        item.distance = -reach;
-        item.offset = (noise(index + item.laps * 17, 6) - 0.5) * span;
+        // Back in from the far side as a different cloud, after a random gap so they never arrive in a train.
+        dress(item);
+        item.distance = -reach - random() * reach * 0.8;
       }
     }
     place();
