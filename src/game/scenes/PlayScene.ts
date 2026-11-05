@@ -11,6 +11,12 @@ import {
 import { GroundTraffic } from "../ground/groundTraffic";
 import { aircraftPresentationScale } from "../rendering/aircraft/visualTokens";
 import { ROUTE_OUTLINE_COLOR } from "../palette";
+
+/** A route's edge: a deep shade of the aircraft's own colour, softer than a near-black outline. */
+const routeEdgeColor = (color: number): number => {
+  const mix = (shift: number) => Math.round(((color >> shift) & 0xff) * 0.35 + ((ROUTE_OUTLINE_COLOR >> shift) & 0xff) * 0.65);
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+};
 import Phaser from "phaser";
 import { HOLD_RADIUS, MAX_HOLDING, Simulation, type SimulationState } from "../../core/Simulation";
 import { clamp, distance } from "../../core/geometry";
@@ -698,16 +704,11 @@ export class PlayScene extends Phaser.Scene {
       );
       if (remaining.length < 2) continue;
 
-      this.routeGraphics.lineStyle(7, ROUTE_OUTLINE_COLOR, 1);
-      this.strokePolyline(this.routeGraphics, [
-        { ...aircraft.position },
-        ...remaining,
-      ]);
-      this.routeGraphics.lineStyle(2.8, style.color, 0.96);
-      this.strokePolyline(this.routeGraphics, [
-        { ...aircraft.position },
-        ...remaining,
-      ]);
+      // A soft edge in a deep shade of the aircraft's own colour, then the colour itself; both
+      // strongest just ahead of the aircraft and easing off toward the landing area.
+      const path = [{ ...aircraft.position }, ...remaining];
+      this.strokeFadingRoute(this.routeGraphics, path, 5, routeEdgeColor(style.color), 0.8, 0.45);
+      this.strokeFadingRoute(this.routeGraphics, path, 2.8, style.color, 0.96, 0.6);
 
       if (aircraft.route.destinationZoneId) {
         const zone = this.zoneById(aircraft.route.destinationZoneId);
@@ -733,7 +734,7 @@ export class PlayScene extends Phaser.Scene {
     const previewColor =
       this.landingTarget.status === "invalid" ? 0xf3a08d : style.color;
 
-    this.previewGraphics.lineStyle(8, 0x0c1716, 0.5);
+    this.previewGraphics.lineStyle(5, routeEdgeColor(previewColor), 0.6);
     this.strokePolyline(this.previewGraphics, points);
     this.previewGraphics.lineStyle(3, previewColor, 0.96);
     this.strokePolyline(this.previewGraphics, points);
@@ -974,6 +975,46 @@ export class PlayScene extends Phaser.Scene {
       this.routeCoachSetEmitted = true;
     }
     this.game.events.emit("route-coach", stage);
+  }
+
+  /**
+   * Strokes a route in a few bands along its length, each a little fainter than the last, from
+   * `from` opacity at the start to `to` at the end. Bands rather than single segments keep the
+   * joins between strokes few, so the overlaps never show.
+   */
+  private strokeFadingRoute(
+    graphics: Phaser.GameObjects.Graphics,
+    points: readonly Vector2[],
+    width: number,
+    color: number,
+    from: number,
+    to: number,
+  ): void {
+    const lengths = points.slice(1).map((point, index) => Math.hypot(point.x - points[index].x, point.y - points[index].y));
+    const total = lengths.reduce((sum, length) => sum + length, 0);
+    if (total <= 0) return;
+    const bands = 6;
+    let index = 0;
+    let walked = 0;
+    let band: Vector2[] = [points[0]];
+    for (let b = 1; b <= bands; b += 1) {
+      const end = (total * b) / bands;
+      while (index < lengths.length && walked + lengths[index] <= end + 1e-6) {
+        walked += lengths[index];
+        index += 1;
+        band.push(points[index]);
+      }
+      if (index < lengths.length && b < bands) {
+        // Split the segment that straddles the band boundary.
+        const t = (end - walked) / lengths[index];
+        const a = points[index];
+        const c = points[index + 1];
+        band.push({ x: a.x + (c.x - a.x) * t, y: a.y + (c.y - a.y) * t });
+      }
+      graphics.lineStyle(width, color, from + (to - from) * ((b - 0.5) / bands));
+      this.strokePolyline(graphics, band);
+      band = [band[band.length - 1]];
+    }
   }
 
   private strokePolyline(
