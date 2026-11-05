@@ -309,7 +309,7 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
 export function addDriftingClouds(
   scene: Phaser.Scene,
   bounds: { readonly width: number; readonly height: number },
-  { count = 9, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5, thinOver }: {
+  { count = 4, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5, thinOver }: {
     count?: number; wind?: number; speed?: number; depth?: number; shadowDepth?: number;
     thinOver?: (point: Vector2, radius: number) => boolean;
   } = {},
@@ -338,7 +338,7 @@ export function addDriftingClouds(
   const dress = (item: Cloud) => {
     const key = keys[Math.floor(random() * keys.length)];
     // Mostly small and middling clouds, now and then a big one.
-    const size = unit * (0.32 + random() ** 1.3 * 0.68);
+    const size = unit * (0.26 + random() ** 1.4 * 0.5);
     const scale = size / CLOUD_SIZE.width;
     const stretch = 0.7 + random() * 0.55;
     // Only a slight tilt, so the sunlit side baked into each build stays toward the north-west.
@@ -370,7 +370,7 @@ export function addDriftingClouds(
       const target = thinOver?.({ x, y }, item.radius) ? 0.25 : 1;
       item.haze += (target - item.haze) * (still ? 1 : 0.05);
       item.cloud.setAlpha(item.opacity * item.haze);
-      item.shadow.setAlpha(0.26 * item.haze);
+      item.shadow.setAlpha(0.18 * item.haze);
       item.shadow.setPosition(x + shadowShift.x, y + shadowShift.y);
     }
   };
