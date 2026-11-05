@@ -10,6 +10,7 @@ import type {
   MapTaxiway,
   ParkingStand
 } from '../shared/airfield';
+import { clearOfHud } from '../shared/frame';
 import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type {
   HudExclusionZone,
@@ -59,6 +60,8 @@ export interface RiverBendLayout extends
   readonly holdShortMarkers: readonly HoldShortMarker<RiverRunwayId, RiverTaxiwayId>[];
   readonly parkingStands: readonly ParkingStand[];
   readonly propAnchors: readonly AirfieldPropAnchor[];
+  /** Buildings sit at the apron ends, stands in the middle. */
+  readonly buildingsAtApronEnds: boolean;
   readonly signs: readonly AirfieldSign[];
   readonly helipad: { readonly center: Vector2; readonly radius: number; readonly zoneId: string };
   readonly riverPath: readonly Vector2[];
@@ -89,9 +92,9 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     },
     apron: [
       { x: 0.63, y: 0.29 },
-      { x: 0.76, y: 0.28 },
-      { x: 0.89, y: 0.39 },
-      { x: 0.81, y: 0.5 },
+      { x: 0.8, y: 0.28 },
+      { x: 0.95, y: 0.38 },
+      { x: 0.89, y: 0.49 },
       { x: 0.64, y: 0.48 },
       { x: 0.59, y: 0.38 }
     ],
@@ -123,9 +126,9 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     },
     apron: [
       { x: 0.43, y: 0.22 },
-      { x: 0.64, y: 0.215 },
-      { x: 0.86, y: 0.31 },
-      { x: 0.74, y: 0.4 },
+      { x: 0.68, y: 0.215 },
+      { x: 0.92, y: 0.305 },
+      { x: 0.82, y: 0.395 },
       { x: 0.47, y: 0.39 },
       { x: 0.39, y: 0.31 }
     ],
@@ -158,9 +161,9 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     },
     apron: [
       { x: 0.5, y: 0.28 },
-      { x: 0.69, y: 0.27 },
-      { x: 0.88, y: 0.39 },
-      { x: 0.78, y: 0.51 },
+      { x: 0.73, y: 0.27 },
+      { x: 0.93, y: 0.385 },
+      { x: 0.85, y: 0.5 },
       { x: 0.52, y: 0.49 },
       { x: 0.45, y: 0.38 }
     ],
@@ -249,7 +252,9 @@ function hudExclusions(width: number, height: number): HudExclusionZone[] {
       y: height - padY - pauseSize,
       width: padX + pauseSize,
       height: padY + pauseSize
-    }
+    },
+    // The speed button mirrors pause in the bottom-left corner.
+    { id: 'speed', x: 0, y: height - padY - pauseSize, width: padX + pauseSize, height: padY + pauseSize }
   ];
 }
 
@@ -475,13 +480,14 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
     }
   ];
 
+  const hud = hudExclusions(width, height);
   return {
     width,
     height,
     variant,
     landingZones,
     guidanceSurfaces: createAirfieldGuidanceSurfaces({ runways, helipad }),
-    hudExclusionZones: hudExclusions(width, height),
+    hudExclusionZones: hud,
     runways,
     taxiways,
     holdShortMarkers,
@@ -494,8 +500,9 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
     riverWidth: profile.riverWidth * unit,
     riverIsSceneryOnly: true,
     fieldPolygons: fieldPolygons(width, height, variant),
-    bankTrees: bankTrees(riverPath, unit),
+    bankTrees: clearOfHud(bankTrees(riverPath, unit), hud),
     buildings,
+    buildingsAtApronEnds: true,
     accessRoad: [
       scalePoint({ x: 0.98, y: variant === 'portrait' ? 0.45 : 0.55 }, width, height),
       apron[3]

@@ -1,5 +1,5 @@
 import type { Vector2 } from '../../../core/types';
-import type { MapLayoutVariant } from '../types';
+import type { HudExclusionZone, MapLayoutVariant } from '../types';
 
 /**
  * A map composed once in a landscape design frame — positions as offsets from
@@ -51,6 +51,12 @@ export function createMapFrame(width: number, height: number, reach: number, min
 }
 
 /** Score and best at the top corners, pause at the bottom right, sized like the other maps. */
+/** Drops scenery circles that would sit under an on-screen control. */
+export function clearOfHud<T extends { center: Vector2; radius: number }>(items: T[], zones: readonly HudExclusionZone[]): T[] {
+  return items.filter(({ center, radius }) => !zones.some((zone) =>
+    center.x + radius > zone.x && center.x - radius < zone.x + zone.width && center.y + radius > zone.y && center.y - radius < zone.y + zone.height));
+}
+
 export function standardHud(width: number, height: number) {
   const edgeX = Math.max(24, width * 0.025);
   const edgeY = Math.max(24, height * 0.02);
@@ -61,5 +67,7 @@ export function standardHud(width: number, height: number) {
     { id: 'score', x: 0, y: 0, width: edgeX + statWidth, height: edgeY + statHeight },
     { id: 'best', x: width - edgeX - statWidth, y: 0, width: edgeX + statWidth, height: edgeY + statHeight },
     { id: 'pause', x: width - edgeX - pause, y: height - edgeY - pause, width: edgeX + pause, height: edgeY + pause },
+    // The speed button mirrors pause in the bottom-left corner.
+    { id: 'speed', x: 0, y: height - edgeY - pause, width: edgeX + pause, height: edgeY + pause },
   ];
 }

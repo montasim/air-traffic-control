@@ -65,6 +65,20 @@ function assertPreparedLayout(
 }
 
 function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T, input: MapPreparationInput): T {
+  if ((authored as { buildingsAtApronEnds?: boolean }).buildingsAtApronEnds !== true) return groundTraffic(authored, input, false);
+  // Buildings at the apron ends with square stand rows, but never at the cost of a stand: a tight
+  // screen gives up square rows first, then the end placement.
+  const usualLayout = { ...authored, buildingsAtApronEnds: false };
+  const usual = groundTraffic(usualLayout, input, false);
+  const stands = usual.apronMarkings.stands.length;
+  for (const [layout, square] of [[authored, true], [authored, false], [usualLayout, true]] as const) {
+    const candidate = groundTraffic(layout, input, square);
+    if (candidate.apronMarkings.stands.length >= stands) return candidate;
+  }
+  return usual;
+}
+
+function groundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T, input: MapPreparationInput, squareRows: boolean) {
   const unit = Math.min(input.width, input.height);
   // Aprons come off the runways and buildings off runways and helipads before anything is placed on them.
   const layout = clearAirfieldSite(authored, unit);
@@ -80,7 +94,7 @@ function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored
     .map((zone) => ({ center: zone.position, width: zone.captureRadius * 3, height: zone.captureRadius * 3, angle: 0 }));
   const landAprons = apronPolygons(layout, 'land');
   const deckAprons = apronPolygons(layout, 'deck');
-  const apronMarkings = createApronMarkings({
+  const markingInput = {
     width: input.width,
     height: input.height,
     unit,
@@ -91,7 +105,8 @@ function withGroundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored
     obstacles: [...obstacles, ...helipads],
     runways,
     hud: layout.hudExclusionZones,
-  });
+  };
+  const apronMarkings = createApronMarkings({ ...markingInput, squareRows });
   return { ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) };
 }
 

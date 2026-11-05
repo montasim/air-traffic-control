@@ -78,6 +78,7 @@ const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y }
 const sub = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x - b.x, y: a.y - b.y });
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
 const dot = (a: Vector2, b: Vector2): number => a.x * b.x + a.y * b.y;
+const normalize = (a: Vector2): Vector2 => scale(a, 1 / (Math.hypot(a.x, a.y) || 1));
 const distance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
 const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 /** Where segment a→b first enters the (margin-expanded) rectangle, as 0..1, or undefined. */
@@ -317,11 +318,18 @@ export function taxiGuidePaths(layout: PlayableMapLayout & GroundNetwork): Vecto
     // GroundTraffic replaces the last corner with this same stand approach.
     const approach = route.stands[0]?.approach;
     const before = route.points.at(-2);
-    if (approach && before && distance(approach[0], before) < 0.5) {
-      guides.push([...points.slice(0, -1), approach[1]]);
-    } else {
-      guides.push(points);
-    }
+    const guide = approach && before && distance(approach[0], before) < 0.5 ? [...points.slice(0, -1), approach[1]] : points;
+    // An exit too close to one landing end is reached by rolling past and turning back, which would
+    // repeat the other direction's curve; paint the lead-in from this side instead, as junctions do.
+    guides.push(guides.some((other) => distance(other[0], guide[0]) < 0.5) ? mirroredExit(guide, axis) : guide);
   }
   return guides;
+}
+
+/** Reflects a guide's runway exit curve across the taxiway it turns onto, so it leads in from the other side. */
+function mirroredExit(guide: readonly Vector2[], axis: Vector2): Vector2[] {
+  const onTaxiway = guide.findIndex((point, i) => i + 1 < guide.length && Math.abs(dot(normalize(sub(guide[i + 1], point)), axis)) < 0.05);
+  if (onTaxiway < 1) return [...guide];
+  const junction = guide[onTaxiway];
+  return guide.map((point, i) => (i < onTaxiway ? sub(point, scale(axis, 2 * dot(sub(point, junction), axis))) : point));
 }

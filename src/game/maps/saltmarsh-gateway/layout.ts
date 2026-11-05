@@ -9,6 +9,7 @@ import type {
   MapTaxiway,
   ParkingStand
 } from '../shared/airfield';
+import { clearOfHud } from '../shared/frame';
 import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type {
   HudExclusionZone,
@@ -20,8 +21,8 @@ import { deterministicUnit } from '../../rendering/shared-map';
 
 export type GatewayRunwayId = 'gateway-main' | 'gateway-commuter';
 export type GatewayRunwayDesignator = '08' | '26' | '13' | '31';
-export type GatewayTaxiwayId = 'gateway-alpha' | 'gateway-bravo' | 'gateway-pad-link';
-export type GatewayConnectionId = GatewayRunwayId | 'gateway-apron' | 'gateway-helipad';
+export type GatewayTaxiwayId = 'gateway-alpha' | 'gateway-bravo';
+export type GatewayConnectionId = GatewayRunwayId | 'gateway-apron';
 
 export interface MapRect {
   readonly x: number;
@@ -67,6 +68,8 @@ export interface SaltmarshGatewayLayout extends
   readonly holdShortMarkers: readonly HoldShortMarker<GatewayRunwayId, GatewayTaxiwayId>[];
   readonly parkingStands: readonly ParkingStand[];
   readonly propAnchors: readonly AirfieldPropAnchor[];
+  /** Buildings sit at the apron ends, stands in the middle. */
+  readonly buildingsAtApronEnds: boolean;
   readonly signs: readonly AirfieldSign[];
   readonly helipad: { readonly center: Vector2; readonly radius: number; readonly zoneId: string };
   readonly openAirspace: MapRect;
@@ -95,14 +98,15 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.32
     },
     apron: [
-      { x: 0.63, y: 0.32 },
-      { x: 0.75, y: 0.31 },
-      { x: 0.87, y: 0.43 },
-      { x: 0.79, y: 0.56 },
-      { x: 0.64, y: 0.54 },
-      { x: 0.59, y: 0.43 }
+      { x: 0.54, y: 0.325 },
+      { x: 0.82, y: 0.315 },
+      { x: 0.92, y: 0.43 },
+      { x: 0.86, y: 0.555 },
+      { x: 0.58, y: 0.545 },
+      { x: 0.51, y: 0.435 }
     ],
-    helipad: { x: 0.61, y: 0.51 },
+    // On the apron between the buildings, so helicopters set down by the terminal and need no taxi link.
+    helipad: { x: 0.72, y: 0.51 },
     openAirspaceStart: 0.65,
     poolAnchors: [{ x: 0.12, y: 0.2 }, { x: 0.27, y: 0.46 }, { x: 0.45, y: 0.77 }],
     buildingAnchors: [{ x: 0.72, y: 0.47 }, { x: 0.64, y: 0.37 }, { x: 0.82, y: 0.49 }]
@@ -123,14 +127,14 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.32
     },
     apron: [
-      { x: 0.43, y: 0.25 },
-      { x: 0.66, y: 0.245 },
-      { x: 0.86, y: 0.34 },
-      { x: 0.73, y: 0.43 },
-      { x: 0.46, y: 0.41 },
-      { x: 0.38, y: 0.33 }
+      { x: 0.36, y: 0.255 },
+      { x: 0.68, y: 0.245 },
+      { x: 0.88, y: 0.34 },
+      { x: 0.76, y: 0.43 },
+      { x: 0.4, y: 0.415 },
+      { x: 0.3, y: 0.335 }
     ],
-    helipad: { x: 0.42, y: 0.39 },
+    helipad: { x: 0.58, y: 0.4 },
     openAirspaceStart: 0.55,
     poolAnchors: [{ x: 0.13, y: 0.46 }, { x: 0.75, y: 0.53 }, { x: 0.28, y: 0.73 }],
     buildingAnchors: [{ x: 0.61, y: 0.36 }, { x: 0.48, y: 0.29 }, { x: 0.75, y: 0.37 }]
@@ -151,14 +155,14 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
       landingAlong: -0.32
     },
     apron: [
-      { x: 0.46, y: 0.31 },
-      { x: 0.67, y: 0.3 },
-      { x: 0.86, y: 0.43 },
-      { x: 0.74, y: 0.57 },
-      { x: 0.48, y: 0.53 },
-      { x: 0.41, y: 0.42 }
+      { x: 0.4, y: 0.315 },
+      { x: 0.7, y: 0.3 },
+      { x: 0.88, y: 0.43 },
+      { x: 0.78, y: 0.565 },
+      { x: 0.44, y: 0.54 },
+      { x: 0.34, y: 0.425 }
     ],
-    helipad: { x: 0.44, y: 0.5 },
+    helipad: { x: 0.62, y: 0.52 },
     openAirspaceStart: 0.65,
     poolAnchors: [{ x: 0.13, y: 0.2 }, { x: 0.23, y: 0.49 }, { x: 0.82, y: 0.72 }],
     buildingAnchors: [{ x: 0.65, y: 0.48 }, { x: 0.51, y: 0.36 }, { x: 0.77, y: 0.49 }]
@@ -244,7 +248,9 @@ function hudExclusions(width: number, height: number): HudExclusionZone[] {
       y: height - padY - pauseSize,
       width: padX + pauseSize,
       height: padY + pauseSize
-    }
+    },
+    // The speed button mirrors pause in the bottom-left corner.
+    { id: 'speed', x: 0, y: height - padY - pauseSize, width: padX + pauseSize, height: padY + pauseSize }
   ];
 }
 
@@ -366,12 +372,6 @@ export function createSaltmarshGatewayLayout(
       path: [runwayPoint(commuter, -commuter.length * 0.1), interpolate(apron[2], apron[3], 0.42)],
       width: taxiwayWidth * 0.9,
       connects: ['gateway-commuter', 'gateway-apron']
-    },
-    {
-      id: 'gateway-pad-link',
-      path: [interpolate(apron[4], apron[5], 0.45), helipad.center],
-      width: taxiwayWidth * 0.78,
-      connects: ['gateway-apron', 'gateway-helipad']
     }
   ];
   const captureScale = Math.max(0.86, Math.min(1.18, unit / 900));
@@ -526,12 +526,13 @@ export function createSaltmarshGatewayLayout(
     tidalPools: profile.poolAnchors.map((anchor, index) =>
       irregularPool(anchor, width, height, unit, index)
     ),
-    treeBelt: createTreeBelt(width, height, unit, hudExclusionZones[0]),
+    treeBelt: clearOfHud(createTreeBelt(width, height, unit, hudExclusionZones[0]), hudExclusionZones),
     serviceRoads: [
       [scalePoint({ x: 0.48, y: 0.08 }, width, height), apron[0]],
       [apron[3], scalePoint({ x: 0.95, y: 0.59 }, width, height)]
     ],
     buildings,
+    buildingsAtApronEnds: true,
     routeHaloColor: 0x101e1b
   };
 }

@@ -221,4 +221,12 @@ describe('ground route geometry', () => {
     expect(segmentEntry({ x: 0, y: 0 }, { x: 100, y: 0 }, rect)).toBeCloseTo(0.4);
     expect(segmentEntry({ x: 0, y: 30 }, { x: 100, y: 30 }, rect)).toBeUndefined();
   });
+  it.each(MAP_DEFINITIONS.map((definition) => definition.id))('%s paints each landing direction exit from its own side with both runway ends on', (id) => {
+    const definition = MAP_DEFINITIONS.find((item) => item.id === id)!;
+    for (const [width, height] of SHAPES) {
+      const { layout } = definition.prepare({ width, height, detailLevel: 'desktop', twoEndLanding: true });
+      const starts = taxiGuidePaths(layout as never).map((guide) => `${Math.round(guide[0].x)},${Math.round(guide[0].y)}`);
+      expect(new Set(starts).size, `${id} ${width}x${height}`).toBe(starts.length);
+    }
+  });
 });

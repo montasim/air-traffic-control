@@ -18,6 +18,8 @@ export interface ApronInput {
   readonly runways: readonly (GroundObstacle & { readonly clearance?: number })[];
   readonly hud: readonly HudExclusionZone[];
   readonly standsPerType?: number;
+  /** Rows only along or across the runways, never at a slant. */
+  readonly squareRows?: boolean;
 }
 
 /** Stand footprint per type: a share of the map unit with a floor that fits a parked aircraft on phones. */
@@ -135,13 +137,13 @@ function segmentsCross(a: Vector2, b: Vector2, c: Vector2, d: Vector2): boolean 
 }
 
 /** Row directions worth trying: along each runway and apron edge, across them, and every 30°. */
-function rowAngles(runways: readonly GroundObstacle[], aprons: readonly (readonly Vector2[])[]): number[] {
-  const base = [...runways.map((rect) => rect.angle), ...aprons.flatMap((polygon) => polygon.map((a, i) => {
+function rowAngles(runways: readonly GroundObstacle[], aprons: readonly (readonly Vector2[])[], square = false): number[] {
+  const base = [...runways.map((rect) => rect.angle), ...(square ? [] : aprons.flatMap((polygon) => polygon.map((a, i) => {
     const b = polygon[(i + 1) % polygon.length];
     return Math.atan2(b.y - a.y, b.x - a.x);
-  }))];
+  })))];
   const angles: number[] = [];
-  const sweep = Array.from({ length: 6 }, (_, i) => (i * Math.PI) / 6);
+  const sweep = square ? [] : Array.from({ length: 6 }, (_, i) => (i * Math.PI) / 6);
   for (const angle of [...base.flatMap((a) => [a, a + Math.PI / 2]), ...sweep]) {
     const n = normalizeAngle(angle);
     if (!angles.some((existing) => Math.abs(Math.sin(existing - n)) < 0.09)) angles.push(n);
@@ -171,7 +173,7 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
   const taxilanes: ApronTaxilane[] = [];
   const dividers: (readonly [Vector2, Vector2])[] = [];
   const hudRects: GroundObstacle[] = hud.map((zone) => ({ center: { x: zone.x + zone.width / 2, y: zone.y + zone.height / 2 }, width: zone.width, height: zone.height, angle: 0 }));
-  const angles = rowAngles(runways, allAprons);
+  const angles = rowAngles(runways, allAprons, input.squareRows);
   // Stands and taxilanes stay off the grass strip beside each runway.
   const runwayGap = runwayApronGap(unit);
 
@@ -227,14 +229,26 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
         const reach = span * (pass === 4 ? 2.2 : 1.1);
         for (let cx = Math.min(...xs) - reach; cx <= Math.max(...xs) + reach; cx += step) {
           for (let cy = Math.min(...ys) - reach; cy <= Math.max(...ys) + reach; cy += step) {
-            const center = { x: cx, y: cy };
-            if (!onApron(center, [polygon], reach)) continue;
+            const gridCenter = { x: cx, y: cy };
+            if (!onApron(gridCenter, [polygon], reach)) continue;
             for (const angle of angles) {
               const forward = unitVector(angle);
               const half = ((count - 1) / 2) * spacing + tail;
-              const ends = [add(center, scale(forward, -half)), add(center, scale(forward, half))];
+              const rowEnds = (middle: Vector2) => [add(middle, scale(forward, -half)), add(middle, scale(forward, half))];
               // The connector joins the taxiway end to the nearer end of the row's lane.
-              const [near, far] = distance(ends[0], start) <= distance(ends[1], start) ? ends : [ends[1], ends[0]];
+              const nearEnd = (points: Vector2[]) => (distance(points[0], start) <= distance(points[1], start) ? points[0] : points[1]);
+              let center = gridCenter;
+              if (input.squareRows) {
+                // Square rows start on the taxiway's own line, so the guide runs straight on and
+                // turns at most once onto the lane, like painted taxi lines.
+                const across = unitVector(exit.heading + Math.PI / 2);
+                const near0 = nearEnd(rowEnds(center));
+                const lateral = (near0.x - start.x) * across.x + (near0.y - start.y) * across.y;
+                center = add(center, scale(across, -lateral));
+              }
+              const ends = rowEnds(center);
+              const near = nearEnd(ends);
+              const far = near === ends[0] ? ends[1] : ends[0];
               const connector = distance(near, start);
               if (connector > unit * (relaxed ? 0.6 : 0.4) || (best && connector >= best.score)) continue;
               if (!ends.every((point) => onApron(point, aprons, deck ? 0 : reach))) continue;

@@ -239,7 +239,9 @@ function hudExclusions(width: number, height: number): HudExclusionZone[] {
   return [
     { id: 'score', x: 0, y: 0, width: edgeX + statWidth, height: edgeY + statHeight },
     { id: 'best', x: width - edgeX - statWidth, y: 0, width: edgeX + statWidth, height: edgeY + statHeight },
-    { id: 'pause', x: width - edgeX - pause, y: height - edgeY - pause, width: edgeX + pause, height: edgeY + pause }
+    { id: 'pause', x: width - edgeX - pause, y: height - edgeY - pause, width: edgeX + pause, height: edgeY + pause },
+    // The speed button mirrors pause in the bottom-left corner.
+    { id: 'speed', x: 0, y: height - edgeY - pause, width: edgeX + pause, height: edgeY + pause }
   ];
 }
 
