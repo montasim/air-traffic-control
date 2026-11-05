@@ -693,6 +693,8 @@ dialog::backdrop {
 }
 /* Practice sits at the far end of the aircraft key row. */
 .flight-key button { margin: 0 0 0 auto; }
+/* On phones the row wraps, so Practice starts its line on the left like everything else. */
+@media (max-width: 700px) { .flight-key button { margin-left: 0; } }
 .flight-key > span {
   padding: 8px 8px;
   border-radius: 6px;
