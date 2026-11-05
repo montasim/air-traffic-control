@@ -1430,7 +1430,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel #field-difficulty { display: none; }
 #start-panel #field-description { display: block; margin: 0; font-size: 0.875rem; line-height: 1.5; color: var(--muted); }
 #start-panel #field-record { margin: 0; font-size: 13px; line-height: 1.5; text-align: right; font-weight: 400; color: var(--ink); }
-#start-panel .flight-settings { display: flex; flex-direction: column; gap: 24px; min-width: 0; padding: 0; }
+/* One gap between the card's sections, reused between the saved shift and the buttons below it. */
+#start-panel .flight-settings { --section-gap: 24px; display: flex; flex-direction: column; gap: var(--section-gap); min-width: 0; padding: 0; }
 #start-panel .difficulty-options { margin: 0; }
 #start-panel .difficulty-choices { gap: 20px; }
 #start-panel .difficulty-options legend { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; font-size: 0.875rem; margin-bottom: 12px; }
@@ -1441,7 +1442,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .runway-option small { color: var(--muted); }
 #start-panel #start-button { margin: 0; }
 /* Resume and Start share one row; Start fills it when there is no shift to resume. */
-#start-panel .flight-actions { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+#start-panel .flight-actions { display: flex; flex-wrap: wrap; gap: var(--section-gap) 12px; }
 #start-panel .flight-actions > button { flex: 1 1 0; min-width: 0; margin: 0; }
 /* The saved shift's details sit above the buttons as the same tags the pause menu uses, so Resume reads as one line. */
 #start-panel .resume-details { order: -1; flex: 0 0 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--ink); }
@@ -1484,7 +1485,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-title { font-size: 1.375rem; }
   #start-panel #field-record { font-size: 13px; }
   #start-panel #field-description { display: none; }
-  #start-panel .flight-settings { gap: 16px; border: 0; padding: 0; }
+  #start-panel .flight-settings { --section-gap: 16px; border: 0; padding: 0; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
   #start-panel .difficulty-choices { gap: 8px; }
   #start-panel .difficulty-choices label span { min-height: 36px; font-size: 13px; }
@@ -1530,6 +1531,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-title { font-size: 1.625rem; }
   #start-panel #field-record { font-size: 12px; }
   #start-panel .flight-settings { gap: 4px; padding: 0; border: 0; }
+  #start-panel .flight-actions { row-gap: 12px; }
   #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
   /* Short landscape windows have width to spare and no height, so the switches share one row there. */
