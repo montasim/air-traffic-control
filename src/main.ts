@@ -725,7 +725,7 @@ function showPausePanel(): void {
   showOnly(elements.pausePanel);
   // The airfield name is the pause heading, so the details below are tags only.
   document.querySelector("#pause-map-name")!.textContent = mapDefinitionById(activeMapId).metadata.name;
-  renderShiftContext(document.querySelector<HTMLElement>("#pause-context")!, elements.score.textContent ?? "", false);
+  renderShiftContext(document.querySelector<HTMLElement>("#pause-context")!, elements.score.textContent ?? "");
   updateResizeNotice();
   elements.pauseButton.setAttribute("aria-label", "Resume game");
   mountHugeIcon(elements.pauseIcon, "play", 22);
@@ -777,7 +777,9 @@ async function handleGameOver({
   document.querySelector<HTMLElement>("#record-message")!.hidden = !isRecord;
   // Both result cards keep one-word labels so they stay level; the record's context reads below them.
   document.querySelector("#result-best-label")!.textContent = "Best";
-  renderShiftContext(document.querySelector<HTMLElement>('#result-difficulty')!);
+  // The same tags as the pause card; the airfield, the pause card's heading, joins the eyebrow here.
+  document.querySelector("#result-eyebrow")!.textContent = `Shift ended · ${mapDefinitionById(activeMapId).metadata.name}`;
+  renderShiftContext(document.querySelector<HTMLElement>('#result-difficulty')!, formatScore(score));
   document.querySelector<HTMLElement>('#achievement-result')!.hidden = true;
   elements.finalScore.textContent = formatScore(score);
   resetCareerResult(elements.careerResult, "Recording shift…");
@@ -1047,10 +1049,9 @@ function updateResizeNotice(): void {
 }
 
 /** The shift's airfield as a heading, then its settings as short tags; the landing count only while paused. */
-function renderShiftContext(target: HTMLElement, landed?: string, withName = true): void {
-  // On the result card the airfield leads the tags; the pause menu shows it as its heading instead.
+/** The pause and result cards' shared tags; both name the airfield elsewhere (heading, eyebrow). */
+function renderShiftContext(target: HTMLElement, landed: string): void {
   target.replaceChildren(shiftTags({
-    name: withName ? mapDefinitionById(activeMapId).metadata.name : undefined,
     difficulty: activeDifficulty,
     landed,
     orientation: activeProfile.id,
