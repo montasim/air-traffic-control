@@ -23,6 +23,7 @@ function mixColor(from: number, to: number, t: number): number {
 export interface AircraftViewOptions {
   livery?: LiveryId;
   reducedMotion?: boolean;
+  night?: boolean;
   presentationScale?: number;
 }
 
@@ -44,6 +45,12 @@ export class AircraftView {
   private landedBlend = -1;
   /** Scale on the ground, at most GROUND_SCALE and small enough to fit this type's stand. */
   private groundScale = GROUND_SCALE;
+  /** Night navigation lights: red port, green starboard, white tail strobe. */
+  private readonly navLights: Phaser.GameObjects.Arc[];
+  private readonly strobe: Phaser.GameObjects.Arc;
+  private night = false;
+  private grounded = false;
+  private strobeClock = 0;
   constructor(
     scene: Phaser.Scene,
     aircraft: Aircraft,
@@ -65,6 +72,7 @@ export class AircraftView {
       );
     this.rotorAngle = initialRotorPhase(aircraft.id);
     this.reducedMotion = options.reducedMotion ?? false;
+    this.night = options.night ?? false;
     const spec = AIRCRAFT_SILHOUETTES[aircraft.type];
     this.ring = scene.add
       .circle(0, 0, spec.selectionRadius, 0, 0)
@@ -94,6 +102,21 @@ export class AircraftView {
       const hub = scene.add.circle(5, 0, 3, INK.bodyHighlight).setStrokeStyle(1.5, INK.keyline);
       children.push(hub);
     }
+    // Each light sits on the wing, set in from the tip edge so none of it hangs off the airframe:
+    // mid-tip on a wing, the forward edge point on a helicopter so it lands on the cabin, not the tail.
+    const outline = AIRCRAFT_OUTLINES[aircraft.type];
+    const span = Math.max(...outline.map(([, y]) => y));
+    const tipXs = outline.filter(([, y]) => y === span).map(([x]) => x);
+    const tipX = aircraft.type === "rotor" ? Math.max(...tipXs) : tipXs.reduce((sum, x) => sum + x, 0) / tipXs.length;
+    const tipY = span - 3.5;
+    const tail = outline.filter(([, y]) => y === 0).reduce((best, point) => point[0] < best[0] ? point : best);
+    this.navLights = [
+      scene.add.circle(tipX, -tipY, 2.6, 0xff3b30),
+      scene.add.circle(tipX, tipY, 2.6, 0x34e36a),
+    ];
+    this.strobe = scene.add.circle(tail[0], 0, 2.6, 0xffffff);
+    children.push(...this.navLights, this.strobe);
+    this.updateLights();
     this.container = scene.add
       .container(aircraft.position.x, aircraft.position.y, children)
       .setDepth(7)
@@ -118,6 +141,8 @@ export class AircraftView {
       );
       this.rotorAssembly.setRotation(this.rotorAngle);
     }
+    this.strobeClock = (this.strobeClock + deltaMilliseconds) % 1000;
+    this.updateLights();
     const progress =
       aircraft.state === "landing" ? aircraft.landingProgress : 0;
     // Touchdown settles onto the ground scale; the ground layer then rolls it out and taxis it.
@@ -135,6 +160,8 @@ export class AircraftView {
   toGround(muteImmediately = false): void {
     this.setSelected(false);
     this.container.setDepth(3);
+    this.grounded = true;
+    this.updateLights();
     this.landedBlend = muteImmediately ? 1 : 0;
     if (muteImmediately) this.paint(1);
   }
@@ -194,6 +221,17 @@ export class AircraftView {
   }
   setReducedMotion(reducedMotion: boolean): void {
     this.reducedMotion = reducedMotion;
+    this.updateLights();
+  }
+  setNight(night: boolean): void {
+    this.night = night;
+    this.updateLights();
+  }
+  /** Lights show in flight at night; the strobe flashes briefly once a second, or stays on with reduced motion. */
+  private updateLights(): void {
+    const on = this.night && !this.grounded;
+    for (const light of this.navLights) light.setVisible(on);
+    this.strobe.setVisible(on && (this.reducedMotion || this.strobeClock < 120));
   }
   destroy(): void {
     this.container.destroy(true);
