@@ -38,7 +38,7 @@ export const FROST_CROSSING_PALETTE: CivilMapPalette = {
   building: 0xb5bab0,
   buildingRoof: 0xeee8d6,
   shadow: 0x4a6f86,
-  vegetation: 0x1d4d35,
+  vegetation: 0x4a8a5c,
   vegetationLight: 0x2f6a4a,
 };
 
