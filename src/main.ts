@@ -1203,7 +1203,7 @@ function openUtility(screen: string, pushHistory = true): void {
   document.querySelector<HTMLElement>("#utility-support")!.hidden = screen === "airfields";
   utilityScreen.dataset.page = screen;
   utilityScreen.hidden = false;
-  utilityScreen.scrollTop = 0;
+  document.querySelector<HTMLElement>("#utility-scroll")!.scrollTop = 0;
   document.body.dataset.screen = "utility";
   for (const element of [elements.startPanel, elements.pausePanel, elements.gameoverPanel, elements.gameCanvas, elements.hud]) element.inert = true;
   if (pushHistory) history.pushState(null, "", `#${screen}`);
