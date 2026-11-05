@@ -183,7 +183,7 @@ export class AircraftView {
     const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
     const edge = mixColor(paint.edge, LANDED.keyline, landed);
     this.shadow.clear();
-    this.shadow.fillStyle(INK.shadow, 0.22 + (LANDED.shadowAlpha - 0.22) * landed);
+    this.shadow.fillStyle(INK.shadow, 0.28 + (LANDED.shadowAlpha - 0.28) * landed);
     this.shadow.fillPoints(this.outline, true);
     const body = this.body.clear();
     body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
@@ -198,7 +198,8 @@ export class AircraftView {
       body.lineStyle(4.4, keyline, 1);
       body.strokePoints(this.outline, true);
     }
-    body.lineStyle(2.4, edge, 1);
+    // A bold outline keeps the silhouette crisp against busier, textured ground.
+    body.lineStyle(3, edge, 1);
     body.strokePoints(this.outline, true);
     // One generous livery panel and one cockpit remain readable at flight scale.
     body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
