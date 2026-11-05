@@ -16,7 +16,7 @@ import {
   paintRaisedBuilding,
   paintShadedTree,
   paintSurfaceTexture,
-  paintFieldPolygon,
+  paintGroundTexture,
   paintHelipad,
   strokePolyline,
   type CivilMapPalette
@@ -55,14 +55,7 @@ function paintSaltmarshGateway(
   const palette = SALTMARSH_GATEWAY_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
 
-  graphics.fillStyle(palette.terrainDark, 1);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-  graphics.fillStyle(palette.terrain, 0.95);
-  graphics.fillRect(0, 0, layout.width, layout.height);
-
-  layout.fieldPolygons.forEach((field, index) => {
-    paintFieldPolygon(graphics, field, palette, index % 2 === 0);
-  });
+  // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
   for (const pool of layout.tidalPools) paintShoredPool(graphics, pool, palette);
   paintHedgerows(graphics, layout, palette);
 
@@ -98,10 +91,17 @@ export function renderSaltmarshGateway(
   layout: SaltmarshGatewayLayout,
   detailLevel: WorldDetailLevel
 ): void {
+  const palette = SALTMARSH_GATEWAY_PALETTE;
+  paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: layout.fieldPolygons, angle: layout.runways[0].angle }, {
+    base: palette.terrain,
+    fields: [palette.terrainLight, palette.terrain, 0xb3c463, palette.terrainDark, 0x9cba58],
+    light: 0xd8eb8c,
+    dark: 0x3c6624
+  });
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({graphics}) => paintSaltmarshGateway(graphics, layout, detailLevel),
     operational: ({graphics}) => paintGatewayAirport(graphics, layout, detailLevel),
     detail: () => {}
-  }, {materialTextureKey: 'terrain:arcade:meadow'});
+  });
   paintSurfaceTexture(scene, layout);
 }

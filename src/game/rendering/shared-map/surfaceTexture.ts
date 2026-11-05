@@ -3,6 +3,7 @@ import type { LandingZone, Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { MapBuilding } from "./airfieldPainter";
 import { buildingCenterClearOfRunways, rotatedRectangle } from "./geometry";
+import { renderScaleOf } from "./composer";
 
 /** What the surface texture needs from a map: its paved shapes and where aircraft touch down. */
 export interface SurfaceLayout {
@@ -20,14 +21,16 @@ export interface SurfaceLayout {
 let serial = 0;
 
 /** A square of random grey pixels with random alpha: drawn small it is grain, scaled up it is soft mottling. */
-function noiseTile(size: number, strength: number): HTMLCanvasElement {
+function noiseTile(size: number, strength: number, light = [255, 255, 255], dark = [0, 0, 0]): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const context = canvas.getContext("2d")!;
   const image = context.createImageData(size, size);
   for (let i = 0; i < image.data.length; i += 4) {
-    const light = Math.random() < 0.5 ? 255 : 0;
-    image.data[i] = image.data[i + 1] = image.data[i + 2] = light;
+    const [r, g, b] = Math.random() < 0.5 ? light : dark;
+    image.data[i] = r;
+    image.data[i + 1] = g;
+    image.data[i + 2] = b;
     image.data[i + 3] = Math.random() * strength * 255;
   }
   context.putImageData(image, 0, 0);
@@ -38,8 +41,8 @@ function noiseTile(size: number, strength: number): HTMLCanvasElement {
  * Soft, seamless mottling: a small noise tile repeated 3×3, scaled up smoothly, and the middle
  * cut out, so blobs blend across the tile edges instead of showing a grid.
  */
-function smoothTile(cells: number, size: number, strength: number): HTMLCanvasElement {
-  const noise = noiseTile(cells, strength);
+function smoothTile(cells: number, size: number, strength: number, light?: number[], dark?: number[]): HTMLCanvasElement {
+  const noise = noiseTile(cells, strength, light, dark);
   const wide = document.createElement("canvas");
   wide.width = wide.height = size * 3;
   const context = wide.getContext("2d")!;
@@ -86,11 +89,12 @@ function paved(context: CanvasRenderingContext2D, layout: SurfaceLayout, which: 
 }
 
 /** A layer cut to one surface: the surface's own texture kept only inside (or outside) its mask. */
-function surfaceLayer(layout: SurfaceLayout, paint: (context: CanvasRenderingContext2D) => void, mask: (context: CanvasRenderingContext2D) => void, keep: "inside" | "outside"): HTMLCanvasElement {
+function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: CanvasRenderingContext2D) => void, mask: (context: CanvasRenderingContext2D) => void, keep: "inside" | "outside"): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(layout.width);
-  canvas.height = Math.ceil(layout.height);
+  canvas.width = Math.ceil(layout.width * scale);
+  canvas.height = Math.ceil(layout.height * scale);
   const context = canvas.getContext("2d")!;
+  context.scale(scale, scale);
   paint(context);
   context.globalCompositeOperation = keep === "inside" ? "destination-in" : "destination-out";
   mask(context);
@@ -98,36 +102,19 @@ function surfaceLayer(layout: SurfaceLayout, paint: (context: CanvasRenderingCon
 }
 
 /**
- * Grass, asphalt and concrete texture for a map, drawn once into one image above the map art
- * and below aircraft and the night layer: grain and mottling on the grass with mowing stripes
- * along the runways, fine grain and touchdown rubber on runways and taxiways, and grain with
- * slab joints on the apron.
+ * Asphalt and concrete texture for a map, drawn once into one image above the map art
+ * and below aircraft and the night layer: fine grain and touchdown rubber on runways and
+ * taxiways, and grain with slab joints on the apron.
  */
 export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, depth = -19.85): Phaser.GameObjects.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
   const { width, height } = layout;
   const unit = Math.min(width, height);
+  const scale = renderScaleOf(scene);
   const angle = layout.runways[0]?.angle ?? 0;
-  const grain = noiseTile(96, 0.12);
-  const mottle = smoothTile(12, Math.max(64, Math.round(unit * 0.5)), 0.08);
+  const grain = noiseTile(96, 0.07);
 
-  const grass = surfaceLayer(layout, (context) => {
-    fillWith(context, mottle, 1, width, height);
-    fillWith(context, grain, 1, width, height);
-    // Mowing stripes run with the runways, alternately lighter and darker.
-    context.save();
-    context.translate(width / 2, height / 2);
-    context.rotate(angle);
-    const band = unit * 0.05;
-    const reach = Math.hypot(width, height);
-    for (let y = -reach, i = 0; y < reach; y += band, i += 1) {
-      context.fillStyle = i % 2 ? "rgba(255,255,255,0.035)" : "rgba(0,0,0,0.03)";
-      context.fillRect(-reach, y, reach * 2, band);
-    }
-    context.restore();
-  }, (context) => { paved(context, layout, "asphalt"); paved(context, layout, "concrete"); }, "outside");
-
-  const asphalt = surfaceLayer(layout, (context) => {
+  const asphalt = surfaceLayer(layout, scale, (context) => {
     fillWith(context, grain, 1, width, height);
     fillWith(context, smoothTile(10, Math.max(48, Math.round(unit * 0.25)), 0.06), 1, width, height);
     // Rubber left by main gear where aircraft touch down, fading along the landing direction.
@@ -150,7 +137,7 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
     }
   }, (context) => paved(context, layout, "asphalt"), "inside");
 
-  const concrete = surfaceLayer(layout, (context) => {
+  const concrete = surfaceLayer(layout, scale, (context) => {
     fillWith(context, grain, 1, width, height);
     // Slab joints in a grid square to the runways.
     context.save();
@@ -190,14 +177,78 @@ export function paintSurfaceTexture(scene: Phaser.Scene, layout: SurfaceLayout, 
   }
 
   const canvas = document.createElement("canvas");
-  canvas.width = Math.ceil(width);
-  canvas.height = Math.ceil(height);
+  canvas.width = Math.ceil(width * scale);
+  canvas.height = Math.ceil(height * scale);
   const context = canvas.getContext("2d")!;
-  for (const layer of [grass, asphalt, concrete]) context.drawImage(layer, 0, 0);
+  for (const layer of [asphalt, concrete]) context.drawImage(layer, 0, 0);
 
   const key = `surface-texture-${serial += 1}`;
   scene.textures.addCanvas(key, canvas);
-  const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDepth(depth);
+  const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
+  image.once("destroy", () => scene.textures.remove(key));
+  return image;
+}
+
+const rgb = (color: number) => [(color >> 16) & 255, (color >> 8) & 255, color & 255];
+const css = (color: number) => `rgb(${rgb(color).join(",")})`;
+
+/** What the painted ground needs: the field patchwork and the direction to mow along. */
+export interface GroundLayout {
+  readonly width: number;
+  readonly height: number;
+  readonly fieldPolygons: readonly (readonly Vector2[])[];
+  readonly angle: number;
+}
+
+/**
+ * The ground under all map scenery, painted once at the render scale: a base colour, a
+ * patchwork of fields in a few crop shades with softly blurred edges, broad green-tinted
+ * mottling (never grey speckle), and mowing stripes along the runways.
+ */
+export function paintGroundTexture(
+  scene: Phaser.Scene,
+  ground: GroundLayout,
+  shades: { readonly base: number; readonly fields: readonly number[]; readonly light: number; readonly dark: number },
+  depth = -21,
+): Phaser.GameObjects.Image | undefined {
+  if (typeof document === "undefined" || !scene.textures) return undefined;
+  const { width, height } = ground;
+  const unit = Math.min(width, height);
+  const scale = renderScaleOf(scene);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.ceil(width * scale);
+  canvas.height = Math.ceil(height * scale);
+  const context = canvas.getContext("2d")!;
+  context.scale(scale, scale);
+  context.fillStyle = css(shades.base);
+  context.fillRect(0, 0, width, height);
+  // Fields with soft edges, as if painted rather than cut out.
+  context.filter = `blur(${Math.max(1, unit * 0.004)}px)`;
+  ground.fieldPolygons.forEach((field, index) => {
+    context.fillStyle = css(shades.fields[index % shades.fields.length]);
+    context.globalAlpha = 0.85;
+    context.beginPath();
+    field.forEach((point, i) => (i ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+    context.closePath();
+    context.fill();
+  });
+  context.filter = "none";
+  context.globalAlpha = 1;
+  fillWith(context, smoothTile(10, Math.max(96, Math.round(unit * 0.6)), 0.18, rgb(shades.light), rgb(shades.dark)), 1, width, height);
+  fillWith(context, smoothTile(14, Math.max(48, Math.round(unit * 0.2)), 0.1, rgb(shades.light), rgb(shades.dark)), 1, width, height);
+  context.save();
+  context.translate(width / 2, height / 2);
+  context.rotate(ground.angle);
+  const band = unit * 0.05;
+  const reach = Math.hypot(width, height);
+  for (let y = -reach, i = 0; y < reach; y += band, i += 1) {
+    context.fillStyle = i % 2 ? "rgba(255,255,240,0.05)" : "rgba(20,40,10,0.04)";
+    context.fillRect(-reach, y, reach * 2, band);
+  }
+  context.restore();
+  const key = `ground-texture-${serial += 1}`;
+  scene.textures.addCanvas(key, canvas);
+  const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
   image.once("destroy", () => scene.textures.remove(key));
   return image;
 }
