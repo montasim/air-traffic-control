@@ -2,6 +2,7 @@ import type { LandingZone, Vector2 } from '../../../core/types';
 import type { ApronMarkings, GroundRoute, GroundStand, PlayableMapLayout } from '../types';
 import { buildingCenterClearOfRunways, filletCorners, PIVOT_TURN } from '../../rendering/shared-map/geometry';
 import type { MapRunway, MapTaxiway, ParkingStand } from './airfield';
+import { distance, lerpPoint } from '../../../core/geometry';
 
 export { filletCorners, PIVOT_TURN };
 
@@ -82,8 +83,6 @@ const sub = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x - b.x, y: a.y - b.y }
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
 const dot = (a: Vector2, b: Vector2): number => a.x * b.x + a.y * b.y;
 const normalize = (a: Vector2): Vector2 => scale(a, 1 / (Math.hypot(a.x, a.y) || 1));
-const distance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
-const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 /** Where segment a→b first enters the (margin-expanded) rectangle, as 0..1, or undefined. */
 export function segmentEntry(a: Vector2, b: Vector2, rect: GroundObstacle, margin = 0): number | undefined {
   const cos = Math.cos(-rect.angle);
@@ -119,7 +118,7 @@ function cutAtObstacles(points: readonly Vector2[], firstTaxiIndex: number, obst
       if (entry !== undefined && (earliest === undefined || entry < earliest)) earliest = entry;
     }
     if (earliest !== undefined) {
-      const cut = lerp(points[i], points[i + 1], Math.max(0, earliest - 0.001));
+      const cut = lerpPoint(points[i], points[i + 1], Math.max(0, earliest - 0.001));
       return [...points.slice(0, i + 1), cut].filter((point, index, all) => index === 0 || distance(point, all[index - 1]) > 1);
     }
   }
@@ -178,7 +177,7 @@ function distanceAlong(points: readonly Vector2[], target: Vector2): number {
     const span = sub(b, a);
     const length = Math.hypot(span.x, span.y);
     const t = length ? Math.max(0, Math.min(1, dot(sub(target, a), span) / (length * length))) : 0;
-    const gap = distance(target, lerp(a, b, t));
+    const gap = distance(target, lerpPoint(a, b, t));
     if (gap < best.gap) best = { gap, along: walked + t * length };
     walked += length;
   }
@@ -206,7 +205,7 @@ function prefixOf(points: readonly Vector2[], along: number): Vector2[] {
   for (let i = 1; i < points.length; i += 1) {
     const length = distance(points[i - 1], points[i]);
     if (walked + length >= along) {
-      result.push(lerp(points[i - 1], points[i], length ? (along - walked) / length : 0));
+      result.push(lerpPoint(points[i - 1], points[i], length ? (along - walked) / length : 0));
       return result;
     }
     walked += length;

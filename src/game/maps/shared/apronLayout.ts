@@ -1,6 +1,7 @@
 import type { Vector2 } from '../../../core/types';
 import type { ApronMarkings, ApronStand, ApronTaxilane, HudExclusionZone, PlayableMapLayout } from '../types';
 import type { GroundObstacle, TaxiExit } from './groundRoutes';
+import { unitVector, distance } from '../../../core/geometry';
 
 type FixedWing = ApronStand['accepts'];
 
@@ -32,8 +33,6 @@ const LABEL: Record<FixedWing, string> = { liner: 'L', commuter: 'C' };
 
 const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y });
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
-const unitVector = (angle: number): Vector2 => ({ x: Math.cos(angle), y: Math.sin(angle) });
-const distance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
 const normalizeAngle = (angle: number) => ((angle % Math.PI) + Math.PI) % Math.PI;
 const angle0 = (a: Vector2, b: Vector2): number => Math.atan2(b.y - a.y, b.x - a.x);
 const turnBetween = (from: number, to: number): number => Math.abs(Math.atan2(Math.sin(to - from), Math.cos(to - from)));

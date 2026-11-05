@@ -42,3 +42,18 @@ export function smoothPath(points: readonly Vector2[], passes = 2): Vector2[] {
   }
   return result;
 }
+
+/** The point `t` of the way from `a` to `b`. */
+export function lerpPoint(a: Vector2, b: Vector2, t: number): Vector2 {
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+}
+
+/** A point given as fractions of a width and height (layout tables), in world units. */
+export function scalePoint(point: Vector2, width: number, height: number): Vector2 {
+  return { x: point.x * width, y: point.y * height };
+}
+
+/** The unit vector pointing along `angle`. */
+export function unitVector(angle: number): Vector2 {
+  return { x: Math.cos(angle), y: Math.sin(angle) };
+}

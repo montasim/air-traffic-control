@@ -9,6 +9,7 @@ import {
   type WorldDetailLevel
 } from '../palette';
 import { createAirfieldEnvironmentGeometry } from './AirfieldRenderer';
+import { tracePolygon } from './shared-map/geometry';
 
 export interface SaltmarshTerrainPaintOptions {
   detail?: WorldDetailLevel | string;
@@ -122,19 +123,6 @@ function deterministicUnit(index: number, salt: number): number {
   value = Math.imul(value, 0x85ebca6b);
   value ^= value >>> 13;
   return (value >>> 0) / 0xffffffff;
-}
-
-function tracePolygon(
-  graphics: Phaser.GameObjects.Graphics,
-  points: readonly Vector2[]
-): void {
-  if (points.length < 3) return;
-  graphics.beginPath();
-  graphics.moveTo(points[0].x, points[0].y);
-  for (let index = 1; index < points.length; index += 1) {
-    graphics.lineTo(points[index].x, points[index].y);
-  }
-  graphics.closePath();
 }
 
 function strokePolyline(

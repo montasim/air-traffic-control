@@ -17,6 +17,7 @@ import type {
   MapLayoutVariant,
   PlayableMapLayout
 } from '../types';
+import { lerpPoint, scalePoint } from '../../../core/geometry';
 
 export type RiverRunwayId = 'river-main' | 'river-commuter';
 export type RiverRunwayDesignator = '07' | '25' | '12' | '30';
@@ -188,19 +189,8 @@ function selectVariant(width: number, height: number): MapLayoutVariant {
   return 'square';
 }
 
-function scalePoint(point: Vector2, width: number, height: number): Vector2 {
-  return { x: point.x * width, y: point.y * height };
-}
-
 function scalePolygon(points: readonly Vector2[], width: number, height: number): Vector2[] {
   return points.map((point) => scalePoint(point, width, height));
-}
-
-function interpolate(first: Vector2, second: Vector2, progress: number): Vector2 {
-  return {
-    x: first.x + (second.x - first.x) * progress,
-    y: first.y + (second.y - first.y) * progress
-  };
 }
 
 function runwayPoint(runway: Pick<MapRunway, 'center' | 'angle'>, distance: number): Vector2 {
@@ -338,13 +328,13 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
   const taxiways: readonly MapTaxiway<RiverTaxiwayId, RiverConnectionId>[] = [
     {
       id: 'river-alpha',
-      path: [runwayPoint(main, -main.length * 0.02), interpolate(apron[0], apron[1], 0.35)],
+      path: [runwayPoint(main, -main.length * 0.02), lerpPoint(apron[0], apron[1], 0.35)],
       width: taxiwayWidth,
       connects: ['river-main', 'river-apron']
     },
     {
       id: 'river-bravo',
-      path: [runwayPoint(commuter, -commuter.length * 0.08), interpolate(apron[2], apron[3], 0.4)],
+      path: [runwayPoint(commuter, -commuter.length * 0.08), lerpPoint(apron[2], apron[3], 0.4)],
       width: taxiwayWidth * 0.9,
       connects: ['river-commuter', 'river-apron']
     }
@@ -428,7 +418,7 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
   const parkingStands: ParkingStand[] = [0.25, 0.52, 0.78].map((progress, index) => ({
     id: `river-stand-${index + 1}`,
     label: `R${index + 1}`,
-    position: interpolate(apron[1], apron[3], progress),
+    position: lerpPoint(apron[1], apron[3], progress),
     angle: main.angle + Math.PI / 2,
     length: unit * 0.04
   }));
@@ -453,7 +443,7 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
       id: 'river-windsock',
       kind: 'windsock',
       label: 'WIND',
-      position: interpolate(apron[3], apron[4], 0.48),
+      position: lerpPoint(apron[3], apron[4], 0.48),
       angle: main.angle,
       size: unit * 0.022
     }
@@ -463,14 +453,14 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
       id: 'river-sign-alpha',
       kind: 'taxiway',
       label: 'A',
-      position: interpolate(taxiways[0].path[0], taxiways[0].path[1], 0.68),
+      position: lerpPoint(taxiways[0].path[0], taxiways[0].path[1], 0.68),
       angle: main.angle
     },
     {
       id: 'river-sign-bravo',
       kind: 'taxiway',
       label: 'B',
-      position: interpolate(taxiways[1].path[0], taxiways[1].path[1], 0.68),
+      position: lerpPoint(taxiways[1].path[0], taxiways[1].path[1], 0.68),
       angle: commuter.angle
     }
   ];

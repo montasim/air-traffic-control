@@ -11,6 +11,7 @@ import type {
 } from '../shared/airfield';
 import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type { HudExclusionZone, MapLayoutVariant, PlayableMapLayout } from '../types';
+import { lerpPoint, scalePoint } from '../../../core/geometry';
 
 export type DesertRunwayId = 'mesa-runway' | 'wadi-runway';
 export type DesertTaxiwayId = 'taxiway-mesa' | 'taxiway-wadi';
@@ -189,16 +190,6 @@ const variantFor = (width: number, height: number): MapLayoutVariant => {
   return 'square';
 };
 
-const scalePoint = (point: Vector2, width: number, height: number): Vector2 => ({
-  x: point.x * width,
-  y: point.y * height
-});
-
-const interpolate = (first: Vector2, second: Vector2, progress: number): Vector2 => ({
-  x: first.x + (second.x - first.x) * progress,
-  y: first.y + (second.y - first.y) * progress
-});
-
 const pointOnRunway = (
   runway: Pick<MapRunway, 'center' | 'angle' | 'length'>,
   along: number,
@@ -332,13 +323,13 @@ export function createDesertParallelLayout(
   const taxiways: readonly MapTaxiway<DesertTaxiwayId, DesertConnectionId>[] = [
     {
       id: 'taxiway-mesa',
-      path: [pointOnRunway(liner, liner.length * 0.12), interpolate(liner.center, apronCenter, 0.62), apronCenter],
+      path: [pointOnRunway(liner, liner.length * 0.12), lerpPoint(liner.center, apronCenter, 0.62), apronCenter],
       width: taxiwayWidth,
       connects: ['mesa-runway', 'apron']
     },
     {
       id: 'taxiway-wadi',
-      path: [pointOnRunway(commuter, commuter.length * 0.08), interpolate(commuter.center, apronCenter, 0.58), apronCenter],
+      path: [pointOnRunway(commuter, commuter.length * 0.08), lerpPoint(commuter.center, apronCenter, 0.58), apronCenter],
       width: taxiwayWidth * 0.9,
       connects: ['wadi-runway', 'apron']
     }
@@ -371,7 +362,7 @@ export function createDesertParallelLayout(
   const parkingStands: readonly ParkingStand[] = [0.24, 0.5, 0.76].map((progress, index) => ({
     id: `desert-stand-${index + 1}`,
     label: `D${index + 1}`,
-    position: interpolate(apron[0], apron[1], progress),
+    position: lerpPoint(apron[0], apron[1], progress),
     angle: liner.angle + Math.PI / 2,
     length: unit * 0.043
   }));
@@ -380,7 +371,7 @@ export function createDesertParallelLayout(
     // Hangar and fuel keep beside FIELD OPS, leaving the middle of the apron to the stands.
     { id: 'desert-hangar', kind: 'hangar', label: 'HANGAR', position: pointOnRunway({ ...liner, center: opsCenter }, -unit * 0.12), angle: liner.angle, size: unit * 0.07 },
     { id: 'desert-fuel', kind: 'fuel', label: 'FUEL', position: pointOnRunway({ ...liner, center: opsCenter }, 0, unit * 0.075), angle: commuter.angle, size: unit * 0.034 },
-    { id: 'desert-windsock', kind: 'windsock', label: 'WIND', position: interpolate(apron[4], opsCenter, 0.14), angle: liner.angle, size: unit * 0.022 }
+    { id: 'desert-windsock', kind: 'windsock', label: 'WIND', position: lerpPoint(apron[4], opsCenter, 0.14), angle: liner.angle, size: unit * 0.022 }
   ];
   const signs: readonly AirfieldSign[] = [
     { id: 'desert-sign-a', kind: 'taxiway', label: 'A', position: taxiways[0].path[1], angle: liner.angle },

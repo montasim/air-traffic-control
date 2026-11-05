@@ -3,6 +3,7 @@ import { buildingCenterClearOfRunways } from '../../rendering/shared-map/geometr
 import type { PlayableMapLayout } from '../types';
 import { deckRunwayIds, isDeckApronKey, pointInPolygon, rectCorners, rectsOverlap, runwayApronGap, segmentHitsRect, standSize } from './apronLayout';
 import { isAnchorOf, type GroundNetwork } from './groundRoutes';
+import { unitVector, distance } from '../../../core/geometry';
 
 type Runway = GroundNetwork['runways'][number];
 type Taxiway = GroundNetwork['taxiways'][number] & { readonly width?: number };
@@ -17,10 +18,8 @@ const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y }
 const sub = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x - b.x, y: a.y - b.y });
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
 const dot = (a: Vector2, b: Vector2): number => a.x * b.x + a.y * b.y;
-const distance = (a: Vector2, b: Vector2): number => Math.hypot(a.x - b.x, a.y - b.y);
 const near = (a: Vector2, b: Vector2) => distance(a, b) < 0.5;
 const normalize = (a: Vector2): Vector2 => scale(a, 1 / (Math.hypot(a.x, a.y) || 1));
-const unitVector = (angle: number): Vector2 => ({ x: Math.cos(angle), y: Math.sin(angle) });
 const centroid = (polygon: readonly Vector2[]): Vector2 =>
   polygon.reduce((sum, p) => ({ x: sum.x + p.x / polygon.length, y: sum.y + p.y / polygon.length }), { x: 0, y: 0 });
 /** The direction of the apron edge nearest a point. */
@@ -34,7 +33,6 @@ const nearestEdgeAngle = (point: Vector2, polygon: readonly Vector2[]): number =
   return best.angle;
 };
 const runwayRect = (runway: Runway) => ({ center: runway.center, width: runway.length, height: runway.width, angle: runway.angle });
-
 
 function polygonArea(polygon: readonly Vector2[]): number {
   let area = 0;

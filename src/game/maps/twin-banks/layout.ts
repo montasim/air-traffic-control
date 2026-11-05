@@ -9,6 +9,7 @@ import type {
 } from '../shared/airfield';
 import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type { HudExclusionZone, MapLayoutVariant, PlayableMapLayout } from '../types';
+import { lerpPoint, scalePoint } from '../../../core/geometry';
 
 export type TwinBanksRunwayId = 'east-main' | 'west-commuter';
 export type TwinBanksTaxiwayId = 'east-link' | 'west-link';
@@ -167,16 +168,6 @@ const variantFor = (width: number, height: number): MapLayoutVariant => {
   return 'square';
 };
 
-const scalePoint = (point: Vector2, width: number, height: number): Vector2 => ({
-  x: point.x * width,
-  y: point.y * height
-});
-
-const interpolate = (first: Vector2, second: Vector2, progress: number): Vector2 => ({
-  x: first.x + (second.x - first.x) * progress,
-  y: first.y + (second.y - first.y) * progress
-});
-
 const pointOnRunway = (
   runway: Pick<MapRunway, 'center' | 'angle' | 'length'>,
   along: number
@@ -309,13 +300,13 @@ export function createTwinBanksLayout(
   const taxiways: readonly MapTaxiway<TwinBanksTaxiwayId, TwinBanksConnectionId>[] = [
     {
       id: 'east-link',
-      path: [pointOnRunway(east, east.length * 0.1), interpolate(east.center, eastCenter, 0.62), eastCenter],
+      path: [pointOnRunway(east, east.length * 0.1), lerpPoint(east.center, eastCenter, 0.62), eastCenter],
       width: taxiwayWidth,
       connects: ['east-main', 'east-apron']
     },
     {
       id: 'west-link',
-      path: [pointOnRunway(west, west.length * 0.08), interpolate(west.center, westCenter, 0.58), westCenter],
+      path: [pointOnRunway(west, west.length * 0.08), lerpPoint(west.center, westCenter, 0.58), westCenter],
       width: taxiwayWidth * 0.88,
       connects: ['west-commuter', 'west-apron']
     }
@@ -334,7 +325,7 @@ export function createTwinBanksLayout(
     width: unit * 0.08,
     shelfWidth: unit * 0.116
   };
-  const bridgeCenter = interpolate(river.centerline[2], river.centerline[3], 0.24);
+  const bridgeCenter = lerpPoint(river.centerline[2], river.centerline[3], 0.24);
   const riverAngle = Math.atan2(
     river.centerline[3].y - river.centerline[2].y,
     river.centerline[3].x - river.centerline[2].x
@@ -347,18 +338,18 @@ export function createTwinBanksLayout(
     angle: riverAngle + Math.PI / 2
   }];
   const parkingStands: readonly ParkingStand[] = [
-    { id: 'east-stand-1', label: 'E1', position: interpolate(eastApron[0], eastApron[1], 0.36), angle: east.angle + Math.PI / 2, length: unit * 0.043 },
-    { id: 'east-stand-2', label: 'E2', position: interpolate(eastApron[0], eastApron[1], 0.68), angle: east.angle + Math.PI / 2, length: unit * 0.043 },
-    { id: 'west-stand-1', label: 'W1', position: interpolate(westApron[0], westApron[1], 0.5), angle: west.angle + Math.PI / 2, length: unit * 0.038 }
+    { id: 'east-stand-1', label: 'E1', position: lerpPoint(eastApron[0], eastApron[1], 0.36), angle: east.angle + Math.PI / 2, length: unit * 0.043 },
+    { id: 'east-stand-2', label: 'E2', position: lerpPoint(eastApron[0], eastApron[1], 0.68), angle: east.angle + Math.PI / 2, length: unit * 0.043 },
+    { id: 'west-stand-1', label: 'W1', position: lerpPoint(westApron[0], westApron[1], 0.5), angle: west.angle + Math.PI / 2, length: unit * 0.038 }
   ];
   const allProps: readonly AirfieldPropAnchor[] = [
     { id: 'east-ops', kind: 'service', label: 'EAST OPS', position: eastCenter, angle: east.angle, size: unit * 0.066 },
-    { id: 'east-hangar', kind: 'hangar', label: 'HANGAR', position: interpolate(eastApron[3], eastCenter, 0.18), angle: east.angle, size: unit * 0.065 },
-    { id: 'east-fuel', kind: 'fuel', label: 'FUEL', position: interpolate(eastApron[2], eastCenter, 0.17), angle: east.angle, size: unit * 0.033 },
-    { id: 'east-wind', kind: 'windsock', label: 'WIND', position: interpolate(eastApron[4], eastCenter, 0.14), angle: east.angle, size: unit * 0.021 },
+    { id: 'east-hangar', kind: 'hangar', label: 'HANGAR', position: lerpPoint(eastApron[3], eastCenter, 0.18), angle: east.angle, size: unit * 0.065 },
+    { id: 'east-fuel', kind: 'fuel', label: 'FUEL', position: lerpPoint(eastApron[2], eastCenter, 0.17), angle: east.angle, size: unit * 0.033 },
+    { id: 'east-wind', kind: 'windsock', label: 'WIND', position: lerpPoint(eastApron[4], eastCenter, 0.14), angle: east.angle, size: unit * 0.021 },
     { id: 'west-ops', kind: 'service', label: 'WEST OPS', position: westCenter, angle: west.angle, size: unit * 0.054 },
-    { id: 'west-hangar', kind: 'hangar', label: 'HANGAR', position: interpolate(westApron[3], westCenter, 0.18), angle: west.angle, size: unit * 0.056 },
-    { id: 'west-utility', kind: 'utility', label: 'UTIL', position: interpolate(westApron[2], westCenter, 0.16), angle: west.angle, size: unit * 0.032 }
+    { id: 'west-hangar', kind: 'hangar', label: 'HANGAR', position: lerpPoint(westApron[3], westCenter, 0.18), angle: west.angle, size: unit * 0.056 },
+    { id: 'west-utility', kind: 'utility', label: 'UTIL', position: lerpPoint(westApron[2], westCenter, 0.16), angle: west.angle, size: unit * 0.032 }
   ];
   const propAnchors = allProps.slice(0, budget.serviceProps);
   const signs: readonly AirfieldSign[] = [

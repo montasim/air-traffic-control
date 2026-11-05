@@ -18,6 +18,7 @@ import type {
 } from '../types';
 import type { MapBuilding } from '../../rendering/shared-map';
 import { deterministicUnit } from '../../rendering/shared-map';
+import { lerpPoint, scalePoint } from '../../../core/geometry';
 
 export type GatewayRunwayId = 'gateway-main' | 'gateway-commuter';
 export type GatewayRunwayDesignator = '08' | '26' | '13' | '31';
@@ -176,23 +177,12 @@ function selectVariant(width: number, height: number): MapLayoutVariant {
   return 'square';
 }
 
-function scalePoint(point: Vector2, width: number, height: number): Vector2 {
-  return { x: point.x * width, y: point.y * height };
-}
-
 function scalePolygon(
   points: readonly Vector2[],
   width: number,
   height: number
 ): Vector2[] {
   return points.map((point) => scalePoint(point, width, height));
-}
-
-function interpolate(first: Vector2, second: Vector2, progress: number): Vector2 {
-  return {
-    x: first.x + (second.x - first.x) * progress,
-    y: first.y + (second.y - first.y) * progress
-  };
 }
 
 function runwayPoint(
@@ -363,13 +353,13 @@ export function createSaltmarshGatewayLayout(
   const taxiways: readonly MapTaxiway<GatewayTaxiwayId, GatewayConnectionId>[] = [
     {
       id: 'gateway-alpha',
-      path: [runwayPoint(main, -main.length * 0.04), interpolate(apron[0], apron[1], 0.35)],
+      path: [runwayPoint(main, -main.length * 0.04), lerpPoint(apron[0], apron[1], 0.35)],
       width: taxiwayWidth,
       connects: ['gateway-main', 'gateway-apron']
     },
     {
       id: 'gateway-bravo',
-      path: [runwayPoint(commuter, -commuter.length * 0.1), interpolate(apron[2], apron[3], 0.42)],
+      path: [runwayPoint(commuter, -commuter.length * 0.1), lerpPoint(apron[2], apron[3], 0.42)],
       width: taxiwayWidth * 0.9,
       connects: ['gateway-commuter', 'gateway-apron']
     }
@@ -454,7 +444,7 @@ export function createSaltmarshGatewayLayout(
   const parkingStands: ParkingStand[] = [0.22, 0.5, 0.78].map((progress, index) => ({
     id: `gateway-stand-${index + 1}`,
     label: `G${index + 1}`,
-    position: interpolate(apron[1], apron[3], progress),
+    position: lerpPoint(apron[1], apron[3], progress),
     angle: main.angle + Math.PI / 2,
     length: unit * 0.043
   }));
@@ -479,7 +469,7 @@ export function createSaltmarshGatewayLayout(
       id: 'gateway-windsock',
       kind: 'windsock',
       label: 'WIND',
-      position: interpolate(apron[3], apron[4], 0.45),
+      position: lerpPoint(apron[3], apron[4], 0.45),
       angle: main.angle,
       size: unit * 0.024
     }
@@ -489,14 +479,14 @@ export function createSaltmarshGatewayLayout(
       id: 'gateway-sign-alpha',
       kind: 'taxiway',
       label: 'A',
-      position: interpolate(taxiways[0].path[0], taxiways[0].path[1], 0.7),
+      position: lerpPoint(taxiways[0].path[0], taxiways[0].path[1], 0.7),
       angle: main.angle
     },
     {
       id: 'gateway-sign-bravo',
       kind: 'taxiway',
       label: 'B',
-      position: interpolate(taxiways[1].path[0], taxiways[1].path[1], 0.7),
+      position: lerpPoint(taxiways[1].path[0], taxiways[1].path[1], 0.7),
       angle: commuter.angle
     }
   ];

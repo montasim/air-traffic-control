@@ -14,6 +14,7 @@ import {
   type WorldDetailLevel
 } from '../palette';
 import { DISPLAY_FONT_STACK } from '../typography';
+import { tracePolygon } from './shared-map/geometry';
 
 const LIGHT = SALTMARSH_COLORS.runwayMark;
 const MID = SALTMARSH_COLORS.sand;
@@ -67,19 +68,6 @@ function rotatedRectangle(
     localPoint(frame, width / 2, height / 2),
     localPoint(frame, -width / 2, height / 2)
   ];
-}
-
-function tracePolygon(
-  graphics: Phaser.GameObjects.Graphics,
-  points: readonly Vector2[]
-): void {
-  if (points.length < 2) return;
-  graphics.beginPath();
-  graphics.moveTo(points[0].x, points[0].y);
-  for (let index = 1; index < points.length; index += 1) {
-    graphics.lineTo(points[index].x, points[index].y);
-  }
-  graphics.closePath();
 }
 
 function drawBuildingShell(

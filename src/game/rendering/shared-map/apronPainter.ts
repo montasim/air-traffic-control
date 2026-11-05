@@ -9,6 +9,7 @@ import { AIRCRAFT_COLORS } from "../../palette";
 import type { WorldDetailLevel } from "../../palette";
 import { filletCorners, strokePolyline, tracePolygon } from "./geometry";
 import type { CivilMapPalette } from "./types";
+import { unitVector } from "../../../core/geometry";
 
 /** Taxiway asphalt matches the runways, so the movement area reads as one surface. */
 export const PAVING = {
@@ -41,7 +42,6 @@ export function apronTones(palette: CivilMapPalette): { readonly fill: number; r
   return { fill, edge: mixColor(fill, palette.shadow, 0.22), joint: mixColor(fill, palette.shadow, 0.1) };
 }
 
-const unitVector = (angle: number): Vector2 => ({ x: Math.cos(angle), y: Math.sin(angle) });
 const add = (a: Vector2, b: Vector2): Vector2 => ({ x: a.x + b.x, y: a.y + b.y });
 const scale = (a: Vector2, k: number): Vector2 => ({ x: a.x * k, y: a.y * k });
 

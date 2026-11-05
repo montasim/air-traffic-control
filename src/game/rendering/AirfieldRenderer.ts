@@ -8,6 +8,8 @@ import {
   resolveWorldDetailLevel,
   type WorldDetailLevel
 } from '../palette';
+import { lerpPoint, distance } from '../../core/geometry';
+import { tracePolygon } from './shared-map/geometry';
 
 export interface AirfieldPaintOptions {
   detail?: WorldDetailLevel | string;
@@ -83,19 +85,6 @@ function offsetPolygon(points: readonly Vector2[], x: number, y: number): Vector
   return points.map((point) => ({ x: point.x + x, y: point.y + y }));
 }
 
-function tracePolygon(
-  graphics: Phaser.GameObjects.Graphics,
-  points: readonly Vector2[]
-): void {
-  if (points.length < 3) return;
-  graphics.beginPath();
-  graphics.moveTo(points[0].x, points[0].y);
-  for (let index = 1; index < points.length; index += 1) {
-    graphics.lineTo(points[index].x, points[index].y);
-  }
-  graphics.closePath();
-}
-
 function strokePolyline(
   graphics: Phaser.GameObjects.Graphics,
   points: readonly Vector2[],
@@ -148,17 +137,6 @@ function approachClearZone(runway: MapRunway, end: -1 | 1): readonly Vector2[] {
   ];
 }
 
-function interpolate(first: Vector2, second: Vector2, progress: number): Vector2 {
-  return {
-    x: first.x + (second.x - first.x) * progress,
-    y: first.y + (second.y - first.y) * progress
-  };
-}
-
-function distance(first: Vector2, second: Vector2): number {
-  return Math.hypot(first.x - second.x, first.y - second.y);
-}
-
 function deterministicUnit(index: number, salt: number): number {
   let value = Math.imul(index + 1, 0x45d9f3b) ^ Math.imul(salt + 17, 0x119de1f3);
   value ^= value >>> 16;
@@ -180,7 +158,7 @@ export function createAirfieldEnvironmentGeometry(
     perimeterRoad: scalePolygon(outerPolder, 0.915),
     perimeterFence: scalePolygon(outerPolder, 0.975),
     causeway,
-    gate: interpolate(causeway[0], causeway[1], 0.2),
+    gate: lerpPoint(causeway[0], causeway[1], 0.2),
     gradedStrips: layout.runways.map((runway) =>
       runwayRectangle(runway, runway.width * 0.36, runway.width * 0.92)
     ),
@@ -303,7 +281,7 @@ function paintDrainage(
   );
   const crossX = Math.cos(causewayAngle + Math.PI / 2);
   const crossY = Math.sin(causewayAngle + Math.PI / 2);
-  const culvert = interpolate(geometry.causeway[0], geometry.causeway[1], 0.38);
+  const culvert = lerpPoint(geometry.causeway[0], geometry.causeway[1], 0.38);
   graphics.lineStyle(Math.max(1.3, unit * 0.0018), SALTMARSH_PALETTE.marking, 0.28);
   for (const offset of [-3, 3]) {
     graphics.lineBetween(
@@ -331,7 +309,7 @@ function paintRoadAndFence(
   for (let index = 0; index < fence.length; index += 1) {
     const start = fence[index];
     const finish = fence[(index + 1) % fence.length];
-    if (distance(interpolate(start, finish, 0.5), geometry.gate) < unit * 0.06) continue;
+    if (distance(lerpPoint(start, finish, 0.5), geometry.gate) < unit * 0.06) continue;
     graphics.lineBetween(start.x, start.y, finish.x, finish.y);
   }
 
@@ -341,7 +319,7 @@ function paintRoadAndFence(
     const edgeProgress = (index / budget.fencePosts) * fence.length;
     const edgeIndex = Math.floor(edgeProgress) % fence.length;
     const progress = edgeProgress - Math.floor(edgeProgress);
-    const post = interpolate(fence[edgeIndex], fence[(edgeIndex + 1) % fence.length], progress);
+    const post = lerpPoint(fence[edgeIndex], fence[(edgeIndex + 1) % fence.length], progress);
     if (distance(post, geometry.gate) < unit * 0.035) continue;
     graphics.fillCircle(post.x, post.y, Math.max(0.9, unit * 0.00135));
   }
@@ -380,8 +358,8 @@ function smoothedPath(points: readonly Vector2[], subdivisions: number): Vector2
     const previous = points[index - 1];
     const corner = points[index];
     const next = points[index + 1];
-    const start = interpolate(previous, corner, 0.62);
-    const finish = interpolate(corner, next, 0.38);
+    const start = lerpPoint(previous, corner, 0.62);
+    const finish = lerpPoint(corner, next, 0.38);
     if (distance(result[result.length - 1], start) > 0.1) result.push(start);
     for (let step = 1; step <= subdivisions; step += 1) {
       const progress = step / subdivisions;

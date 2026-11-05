@@ -12,6 +12,7 @@ import type {
 } from './shared/airfield';
 import { createAirfieldGuidanceSurfaces } from './shared/guidance';
 import type { HudExclusionZone } from './types';
+import { lerpPoint, scalePoint } from '../../core/geometry';
 
 export type SaltmarshVariant = 'portrait' | 'landscape' | 'square';
 export type RunwayId = 'long-runway' | 'crosswind-strip';
@@ -206,17 +207,6 @@ function runwayFromSpec(
   };
 }
 
-function scalePoint(point: Vector2, width: number, height: number): Vector2 {
-  return { x: point.x * width, y: point.y * height };
-}
-
-function interpolate(first: Vector2, second: Vector2, progress: number): Vector2 {
-  return {
-    x: first.x + (second.x - first.x) * progress,
-    y: first.y + (second.y - first.y) * progress
-  };
-}
-
 function polygonCenter(points: readonly Vector2[]): Vector2 {
   const total = points.reduce(
     (sum, point) => ({ x: sum.x + point.x, y: sum.y + point.y }),
@@ -232,7 +222,7 @@ function pathAngle(path: readonly Vector2[]): number {
 }
 
 function taxiwayPath(start: Vector2, end: Vector2, bend: number): readonly Vector2[] {
-  const midpoint = interpolate(start, end, 0.52);
+  const midpoint = lerpPoint(start, end, 0.52);
   const angle = Math.atan2(end.y - start.y, end.x - start.x) + Math.PI / 2;
   return [
     start,
@@ -278,7 +268,7 @@ function holdShortAnchor(
     if (progress < 0 || progress > 1) continue;
 
     return {
-      position: interpolate(start, end, progress),
+      position: lerpPoint(start, end, progress),
       angle: Math.atan2(end.y - start.y, end.x - start.x) + Math.PI / 2
     };
   }
@@ -302,11 +292,11 @@ function createAirfieldDetails(
   'taxiways' | 'holdShortMarkers' | 'parkingStands' | 'propAnchors' | 'signs'
 > {
   const center = polygonCenter(apron);
-  const alphaApron = interpolate(apron[0], center, 0.58);
+  const alphaApron = lerpPoint(apron[0], center, 0.58);
   // Stay near the outer apron vertex so Bravo clears the crosswind strip
   // before joining the apron in every profile.
-  const bravoApron = interpolate(apron[2], center, 0.3);
-  const helipadApron = interpolate(apron[4], center, 0.56);
+  const bravoApron = lerpPoint(apron[2], center, 0.3);
+  const helipadApron = lerpPoint(apron[4], center, 0.56);
   const taxiwayWidth = Math.max(10, unit * 0.017);
 
   const taxiways: readonly MapTaxiway[] = [
@@ -358,7 +348,7 @@ function createAirfieldDetails(
   const parkingStands: readonly ParkingStand[] = [0.2, 0.48, 0.76].map((progress, index) => ({
     id: `stand-${index + 1}`,
     label: `P${index + 1}`,
-    position: interpolate(interpolate(apron[0], apron[1], progress), center, 0.34),
+    position: lerpPoint(lerpPoint(apron[0], apron[1], progress), center, 0.34),
     angle: liner.angle + Math.PI / 2,
     length: Math.max(24, unit * 0.044)
   }));
@@ -368,7 +358,7 @@ function createAirfieldDetails(
       id: 'windsock-east',
       kind: 'windsock',
       label: 'WIND',
-      position: interpolate(apron[3], center, 0.16),
+      position: lerpPoint(apron[3], center, 0.16),
       angle: liner.angle,
       size: unit * 0.024
     },
@@ -376,7 +366,7 @@ function createAirfieldDetails(
       id: 'hangar-main',
       kind: 'hangar',
       label: 'HANGAR',
-      position: interpolate(apron[0], center, 0.19),
+      position: lerpPoint(apron[0], center, 0.19),
       angle: liner.angle,
       size: unit * 0.082
     },
@@ -384,7 +374,7 @@ function createAirfieldDetails(
       id: 'service-building',
       kind: 'service',
       label: 'OPS',
-      position: interpolate(apron[4], center, 0.2),
+      position: lerpPoint(apron[4], center, 0.2),
       angle: liner.angle,
       size: unit * 0.052
     },
@@ -392,7 +382,7 @@ function createAirfieldDetails(
       id: 'fuel-farm',
       kind: 'fuel',
       label: 'FUEL',
-      position: interpolate(apron[2], center, 0.28),
+      position: lerpPoint(apron[2], center, 0.28),
       angle: commuter.angle,
       size: unit * 0.038
     },
@@ -400,7 +390,7 @@ function createAirfieldDetails(
       id: 'perimeter-fence',
       kind: 'fence',
       label: 'PERIMETER',
-      position: interpolate(apron[1], center, 0.1),
+      position: lerpPoint(apron[1], center, 0.1),
       angle: Math.atan2(apron[2].y - apron[1].y, apron[2].x - apron[1].x),
       size: unit * 0.13
     },
@@ -408,7 +398,7 @@ function createAirfieldDetails(
       id: 'utility-yard',
       kind: 'utility',
       label: 'UTIL',
-      position: interpolate(apron[3], center, 0.22),
+      position: lerpPoint(apron[3], center, 0.22),
       angle: commuter.angle,
       size: unit * 0.042
     }
@@ -423,28 +413,28 @@ function createAirfieldDetails(
       id: 'sign-alpha',
       kind: 'taxiway',
       label: 'A',
-      position: interpolate(alpha.path[1], alpha.path[2], 0.7),
+      position: lerpPoint(alpha.path[1], alpha.path[2], 0.7),
       angle: pathAngle(alpha.path)
     },
     {
       id: 'sign-bravo',
       kind: 'taxiway',
       label: 'B',
-      position: interpolate(bravo.path[1], bravo.path[2], 0.7),
+      position: lerpPoint(bravo.path[1], bravo.path[2], 0.7),
       angle: pathAngle(bravo.path)
     },
     {
       id: 'sign-fuel',
       kind: 'facility',
       label: fuel.label,
-      position: interpolate(fuel.position, center, 0.18),
+      position: lerpPoint(fuel.position, center, 0.18),
       angle: fuel.angle
     },
     {
       id: 'sign-ops',
       kind: 'facility',
       label: service.label,
-      position: interpolate(service.position, center, 0.18),
+      position: lerpPoint(service.position, center, 0.18),
       angle: service.angle
     }
   ];
