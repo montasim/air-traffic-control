@@ -140,6 +140,12 @@ for (const name of ["home", "settings", "help", "career", "back", "expand", "pla
   });
 }
 elements.startButton.disabled = true;
+document.querySelector<HTMLButtonElement>("#store-toggle")!.addEventListener("click", (event) => {
+  const toggle = event.currentTarget as HTMLButtonElement;
+  const open = toggle.getAttribute("aria-expanded") !== "true";
+  toggle.setAttribute("aria-expanded", String(open));
+  toggle.closest(".home-stores")!.classList.toggle("is-open", open);
+});
 
 async function loadGameFonts(timeoutMilliseconds = 1_600): Promise<void> {
   if (!document.fonts) return;
