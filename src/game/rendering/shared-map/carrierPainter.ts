@@ -40,10 +40,10 @@ function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint
   const half = lane.length / 2;
   const edge = lane.width / 2;
   const line = Math.max(1, unit * 0.0018);
-  // Edge lines; a lane that takes no landings is only outlined, faintly.
-  graphics.lineStyle(line, DECK.line, lane.operational ? 0.6 : 0.28);
-  for (const side of [-1, 1]) strokePolyline(graphics, [along(lane, -half, side * edge), along(lane, half, side * edge)]);
+  // A lane that takes no landings is not drawn: its bare outline read as stray lines on the deck.
   if (!lane.operational) return;
+  graphics.lineStyle(line, DECK.line, 0.6);
+  for (const side of [-1, 1]) strokePolyline(graphics, [along(lane, -half, side * edge), along(lane, half, side * edge)]);
   // Dashed centre line.
   graphics.lineStyle(line * 1.4, DECK.line, 0.75);
   const dash = Math.max(6, lane.width * 0.6);

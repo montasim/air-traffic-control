@@ -52,6 +52,20 @@ export interface Carrier {
 /** Beam as a share of the deck length: wide enough for parking beside the lanes. */
 const BEAM = 0.34;
 const ANGLED_DECK = (-9 * Math.PI) / 180;
+/** The deck outline as shares of length and beam; the aft starboard parking shelf fits full stand footprints even in compact layouts. */
+const DECK = [
+  [-0.5, -0.34], [-0.5, 0.6], [0.1, 0.7], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
+  [0.2, -0.3], [-0.05, -0.5], [-0.3, -0.5], [-0.42, -0.4],
+] as const;
+
+function insidePolygon(point: Vector2, polygon: readonly Vector2[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [a, b] = [polygon[i], polygon[j]];
+    if ((a.y > point.y) !== (b.y > point.y) && point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
 
 /**
  * Builds a carrier in local deck coordinates — x from stern (−½) to bow (+½) as
@@ -69,11 +83,7 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   /** A point given as shares of length (x) and beam (y). */
   const at = (x: number, y: number) => world(x * length, y * beam);
 
-  // The aft starboard parking shelf fits full stand footprints even in compact layouts.
-  const deck = [
-    [-0.5, -0.34], [-0.5, 0.6], [0.1, 0.7], [0.36, 0.46], [0.5, 0.16], [0.5, -0.12],
-    [0.2, -0.3], [-0.05, -0.5], [-0.3, -0.5], [-0.42, -0.4],
-  ].map(([x, y]) => at(x, y));
+  const deck = DECK.map(([x, y]) => at(x, y));
   const hull = [
     [-0.49, -0.3], [-0.49, 0.36], [0.1, 0.44], [0.36, 0.4], [0.55, 0.02], [0.36, -0.18],
     [0.2, -0.26], [-0.05, -0.42], [-0.3, -0.42], [-0.42, -0.34],
@@ -82,14 +92,28 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   const laneWidth = beam * 0.16;
   // Axial lane along the hull, port of the centre line; angled lane from the stern off to port.
   const axialStart = { x: -0.48 * length, y: -0.04 * beam };
-  const axialLength = 0.7 * length;
   const angledStart = { x: -0.46 * length, y: -0.08 * beam };
-  const angledLength = 0.6 * length;
-  const laneCenter = (start: Vector2, laneLength: number, localAngle: number) =>
-    world(start.x + (Math.cos(localAngle) * laneLength) / 2, start.y + (Math.sin(localAngle) * laneLength) / 2);
+  const localDeck = DECK.map(([x, y]) => ({ x: x * length, y: y * beam }));
+  // Each lane runs only as far as the deck allows, its painted shoulder included, so no part of
+  // a runway or its outline hangs over the sea.
+  const fitted = (start: Vector2, wanted: number, localAngle: number) => {
+    const along = { x: Math.cos(localAngle), y: Math.sin(localAngle) };
+    const margin = laneWidth * 0.5 + Math.max(2, laneWidth * 0.08) + 1;
+    const fits = (s: number) => [-margin, margin].every((side) =>
+      insidePolygon({ x: start.x + along.x * s - along.y * side, y: start.y + along.y * s + along.x * side }, localDeck));
+    let from = 0;
+    let to = wanted;
+    const step = length * 0.005;
+    while (from < to && !fits(from - Math.max(2, laneWidth * 0.08))) from += step;
+    while (to > from && !fits(to + Math.max(2, laneWidth * 0.08))) to -= step;
+    const middle = (from + to) / 2;
+    return { center: world(start.x + along.x * middle, start.y + along.y * middle), length: to - from };
+  };
+  const axial = fitted(axialStart, 0.7 * length, 0);
+  const angled = fitted(angledStart, 0.6 * length, ANGLED_DECK);
   const lanes: CarrierLanePaint[] = [
-    { kind: 'axial', center: laneCenter(axialStart, axialLength, 0), length: axialLength, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
-    { kind: 'angled', center: laneCenter(angledStart, angledLength, ANGLED_DECK), length: angledLength, width: laneWidth, angle: spec.angle + ANGLED_DECK, operational: spec.lanes.includes('angled') },
+    { kind: 'axial', ...axial, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
+    { kind: 'angled', ...angled, width: laneWidth, angle: spec.angle + ANGLED_DECK, operational: spec.lanes.includes('angled') },
   ];
   const runways: MapRunway[] = lanes.filter((lane) => lane.operational).map((lane) => ({
     id: `${spec.id}-${lane.kind}`,
