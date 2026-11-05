@@ -220,11 +220,7 @@
               </div>
               <fieldset class="difficulty-options" id="difficulty-options">
                 <legend><span>Difficulty</span><span id="field-record"></span></legend>
-                <div class="difficulty-choices">
-                  <label><input type="radio" name="difficulty" value="easy" /><span>Easy</span></label>
-                  <label><input type="radio" name="difficulty" value="medium" checked /><span>Medium</span></label>
-                  <label><input type="radio" name="difficulty" value="hard" /><span>Hard</span></label>
-                </div>
+                <div class="difficulty-choices" id="difficulty-choices"></div>
               </fieldset>
               <!-- On/off options as toggle chips on one row: filled when on. The real switches sit invisibly over each chip. -->
               <div class="flight-switches">
@@ -438,11 +434,7 @@
             <p id="airfield-selection-status" role="status">Your difficulty stays the same when you change airfields.</p>
             <fieldset class="difficulty-options career-mode" id="airfield-difficulty">
               <legend>Difficulty</legend>
-              <div class="difficulty-choices">
-                <label><input type="radio" name="airfield-difficulty" value="easy" /><span>Easy</span></label>
-                <label><input type="radio" name="airfield-difficulty" value="medium" /><span>Medium</span></label>
-                <label><input type="radio" name="airfield-difficulty" value="hard" /><span>Hard</span></label>
-              </div>
+              <div class="difficulty-choices" id="airfield-difficulty-choices"></div>
             </fieldset>
             <div id="category-filters" class="category-filters" role="group" aria-label="Airport category"></div>
             <div id="map-options" class="map-options" role="group" aria-label="Airfields"></div>
@@ -492,8 +484,6 @@
           <div id="practice-content" hidden>
             <fieldset class="practice-lessons">
               <legend class="visually-hidden">Lesson</legend>
-              <label><input type="radio" name="practice-lesson" value="land" checked /><span><span class="button-icon" data-ui-icon="landing" aria-hidden="true"></span>Land</span></label>
-              <label><input type="radio" name="practice-lesson" value="hold" /><span><span class="button-icon" data-ui-icon="target" aria-hidden="true"></span>Hold</span></label>
             </fieldset>
             <div class="practice-lesson">
               <h3 id="practice-lesson-title">Land an aircraft</h3>

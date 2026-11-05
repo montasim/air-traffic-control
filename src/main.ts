@@ -36,7 +36,12 @@ import {
   IndexedDbSavePersistence,
   type GameSaveV3,
 } from "./storage/gameStore";
-import { mountHugeIcon, type AppIconName } from "./ui/hugeicons";
+import { mountHugeIcon } from "./ui/hugeicons";
+import { el, formatScore } from "./ui/dom";
+import { shiftTags } from "./ui/shiftTags";
+import { createConfirmDialog, LEAVE_SHIFT, RESTART_SHIFT } from "./ui/confirmDialog";
+import { createAnnouncer } from "./ui/announcer";
+import { DIFFICULTY_CHOICES, mountSegmentedChoices } from "./ui/segmentedChoices";
 import { mountPractice } from "./ui/practice";
 import { createPreviewLibrary } from "./ui/previewLibrary";
 import { airfieldFocus, shrink } from "./ui/mapPreviews";
@@ -128,8 +133,14 @@ const elements = {
     ...document.querySelectorAll<HTMLInputElement>("[data-audio-volume]"),
   ],
 };
+const { announce, flash: showFlightMessage } = createAnnouncer(elements.routeStatus, document.querySelector<HTMLElement>("#flight-message")!);
+const confirmShift = createConfirmDialog(document.querySelector<HTMLDialogElement>("#confirm-dialog")!);
 
 mountHugeIcon(elements.pauseIcon, "pause", 22);
+// Every segmented switch comes from one builder, before anything reads its inputs.
+mountSegmentedChoices(document.querySelector<HTMLElement>("#difficulty-choices")!, "difficulty", DIFFICULTY_CHOICES, "medium");
+mountSegmentedChoices(document.querySelector<HTMLElement>("#airfield-difficulty-choices")!, "airfield-difficulty", DIFFICULTY_CHOICES);
+mountSegmentedChoices(document.querySelector<HTMLElement>(".practice-lessons")!, "practice-lesson", [{ value: "land", label: "Land", icon: "landing" }, { value: "hold", label: "Hold", icon: "target" }], "land");
 mountHugeIcon(elements.startIcon, "play", 18);
 mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
@@ -413,20 +424,6 @@ function showOnly(panel?: HTMLElement): void {
   });
 }
 
-function formatScore(value: number): string {
-  return Math.max(0, value).toString().padStart(2, "0");
-}
-
-function announce(message: string): void {
-  elements.routeStatus.textContent = "";
-  // Play stays quiet: only a rejected route is shown, because it explains a failed input.
-  // Every message, landings included, still reaches screen readers through #route-status.
-  if (message.startsWith("Route not added")) showFlightMessage(message);
-  requestAnimationFrame(() => {
-    elements.routeStatus.textContent = message;
-  });
-}
-
 function hideRouteCoachmark(): void {
   window.clearTimeout(routeCoachTimer);
   elements.routeCoachmark.hidden = true;
@@ -470,26 +467,18 @@ function renderRankProgress(target: HTMLElement): void {
   }
   const requirements = next.requirements;
   const progress = promotionProgress(currentSave.career, currentSave.mapRecords, requirements.qualifyingBestScore);
-  const heading = document.createElement("p");
-  heading.className = "rank-next";
-  heading.append("Next rank · ");
-  const name = document.createElement("strong");
-  name.textContent = next.name;
-  heading.append(name);
-  const meters = document.createElement("ul");
-  meters.className = "rank-meters";
+  const heading = el("p", "rank-next", "Next rank · ");
+  heading.append(el("strong", "", next.name));
+  const meters = el("ul", "rank-meters");
   for (const [label, done, goal] of [
     ["Landings", currentSave.career.totalSafeLandings, requirements.minimumSafeLandings],
     ["Shifts", currentSave.career.shiftsPlayed, requirements.minimumShifts],
     [`Airfields at ${requirements.qualifyingBestScore}+`, progress.distinctMaps, requirements.minimumDistinctMaps],
   ] as const) {
     const met = done >= goal;
-    const item = document.createElement("li");
-    item.classList.toggle("is-met", met);
-    const value = document.createElement("strong");
-    value.textContent = `${Math.min(done, goal)}/${goal}${met ? " ✓" : ""}`;
-    const bar = document.createElement("span");
-    bar.className = "rank-meter";
+    const item = el("li", met ? "is-met" : "");
+    const value = el("strong", "", `${Math.min(done, goal)}/${goal}${met ? " ✓" : ""}`);
+    const bar = el("span", "rank-meter");
     bar.setAttribute("aria-hidden", "true");
     bar.style.setProperty("--fill", `${Math.min(100, (done / Math.max(1, goal)) * 100)}%`);
     item.append(value, ` ${label}`, bar);
@@ -524,9 +513,8 @@ function renderMapOptions(): void {
       currentSave.career.earnedRankId,
     );
     const selected = definition.id === activeMapId;
-    const button = document.createElement("button");
+    const button = el("button", "map-option");
     button.type = "button";
-    button.className = "map-option";
     button.dataset.mapId = definition.id;
     button.setAttribute("aria-pressed", String(selected));
     button.setAttribute("aria-disabled", String(!unlocked));
@@ -539,15 +527,13 @@ function renderMapOptions(): void {
     button.style.setProperty("--map-preview-position", `var(--map-focus-${definition.id}, center)`);
     if (selected) button.classList.add("is-selected");
     if (!unlocked) button.classList.add("is-locked");
-    const title = document.createElement("strong");
-    title.textContent = definition.metadata.name;
-    const detail = document.createElement("span");
-    detail.textContent = unlocked
-      ? `${AIRPORT_CATEGORIES[definition.metadata.category]} · ${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best ${formatScore(mapBest(definition.id))}`
-      : `Unlock at ${rankDefinition(definition.metadata.unlockRankId).name}`;
-    const copy = document.createElement("small");
-    copy.textContent = definition.metadata.description;
-    button.append(title, detail, copy);
+    button.append(
+      el("strong", "", definition.metadata.name),
+      el("span", "", unlocked
+        ? `${AIRPORT_CATEGORIES[definition.metadata.category]} · ${DIFFICULTY_LABELS[currentSave.selectedDifficulty]} best ${formatScore(mapBest(definition.id))}`
+        : `Unlock at ${rankDefinition(definition.metadata.unlockRankId).name}`),
+      el("small", "", definition.metadata.description),
+    );
     button.addEventListener("click", () => {
       if (!unlocked) {
         document.querySelector('#airfield-selection-status')!.textContent = `${definition.metadata.name} unlocks at ${rankDefinition(definition.metadata.unlockRankId).name}. Complete career objectives to earn that clearance.`;
@@ -561,7 +547,7 @@ function renderMapOptions(): void {
         utilityReturnFocus = document.querySelector('#choose-airfield');
         history.back();
       };
-      if (playScene()?.getPhase() === 'paused') confirmAbandon('Leave this shift?', 'This unfinished shift will not count toward your career, records, or achievements.', () => void choose());
+      if (playScene()?.getPhase() === 'paused') confirmShift(LEAVE_SHIFT, () => void choose());
       else void choose();
     });
     return button;
@@ -839,10 +825,7 @@ async function handleGameOver({
     renderPromotion(elements.careerResult, earned.name, earned.unlocks.map((id) => mapDefinitionById(id).metadata.name), promotionDelay);
     const liveries = LIVERIES.filter(livery => rankIndex(livery.rank) > rankIndex(result.previousRankId) && rankIndex(livery.rank) <= rankIndex(result.earnedRankId));
     if (liveries.length) {
-      const reward = document.createElement('p');
-      reward.className = 'career-result-note';
-      reward.textContent = `${liveries.map(livery => livery.name).join(' and ')} livery unlocked. Choose it in Your career.`;
-      elements.careerResult.append(reward);
+      elements.careerResult.append(el('p', 'career-result-note', `${liveries.map(livery => livery.name).join(' and ')} livery unlocked. Choose it in Your career.`));
     }
     announce(`Promoted to ${earned.name}.${liveries.length ? ' New liveries available in Your career.' : ''}`);
     promotionAudioTimer = window.setTimeout(
@@ -860,10 +843,7 @@ async function handleGameOver({
     renderRankProgress(elements.careerResult);
   }
   if (!result.persisted) {
-    const note = document.createElement("span");
-    note.className = "career-result-note";
-    note.textContent = " Progress is available this session only; saving on this device failed.";
-    elements.careerResult.append(note);
+    elements.careerResult.append(el("span", "career-result-note", " Progress is available this session only; saving on this device failed."));
   }
   elements.restartButton.disabled = false;
   elements.chooseMapButton.disabled = false;
@@ -936,11 +916,7 @@ weatherInput.addEventListener("change", () => {
 elements.startButton.addEventListener("click", () => void startRun());
 elements.restartButton.addEventListener("click", () => void startRun());
 elements.restartFromPause.addEventListener("click", () =>
-  confirmAbandon(
-    "Restart this shift?",
-    "Your unfinished shift, including achievement progress, will not be saved.",
-    () => void startRun(),
-  ),
+  confirmShift(RESTART_SHIFT, () => void startRun()),
 );
 elements.resumeButton.addEventListener("click", () => void resumeRun());
 elements.chooseMapButton.addEventListener("click", () => {
@@ -1029,21 +1005,6 @@ type UtilityName = typeof utilityNames[number];
 function isUtilityName(value: string): value is UtilityName {
   return utilityNames.some(name => name === value);
 }
-const confirmDialog =
-  document.querySelector<HTMLDialogElement>("#confirm-dialog")!;
-let pendingAction: (() => void) | undefined;
-let messageTimer = 0;
-
-function showFlightMessage(message: string): void {
-  const output = document.querySelector<HTMLElement>("#flight-message")!;
-  output.textContent = message;
-  output.hidden = false;
-  window.clearTimeout(messageTimer);
-  messageTimer = window.setTimeout(() => {
-    output.hidden = true;
-  }, 2800);
-}
-
 function renderFieldDetail(): void {
   const definition = mapDefinitionById(activeMapId);
   const preview = document.querySelector<HTMLImageElement>('#home-map-preview')!;
@@ -1105,65 +1066,8 @@ function renderShiftContext(target: HTMLElement, landed: string): void {
   }));
 }
 
-/** The pill tags that sum up a shift, shared by the pause menu, the result card and the saved-shift offer. */
-function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: string; orientation?: string; twoEndLanding: boolean }): HTMLUListElement {
-  const tags = document.createElement("ul");
-  tags.className = "shift-tags";
-  if (shift.name) {
-    const name = document.createElement("li");
-    name.className = "shift-tag-name";
-    name.textContent = shift.name;
-    tags.append(name);
-  }
-  const facts: [string, AppIconName?][] = [
-    [DIFFICULTY_LABELS[shift.difficulty]],
-    ...(shift.landed === undefined ? [] : [[`${shift.landed} landed`, "landing"] as [string, AppIconName]]),
-    ...(shift.orientation === undefined ? [] : [[shift.orientation.charAt(0).toUpperCase() + shift.orientation.slice(1)] as [string]]),
-    [shift.twoEndLanding ? "Both ends" : "One end"],
-  ];
-  for (const [text, icon] of facts) {
-    const tag = document.createElement("li");
-    if (icon) {
-      const glyph = document.createElement("span");
-      glyph.setAttribute("aria-hidden", "true");
-      mountHugeIcon(glyph, icon, 14);
-      tag.append(glyph);
-    }
-    tag.append(text);
-    tags.append(tag);
-  }
-  return tags;
-}
-
-function confirmAbandon(title: string, copy: string, action: () => void): void {
-  pendingAction = action;
-  document.querySelector("#confirm-title")!.textContent = title;
-  document.querySelector("#confirm-copy")!.textContent = copy;
-  const [label, icon] = title.startsWith("Restart")
-    ? (["Restart shift", "restart"] as const)
-    : title.startsWith("Start")
-      ? (["Start new shift", "play"] as const)
-      : (["Main menu", "home"] as const);
-  document.querySelector("#confirm-accept-label")!.textContent = label;
-  mountHugeIcon(document.querySelector<HTMLElement>("#confirm-accept-icon")!, icon, 18);
-  confirmDialog.showModal();
-}
-
-document
-  .querySelector("#confirm-cancel")!
-  .addEventListener("click", () => confirmDialog.close());
-document.querySelector("#confirm-accept")!.addEventListener("click", () => {
-  const action = pendingAction;
-  confirmDialog.close();
-  action?.();
-});
-confirmDialog.addEventListener("close", () => {
-  pendingAction = undefined;
-});
 document.querySelector("#pause-map")!.addEventListener("click", () =>
-  confirmAbandon(
-    "Leave this shift?",
-    "This unfinished shift will not count toward your career, records, or achievements.",
+  confirmShift(LEAVE_SHIFT,
     () => {
       clearActiveShift();
       updateResumeOffer();
@@ -1229,7 +1133,7 @@ document.querySelectorAll<HTMLElement>("[data-screen]").forEach(button =>
 document.querySelector("#utility-close")!.addEventListener("click", () => history.back());
 
 for (const [id, label] of Object.entries({ all: 'All airfields', ...AIRPORT_CATEGORIES })) {
-  const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
+  const button = el('button', '', label); button.type = 'button';
   button.setAttribute('aria-pressed', String(id === categoryFilter));
   button.addEventListener('click', () => {
     categoryFilter = id;
