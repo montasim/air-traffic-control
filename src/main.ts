@@ -134,7 +134,7 @@ mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
 mountHugeIcon(elements.restartIcon, "restart", 18);
 mountHugeIcon(elements.chooseMapIcon, "home", 18);
-for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close", "landing", "target", "night", "bothEnds"] as const) {
+for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close", "landing", "target", "night", "weather", "bothEnds"] as const) {
   document.querySelectorAll<HTMLElement>(`[data-ui-icon="${name}"]`).forEach(target => {
     mountHugeIcon(target, name, 18);
   });
@@ -191,6 +191,7 @@ let savingLandingMode = false;
 let restoreLandingModeFocus = false;
 const landingModeInput = document.querySelector<HTMLInputElement>('#two-end-landing')!;
 const nightModeInput = document.querySelector<HTMLInputElement>('#night-mode')!;
+const weatherInput = document.querySelector<HTMLInputElement>('#weather-mode')!;
 let activeRunId = '';
 let finishingRunId = '';
 let sceneReady = false;
@@ -259,6 +260,7 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   nextGame.events.on("scene-ready", () => {
     sceneReady = true;
     playScene()?.setNight(currentSave.settings.night);
+    playScene()?.setWeather(currentSave.settings.weather);
     const focusLandingMode = restoreLandingModeFocus;
     restoreLandingModeFocus = false;
     landingModeInput.disabled = savingLandingMode || !isMapUnlocked(activeMapId, currentSave.career.earnedRankId);
@@ -891,6 +893,14 @@ nightModeInput.addEventListener("change", () => {
     refreshPreviews();
   });
 });
+// Weather only changes the look too: the live map shows or hides its clouds at once.
+weatherInput.addEventListener("change", () => {
+  playScene()?.setWeather(weatherInput.checked);
+  void gameStore.setWeather(weatherInput.checked).then(save => {
+    currentSave = save;
+    refreshPreviews();
+  });
+});
 elements.startButton.addEventListener("click", () => void startRun());
 elements.restartButton.addEventListener("click", () => void startRun());
 elements.restartFromPause.addEventListener("click", () =>
@@ -1022,6 +1032,7 @@ function renderFieldDetail(): void {
   document.querySelector<HTMLFieldSetElement>('#difficulty-options')!.disabled = !unlocked;
   landingModeInput.checked = currentSave.settings.twoEndLanding;
   nightModeInput.checked = currentSave.settings.night;
+  weatherInput.checked = currentSave.settings.weather;
   landingModeInput.disabled = savingLandingMode || !sceneReady || !unlocked;
   const lock = document.querySelector<HTMLElement>("#field-lock")!;
   lock.hidden = unlocked;
@@ -1220,7 +1231,7 @@ function refreshPreviews(): void {
       `[data-map-id="${id}"]`,
     );
     card?.style.setProperty("--map-preview", `url("${url}")`);
-  }, { night: currentSave.settings.night, twoEndLanding: currentSave.settings.twoEndLanding, world, detailLevel, first: activeMapId });
+  }, { night: currentSave.settings.night, weather: currentSave.settings.weather, twoEndLanding: currentSave.settings.twoEndLanding, world, detailLevel, first: activeMapId });
 }
 refreshPreviews();
 window.addEventListener("pagehide", () => disposePreviews(), { once: true });

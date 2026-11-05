@@ -19,6 +19,7 @@ import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon';
 import VolumeHighIcon from '@hugeicons/core-free-icons/VolumeHighIcon';
 import VolumeMute02Icon from '@hugeicons/core-free-icons/VolumeMute02Icon';
 import Moon02Icon from '@hugeicons/core-free-icons/Moon02Icon';
+import CloudIcon from '@hugeicons/core-free-icons/CloudIcon';
 import ArrowDataTransferHorizontalIcon from '@hugeicons/core-free-icons/ArrowDataTransferHorizontalIcon';
 
 type IconAttributes = Readonly<Record<string, string | number>>;
@@ -47,6 +48,7 @@ export const APP_ICONS = {
   volume: VolumeHighIcon,
   mute: VolumeMute02Icon,
   night: Moon02Icon,
+  weather: CloudIcon,
   bothEnds: ArrowDataTransferHorizontalIcon
 } satisfies Record<string, HugeIconData>;
 

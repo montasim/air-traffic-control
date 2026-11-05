@@ -169,6 +169,8 @@ export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: nu
   if (still) return;
   let clock = 0;
   const step = (_time: number, delta: number) => {
+    // Stop once the sprites are cleared away, as between map previews.
+    if (!layers[0].sprite.scene) return void scene.events.off("update", step);
     clock += delta / 1000;
     for (const [index, { sprite, layer }] of layers.entries()) {
       sprite.tilePositionX = -clock * layer.speed;
@@ -233,6 +235,8 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
   if (still) return;
   let clock = 2.5;
   const step = (_time: number, delta: number) => {
+    // Stop once the graphics are cleared away, as between map previews.
+    if (!graphics.scene) return void scene.events.off("update", step);
     clock += delta / 1000;
     draw(clock);
   };
@@ -305,7 +309,7 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
  * aircraft and landing circles, so they never hide play; when one drifts off, it returns on the
  * far side. Where `thinOver` says a cloud covers part of the airfield, it eases to a light haze so
  * runways and stands stay readable. At night (the scene's "night-mode" event) they turn a dim,
- * moonlit blue-grey and cast no shadows. Drawn once, still, when the player prefers reduced motion.
+ * moonlit blue-grey and cast no shadows; with weather off ("weather-mode") they are hidden. Drawn once, still, when the player prefers reduced motion.
  */
 export function addDriftingClouds(
   scene: Phaser.Scene,
@@ -364,17 +368,34 @@ export function addDriftingClouds(
     return item;
   });
   const shadowShift = { x: unit * 0.07, y: unit * 0.09 };
+  let weather = true;
+  const show = () => {
+    for (const item of clouds) {
+      item.cloud.setVisible(weather);
+      item.shadow.setVisible(weather && !night);
+    }
+  };
   const onNight = (enabled: boolean) => {
     night = enabled;
     for (const item of clouds) {
       if (night) item.cloud.setTint(0x8798a8);
       else item.cloud.clearTint();
-      item.shadow.setVisible(!night);
     }
+    show();
     place();
   };
+  const onWeather = (enabled: boolean) => {
+    weather = enabled;
+    show();
+  };
   scene.events.on("night-mode", onNight);
-  scene.events.once("shutdown", () => scene.events.off("night-mode", onNight));
+  scene.events.on("weather-mode", onWeather);
+  const unhook = () => {
+    scene.events.off("night-mode", onNight);
+    scene.events.off("weather-mode", onWeather);
+    scene.events.off("update", step);
+  };
+  scene.events.once("shutdown", unhook);
   const place = () => {
     for (const item of clouds) {
       const x = centre.x + along.x * item.distance + across.x * item.offset;
@@ -391,7 +412,8 @@ export function addDriftingClouds(
   place();
   for (const key of keys) scene.events.once("shutdown", () => scene.textures.remove(key));
   if (still) return;
-  const step = (_time: number, delta: number) => {
+  function step(_time: number, delta: number): void {
+    if (!clouds[0]?.cloud.scene) return unhook();
     for (const item of clouds) {
       item.distance += speed * item.pace * (delta / 1000);
       if (item.distance > reach) {
@@ -401,7 +423,7 @@ export function addDriftingClouds(
       }
     }
     place();
-  };
+  }
   scene.events.on("update", step);
   scene.events.once("shutdown", () => scene.events.off("update", step));
 }

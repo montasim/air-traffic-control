@@ -319,6 +319,11 @@ export class PlayScene extends Phaser.Scene {
     this.events.emit("night-mode", enabled);
   }
 
+  /** Shows or hides the drifting clouds. */
+  setWeather(enabled: boolean): void {
+    this.events.emit("weather-mode", enabled);
+  }
+
   setTimeScale(scale: number): void {
     this.timeScale = scale;
   }

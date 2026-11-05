@@ -46,6 +46,7 @@ export function createMapPreviews(
   onPreview: (id: MapId, url: string, focus: { readonly x: number; readonly y: number }) => void,
   options: {
     readonly night: boolean;
+    readonly weather: boolean;
     readonly twoEndLanding: boolean;
     readonly world: { readonly width: number; readonly height: number };
     readonly detailLevel: WorldDetailLevel;
@@ -84,6 +85,9 @@ export function createMapPreviews(
       const prepared = map.prepare({ width: WIDTH, height: HEIGHT, detailLevel: options.detailLevel, twoEndLanding: options.twoEndLanding });
       map.render(this, prepared);
       if (options.night) drawNight(this, prepared.layout);
+      // Time of day and weather reach the drifting clouds the same way as in a shift.
+      this.events.emit("night-mode", options.night);
+      this.events.emit("weather-mode", options.weather);
       const zones = prepared.layout.landingZones;
       const focus = zones.length
         ? { x: zones.reduce((sum, zone) => sum + zone.position.x, 0) / zones.length / WIDTH, y: zones.reduce((sum, zone) => sum + zone.position.y, 0) / zones.length / HEIGHT }

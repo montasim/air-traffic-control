@@ -52,6 +52,7 @@ export interface GameStore {
   selectDifficulty(difficulty: DifficultyId): Promise<GameSaveV3>;
   setTwoEndLanding(enabled: boolean): Promise<GameSaveV3>;
   setNight(enabled: boolean): Promise<GameSaveV3>;
+  setWeather(enabled: boolean): Promise<GameSaveV3>;
   selectMap(mapId: MapId): Promise<GameSaveV3>;
   updateAudio(settings: Partial<AudioSettings>): Promise<GameSaveV3>;
   acknowledgeEarnedRank(): Promise<GameSaveV3>;
@@ -192,6 +193,13 @@ class SerialGameStore implements GameStore {
   setNight(enabled: boolean): Promise<GameSaveV3> {
     return this.enqueue(async current => ({
       save: { ...current, settings: { ...current.settings, night: enabled === true } },
+      result: undefined
+    })).then(({ save }) => save);
+  }
+
+  setWeather(enabled: boolean): Promise<GameSaveV3> {
+    return this.enqueue(async current => ({
+      save: { ...current, settings: { ...current.settings, weather: enabled === true } },
       result: undefined
     })).then(({ save }) => save);
   }

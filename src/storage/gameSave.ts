@@ -28,6 +28,8 @@ export interface GameSettings {
   readonly livery: LiveryId;
   readonly twoEndLanding: boolean;
   readonly night: boolean;
+  /** Drifting clouds over the map. */
+  readonly weather: boolean;
   readonly audio: AudioSettings;
 }
 
@@ -114,6 +116,7 @@ export function createDefaultGameSave(): GameSaveV3 {
       livery: 'classic',
       twoEndLanding: false,
       night: false,
+      weather: true,
       audio: {
         enabled: true,
         volume: DEFAULT_AUDIO_VOLUME
@@ -209,6 +212,7 @@ function normalizeV2(value: Record<string, unknown>): GameSaveV3 {
       livery: normalizeLivery(settings.livery, earnedRankId),
       twoEndLanding: settings.twoEndLanding === true,
       night: settings.night === true,
+      weather: settings.weather !== false,
       audio: {
         enabled: booleanValue(storedAudio.enabled, defaults.settings.audio.enabled),
         volume: audioVolume(storedAudio.volume)
@@ -255,6 +259,7 @@ function migrateV1(value: LegacyGameSaveV1): GameSaveV3 {
       livery: 'classic',
       twoEndLanding: false,
       night: false,
+      weather: true,
       audio: {
         enabled: booleanValue(value.soundEnabled, true),
         volume: DEFAULT_AUDIO_VOLUME
