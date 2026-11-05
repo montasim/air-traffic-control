@@ -466,6 +466,9 @@ h3 {
   visibility: hidden;
 }
 .compact-panel {
+  /* These cards open over the field mid-gesture; a finger still dragging must not select their text. */
+  -webkit-user-select: none;
+  user-select: none;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
@@ -1517,9 +1520,9 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #start-description { margin-top: 4px; font-size: 12px; text-align: left; }
   #start-panel .home-tools { gap: 0; }
   #start-panel .home-tools button { padding: 8px; font-size: 0.9375rem; }
-  #start-panel .departure-board { grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); padding: 12px 16px; gap: 16px; }
+  /* Side by side, nothing overlaps the card's top edge, so it is cream all the way up (unlike the upright phone card). */
+  #start-panel .departure-board { grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); padding: 12px 16px; gap: 16px; background: var(--paper); }
   #start-panel .home-preview { height: 100px; aspect-ratio: auto; max-height: none; margin: 0; border-radius: 8px; }
-  #start-panel #home-map-preview { object-fit: contain; }
   #start-panel .home-assignment { margin: 0; }
   #start-panel #field-title { font-size: 1.625rem; }
   #start-panel #field-record { font-size: 12px; }

@@ -15,6 +15,7 @@ const DEVICES = [
   ['large desktop', 1920, 1080], ['laptop', 1366, 768],
   ['tablet landscape', 1024, 768], ['tablet portrait', 768, 1024],
   ['phone portrait', 390, 844], ['phone landscape', 844, 390],
+  ['iPhone SE portrait', 375, 667], ['iPhone SE landscape', 667, 375],
 ] as const;
 
 describe('playable on every device size', () => {
