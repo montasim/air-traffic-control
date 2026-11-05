@@ -30,8 +30,6 @@
   --button-height: 48px;
   --button-font: 1.125rem;
   --button-pad-x: 20px;
-  --switch-width: 44px;
-  --switch-height: 26px;
   --icon-gap: 8px;
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
@@ -1441,13 +1439,8 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* One gap between the card's sections, reused between the saved shift and the buttons below it. */
 #start-panel .flight-settings { --section-gap: 24px; display: flex; flex-direction: column; gap: var(--section-gap); min-width: 0; padding: 0; }
 #start-panel .difficulty-options { margin: 0; }
-#start-panel .difficulty-choices { gap: 20px; }
 #start-panel .difficulty-options legend { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; font-size: 0.875rem; margin-bottom: 12px; }
 /* The two switches stack as settings rows (label left, switch right) so neither label wraps into the other. */
-#start-panel .flight-switches { display: grid; grid-template-columns: 1fr; gap: 0; padding-top: 8px; border-top: 1px solid var(--line); }
-#start-panel .runway-option { margin: 0; gap: 12px; min-height: 44px; padding-block: 4px; }
-#start-panel .runway-option + .runway-option { border-top: 1px solid var(--line); }
-#start-panel .runway-option small { color: var(--muted); }
 #start-panel #start-button { margin: 0; }
 /* Resume and Start share one row; Start fills it when there is no shift to resume. */
 #start-panel .flight-actions { display: flex; flex-wrap: wrap; gap: var(--section-gap) 12px; }
@@ -1494,9 +1487,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel #field-description { display: none; }
   #start-panel .flight-settings { --section-gap: 16px; border: 0; padding: 0; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
-  #start-panel .difficulty-choices { gap: 8px; }
-  #start-panel .difficulty-choices label span { min-height: 36px; font-size: 13px; }
-  #start-panel .flight-switches { padding: 0; border: 0; }
   #start-panel .home-stores { order: 3; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0; }
   #start-panel .home-stores p { font-size: 0.875rem; }
   /* The store badges fold behind a tap so the launch screen stays short. */
@@ -1531,7 +1521,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .home-tools { gap: 0; }
   #start-panel .home-tools button { padding: 8px; font-size: 0.9375rem; }
   #start-panel .departure-board { grid-template-columns: minmax(0, .8fr) minmax(0, 1.4fr); padding: 12px 16px; gap: 16px; }
-  #start-panel .difficulty-choices { gap: 16px; }
   #start-panel .home-preview { height: 100px; aspect-ratio: auto; max-height: none; margin: 0; border-radius: 8px; }
   #start-panel #home-map-preview { object-fit: contain; }
   #start-panel .home-assignment { margin: 0; }
@@ -1541,9 +1530,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .flight-actions { row-gap: 12px; }
   #start-panel #field-description { display: none; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
-  /* Short landscape windows have width to spare and no height, so the switches share one row there. */
-  #start-panel .flight-switches { grid-template-columns: 1fr 1fr; gap: 16px; padding: 0; border: 0; }
-  #start-panel .runway-option + .runway-option { border-top: 0; }
   #start-panel .flight-actions { justify-content: flex-end; }
   #start-panel .flight-actions > button { flex: 0 1 240px; }
   #start-panel .home-stores { flex-direction: row; gap: 12px; padding: 0; text-align: left; }
@@ -1612,19 +1598,24 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #gameover-panel .result-actions { padding: 12px 20px 16px; }
 }
 
-/* Optional runway rule, separate from the difficulty radio group. */
-.runway-option { display: flex; flex-direction: row-reverse; align-items: center; gap: 16px; margin: 8px 0 16px; cursor: pointer; text-align: left; }
-.runway-option > span { flex: 1; min-width: 0; }
-.runway-option small { display: block; margin-top: 3px; font-size: 0.8rem; line-height: 1.4; }
-.runway-option input { appearance: none; position: relative; flex: 0 0 var(--switch-width); width: var(--switch-width); height: var(--switch-height); margin: 0; border: 2px solid #647870; border-radius: 20px; background: #d9decf; cursor: pointer; }
-.runway-option input::before { content: ''; position: absolute; width: calc(var(--switch-height) - 8px); height: calc(var(--switch-height) - 8px); top: 2px; left: 2px; border-radius: 50%; background: #344e46; }
-.runway-option input:checked { background: #28766d; border-color: #28766d; }
-.runway-option input:checked::before { transform: translateX(calc(var(--switch-width) - var(--switch-height))); background: #fff5df; }
-.runway-option input:disabled { cursor: wait; opacity: .55; }
-.runway-option input:focus-visible { outline: 3px solid #28766d; outline-offset: 3px; }
+/* Difficulty is one segmented control: a single track, the chosen level filled. Segments and the setting
+   chips share one height, a step under the action buttons, so the row reads as one family. */
+:root { --chip-height: calc(var(--button-height) - 8px); }
+#start-panel .difficulty-choices { gap: 4px; padding: 4px; border-radius: 12px; background: #e5e6d3; }
+#start-panel .difficulty-choices span { min-height: var(--chip-height); border: 0; background: transparent; font-size: 0.875rem; }
+#start-panel .difficulty-choices label:hover input:not(:checked) + span { background: #203d3914; }
+#start-panel .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); box-shadow: 0 2px 6px #203d3933; }
+/* On/off settings are toggle chips: outlined when off, filled teal with light text when on. The real switch
+   covers each chip invisibly, so clicks, keys and screen readers work as before. */
+#start-panel .flight-switches { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
+.setting-chip { position: relative; display: inline-flex; align-items: center; gap: var(--icon-gap); min-height: var(--chip-height); padding: 0 16px 0 12px; border: 1px solid #b9bea6; border-radius: 999px; color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+.setting-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border-radius: inherit; opacity: 0; cursor: pointer; }
+.setting-chip:hover { background: #203d3914; }
+.setting-chip:has(input:checked) { border-color: #28766d; background: #28766d; color: var(--paper); }
+.setting-chip:has(input:focus-visible) { outline: 3px solid #28766d; outline-offset: 3px; }
+.setting-chip:has(input:disabled) { cursor: wait; opacity: .55; }
 @media (forced-colors: active) {
-  .runway-option input { appearance: auto; }
-  .runway-option input::before { display: none; }
+  .setting-chip:has(input:checked) { border-width: 3px; }
 }
 /* Play-distributed builds omit other storefronts and external donation links. */
 :root[data-platform="android"] #start-panel .home-stores,
@@ -1661,13 +1652,13 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 
 /* Type and action buttons step down with the screen. Text from 14px up is in rem, so the root size scales
    it: large 100%, medium 93.75%, small 87.5% (respecting the reader's browser setting); tiny rem
-   labels keep an 11px floor and 13px-or-smaller px labels stay put. Buttons go 48px, 44px, 40px and switches 44, 40, 36px wide, so every control on one screen matches. */
+   labels keep an 11px floor and 13px-or-smaller px labels stay put. Buttons go 48px, 44px, 40px, and chips and segments sit one step under them, so every control on one screen matches. */
 html { font-size: 100%; }
 @media (max-width: 900px) {
   html { font-size: 93.75%; }
-  :root { --button-height: 44px; --button-pad-x: 18px; --switch-width: 40px; --switch-height: 24px; }
+  :root { --button-height: 44px; --button-pad-x: 18px; }
 }
 @media (max-width: 700px), (max-height: 500px) and (orientation: landscape) {
   html { font-size: 87.5%; }
-  :root { --button-height: 40px; --button-pad-x: 16px; --switch-width: 36px; --switch-height: 20px; }
+  :root { --button-height: 40px; --button-pad-x: 16px; }
 }

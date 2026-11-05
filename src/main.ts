@@ -134,7 +134,7 @@ mountHugeIcon(elements.resumeIcon, "play", 18);
 mountHugeIcon(elements.restartFromPauseIcon, "restart", 18);
 mountHugeIcon(elements.restartIcon, "restart", 18);
 mountHugeIcon(elements.chooseMapIcon, "home", 18);
-for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close", "landing", "target"] as const) {
+for (const name of ["home", "settings", "help", "career", "back", "expand", "play", "restart", "close", "landing", "target", "night", "bothEnds"] as const) {
   document.querySelectorAll<HTMLElement>(`[data-ui-icon="${name}"]`).forEach(target => {
     mountHugeIcon(target, name, 18);
   });

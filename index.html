@@ -215,14 +215,15 @@
                   <label><input type="radio" name="difficulty" value="hard" /><span>Hard</span></label>
                 </div>
               </fieldset>
+              <!-- On/off options as toggle chips on one row: filled when on. The real switches sit invisibly over each chip. -->
               <div class="flight-switches">
-              <label class="runway-option" for="two-end-landing">
+              <label class="setting-chip" for="two-end-landing">
                 <input type="checkbox" role="switch" id="two-end-landing" aria-describedby="two-end-description" />
-                <span>Land at both side<small class="visually-hidden" id="two-end-description">Allow aircraft to land at either end of each runway.</small></span>
+                <span class="button-icon" data-ui-icon="bothEnds" aria-hidden="true"></span><span>Land at both side<small class="visually-hidden" id="two-end-description">Allow aircraft to land at either end of each runway.</small></span>
               </label>
-              <label class="runway-option" for="night-mode">
+              <label class="setting-chip" for="night-mode">
                 <input type="checkbox" role="switch" id="night-mode" aria-describedby="night-mode-description" />
-                <span>Night shift<small class="visually-hidden" id="night-mode-description">Darken the map and turn on runway and aircraft lights.</small></span>
+                <span class="button-icon" data-ui-icon="night" aria-hidden="true"></span><span>Night shift<small class="visually-hidden" id="night-mode-description">Darken the map and turn on runway and aircraft lights.</small></span>
               </label>
               </div>
               <div class="flight-actions">
