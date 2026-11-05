@@ -1454,7 +1454,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 #start-panel .store-links a { display: inline-flex; align-items: center; border-radius: 4px; scroll-margin-block: 24px; }
 #start-panel .store-links img { display: block; width: auto; height: 48px; }
 #start-panel .store-links a:hover { opacity: .85; }
-#start-panel .store-toggle { display: none; }
 @media (max-width: 900px) {
   #start-panel .intro-content { padding: 32px 24px; gap: 24px; }
   #start-panel .home-header { flex-wrap: wrap; gap: 12px; }
@@ -1487,12 +1486,6 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
   #start-panel .difficulty-options legend { font-size: 13px; margin-bottom: 4px; }
   #start-panel .home-stores { order: 3; flex-direction: column; align-items: center; text-align: center; gap: 12px; padding: 0; }
   #start-panel .home-stores p { font-size: 0.875rem; }
-  /* The store badges fold behind a tap so the launch screen stays short. */
-  #start-panel .store-intro p { display: none; }
-  #start-panel .store-toggle { display: inline-flex; align-items: center; gap: var(--icon-gap); min-height: 44px; padding: 8px; border: 0; background: transparent; color: var(--paper); font: inherit; font-size: 0.875rem; cursor: pointer; }
-  #start-panel .store-toggle .button-icon { transition: transform 160ms ease; }
-  #start-panel .home-stores.is-open .store-toggle .button-icon { transform: rotate(180deg); }
-  #start-panel .home-stores:not(.is-open) .store-links { display: none; }
   #start-panel .store-links { width: 100%; justify-content: center; gap: 12px; }
   #start-panel .store-links img { height: 44px; max-width: 100%; }
 }
