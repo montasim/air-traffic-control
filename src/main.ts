@@ -652,7 +652,8 @@ function updateResumeOffer(): void {
   const landed = formatScore(shift.simulation.score);
   elements.resumeShiftButton.title = `${name} · ${DIFFICULTY_LABELS[shift.difficulty]} · ${landed} landed`;
   elements.resumeShiftContext.replaceChildren(shiftTags({
-    name, difficulty: shift.difficulty, landed, orientation: shift.orientation, twoEndLanding: shift.twoEndLanding,
+    // No orientation tag here: it follows the device, so it does not help choose between resuming and starting.
+    name, difficulty: shift.difficulty, landed, twoEndLanding: shift.twoEndLanding,
   }));
 }
 
@@ -1058,7 +1059,7 @@ function renderShiftContext(target: HTMLElement, landed?: string, withName = tru
 }
 
 /** The pill tags that sum up a shift, shared by the pause menu, the result card and the saved-shift offer. */
-function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: string; orientation: string; twoEndLanding: boolean }): HTMLUListElement {
+function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: string; orientation?: string; twoEndLanding: boolean }): HTMLUListElement {
   const tags = document.createElement("ul");
   tags.className = "shift-tags";
   if (shift.name) {
@@ -1070,7 +1071,7 @@ function shiftTags(shift: { name?: string; difficulty: DifficultyId; landed?: st
   const facts: [string, AppIconName?][] = [
     [DIFFICULTY_LABELS[shift.difficulty]],
     ...(shift.landed === undefined ? [] : [[`${shift.landed} landed`, "landing"] as [string, AppIconName]]),
-    [shift.orientation.charAt(0).toUpperCase() + shift.orientation.slice(1)],
+    ...(shift.orientation === undefined ? [] : [[shift.orientation.charAt(0).toUpperCase() + shift.orientation.slice(1)] as [string]]),
     [shift.twoEndLanding ? "Both ends" : "One end"],
   ];
   for (const [text, icon] of facts) {
