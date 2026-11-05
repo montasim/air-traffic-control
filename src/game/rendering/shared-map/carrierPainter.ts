@@ -21,7 +21,6 @@ const DECK = {
   islandShade: 0x6b767b,
   islandTop: 0xb3bbbd,
   glass: 0x24343b,
-  wake: 0xf2f7f6,
 } as const;
 
 /** A point on the carrier given as shares of its length (x, stern to bow) and beam (y, starboard positive). */
@@ -39,26 +38,6 @@ const along = (lane: CarrierLanePaint, distance: number, offset = 0): Vector2 =>
   x: lane.center.x + Math.cos(lane.angle) * distance - Math.sin(lane.angle) * offset,
   y: lane.center.y + Math.sin(lane.angle) * distance + Math.cos(lane.angle) * offset,
 });
-
-/**
- * Fills a shape as a stack of faint copies shrinking toward its middle, so it is densest at its
- * heart and fades out with no hard edge: how white water looks from above.
- */
-function featherFill(graphics: Phaser.GameObjects.Graphics, points: readonly Vector2[], alpha: number): void {
-  const middle = points.reduce((sum, point) => ({ x: sum.x + point.x / points.length, y: sum.y + point.y / points.length }), { x: 0, y: 0 });
-  graphics.fillStyle(DECK.wake, alpha);
-  for (let share = 1; share >= 0.3; share -= 0.14) {
-    tracePolygon(graphics, points.map((point) => ({ x: middle.x + (point.x - middle.x) * share, y: middle.y + (point.y - middle.y) * share })));
-    graphics.fillPath();
-  }
-}
-
-/** Wake trails behind the stern, feathered so they fade into the sea; painted under everything else. */
-export function paintCarrierWake(graphics: Phaser.GameObjects.Graphics, carrier: Carrier): void {
-  const [trailA, trailB, wash] = carrier.wake;
-  featherFill(graphics, wash, 0.012);
-  for (const trail of [trailA, trailB]) featherFill(graphics, trail, 0.035);
-}
 
 function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint, unit: number): void {
   const half = lane.length / 2;
@@ -174,7 +153,7 @@ export function paintCarrierIsland(graphics: Phaser.GameObjects.Graphics, carrie
 }
 
 /**
- * An escort sailing with the carrier, seen from above: its wake, a narrow haze-grey hull with a
+ * An escort sailing with the carrier, seen from above: a narrow haze-grey hull with a
  * pointed bow, a stepped superstructure with a mast, a gun forward and a helicopter deck aft.
  * `kind` "supply" draws a fuller replenishment ship with cargo hatches instead.
  */
@@ -195,9 +174,6 @@ export function paintEscortShip(
     graphics.fillPath();
   };
   const box = (x: number, y: number, l: number, b: number) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => at(x + (u * l) / 2, y + (v * b) / 2));
-  // Wake: two feathered trails spreading astern over a faint wash; the moving foam does the rest.
-  featherFill(graphics, [at(-0.5, -0.3), at(-1.6, -1.6), at(-1.6, 1.6), at(-0.5, 0.3)], 0.015);
-  for (const side of [-1, 1]) featherFill(graphics, [at(-0.48, side * 0.25), at(-1.5, side * 1.5), at(-1.5, side * 1.1), at(-0.48, side * 0.05)], 0.04);
   const hull = [at(0.52, 0), at(0.3, 0.5), at(0.05, 0.5), at(-0.5, 0.42), at(-0.5, -0.42), at(0.05, -0.5), at(0.3, -0.5)];
   fill(hull.map((p) => ({ x: p.x + unit * 0.006, y: p.y + unit * 0.009 })), DECK.shadow, 0.35);
   fill(hull, DECK.hull);

@@ -10,7 +10,6 @@ import {
   paintCanopy,
   paintCarrierDeck,
   paintCarrierIsland,
-  paintCarrierWake,
   paintControlTower,
   paintGroundTexture,
   paintHelipad,
@@ -101,7 +100,6 @@ export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastL
       paintBrokenShore(graphics, layout, [layout.sea], CARRIER_COAST_PALETTE, detailLevel === 'mobile' ? 120 : 240);
       for (const islet of layout.islets) paintRingedIslet(graphics, islet);
       paintWhitecaps(graphics, layout, detailLevel === 'mobile' ? 40 : 90, unit, (point) => !ashore(point) && clearOfAirfield(layout, point, unit * 0.04));
-      paintCarrierWake(graphics, layout.carrier);
       const budget = detailLevel === 'mobile' ? 30 : 60;
       layout.scrub.slice(0, budget).forEach((bush, index) => {
         if (clearOfAirfield(layout, bush.center, bush.radius)) paintShadedTree(graphics, bush.center, bush.radius, CARRIER_COAST_PALETTE, index);

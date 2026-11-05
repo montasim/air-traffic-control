@@ -44,8 +44,6 @@ export interface Carrier {
   readonly island: { readonly center: Vector2; readonly width: number; readonly height: number; readonly angle: number };
   /** Deck taxi lines from each landing lane to the parking area aft of the island. */
   readonly taxiways: MapTaxiway[];
-  /** Wake trails behind the stern (scenery). */
-  readonly wake: Vector2[][];
 }
 
 /** Beam as a share of the deck length: wide enough for parking beside the lanes. */
@@ -138,14 +136,5 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     angle: spec.angle + Math.atan2(edge.y, edge.x),
   };
 
-  // Two wake trails spreading from the stern, and a faint broad wash between them.
-  const stern = (y: number) => at(-0.5, y);
-  const astern = (distance: number, spread: number) => world(-0.5 * length - distance, spread);
-  const wake = [
-    [stern(-0.18), astern(length * 0.9, -beam * 0.9), astern(length * 0.9, -beam * 0.55), stern(-0.06)],
-    [stern(0.06), astern(length * 0.9, beam * 0.55), astern(length * 0.9, beam * 0.9), stern(0.18)],
-    [stern(-0.3), astern(length * 1.4, -beam * 1.5), astern(length * 1.4, beam * 1.5), stern(0.3)],
-  ];
-
-  return { id: spec.id, center: spec.center, length, beam, angle: spec.angle, hull, deck, runways, paintedLanes: [lane], helipads, island, taxiways, wake };
+  return { id: spec.id, center: spec.center, length, beam, angle: spec.angle, hull, deck, runways, paintedLanes: [lane], helipads, island, taxiways };
 }

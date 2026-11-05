@@ -9,7 +9,6 @@ import {
   paintAirfieldGuides,
   paintCarrierDeck,
   paintCarrierIsland,
-  paintCarrierWake,
   paintEscortShip,
   deterministicUnit,
   paintGroundTexture,
@@ -103,7 +102,6 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
       paintSwellBands(graphics, layout, layout.carrier.angle + 0.5, BLUE_WATER_PALETTE.terrainDark, unit);
       paintWhitecaps(graphics, layout, detailLevel === 'mobile' ? 50 : 130, unit, (point) => clearOfAirfield(layout, point, unit * 0.04));
       paintSunGlint(graphics, layout, unit);
-      paintCarrierWake(graphics, layout.carrier);
       for (const escort of escorts) paintEscortShip(graphics, escort.center, layout.carrier.angle, escort.length, unit, escort.kind);
     },
     operational: ({ graphics, unit }) => {
