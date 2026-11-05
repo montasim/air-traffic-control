@@ -38,7 +38,7 @@ Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasi
 Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start flight**. The **How to play** page includes a practice flight.
 
 1. Press an aircraft with your mouse, finger, or pen and hold.
-2. Draw a route to the destination with its matching color and letter. By default, use the highlighted end. Enable **Land at both runway ends** below difficulty to use either end. Both settings accept any approach angle. Release when the landing area lights up.
+2. Draw a route to the destination with its matching color and letter. By default, use the highlighted end. Enable **Both side landing** below difficulty to use either end. Both settings accept any approach angle. Release when the landing area lights up.
 3. Keep aircraft apart. Red warning rings indicate nearby traffic; draw a new route to reroute an aircraft.
 
 | Aircraft | Destination |
