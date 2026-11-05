@@ -8,6 +8,7 @@ import {
   paintCarrierDeck,
   paintCarrierIsland,
   paintCarrierWake,
+  paintEscortShip,
   deterministicUnit,
   paintGroundTexture,
   paintHelipad,
@@ -53,6 +54,23 @@ function paintDepthPatches(graphics: Phaser.GameObjects.Graphics, layout: BlueWa
   }
 }
 
+/**
+ * The escort group sailing in company with the carrier, placed by shares of the carrier's length
+ * ahead (x) and to starboard (y): two destroyers screening ahead and to port, and a supply ship
+ * keeping station off the starboard quarter.
+ */
+const ESCORTS = [
+  { x: 0.74, y: -0.4, length: 0.2, kind: 'destroyer' },
+  { x: 0.05, y: 0.42, length: 0.19, kind: 'destroyer' },
+  { x: -0.3, y: -0.42, length: 0.24, kind: 'supply' },
+] as const;
+
+/** A broad, soft band of sun glint across the sea, brightest along its middle. */
+function paintSunGlint(graphics: Phaser.GameObjects.Graphics, layout: BlueWaterLayout, unit: number): void {
+  graphics.fillStyle(0xe8f6f8, 0.03);
+  for (let ring = 1; ring >= 0.25; ring -= 0.15) graphics.fillEllipse(layout.width * 0.72, layout.height * 0.28, unit * 1.3 * ring, unit * 0.55 * ring);
+}
+
 export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout, detailLevel: WorldDetailLevel): void {
   // Open ocean with a fine sparkle of foam-white and deep shade.
   paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [] }, {
@@ -66,7 +84,20 @@ export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout,
       paintDepthPatches(graphics, layout, unit);
       paintSwellBands(graphics, layout, layout.carrier.angle + 0.5, BLUE_WATER_PALETTE.terrainDark, unit);
       paintWhitecaps(graphics, layout, detailLevel === 'mobile' ? 50 : 130, unit, (point) => clearOfAirfield(layout, point, unit * 0.04));
+      paintSunGlint(graphics, layout, unit);
       paintCarrierWake(graphics, layout.carrier);
+      const { carrier } = layout;
+      const [cos, sin] = [Math.cos(carrier.angle), Math.sin(carrier.angle)];
+      for (const escort of ESCORTS) {
+        const [dx, dy] = [escort.x * carrier.length, escort.y * carrier.length];
+        const center = { x: carrier.center.x + dx * cos - dy * sin, y: carrier.center.y + dx * sin + dy * cos };
+        // Only escorts that sit fully on screen and clear of the approaches are drawn.
+        const length = carrier.length * escort.length;
+        const reach = length * 0.55;
+        if (center.x < reach || center.y < reach || center.x > layout.width - reach || center.y > layout.height - reach) continue;
+        if (!clearOfAirfield(layout, center, reach)) continue;
+        paintEscortShip(graphics, center, carrier.angle, length, unit, escort.kind);
+      }
     },
     operational: ({ graphics, unit }) => {
       paintCarrierDeck(graphics, layout.carrier, unit);

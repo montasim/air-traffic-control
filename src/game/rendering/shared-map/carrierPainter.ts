@@ -14,7 +14,7 @@ const DECK = {
   seam: 0x454d52,
   rim: 0x7b878c,
   elevator: 0x555f64,
-  catapult: 0x2c3337,
+  elevatorEdge: 0x2c3337,
   line: 0xe9e6d8,
   wire: 0xc9c4b0,
   island: 0x8c9599,
@@ -81,8 +81,7 @@ function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint
 
 /**
  * Hull, flight deck and its markings, after a real supercarrier: a bow wave off the knife bow, the
- * non-skid deck with its seams, deck-edge elevators, two bow catapults with their blast deflectors,
- * and the landing lane. Deck parking and taxi guides are painted after.
+ * non-skid deck with its seams, deck-edge elevators, and the landing lane. Deck parking and taxi guides are painted after.
  */
 export function paintCarrierDeck(graphics: Phaser.GameObjects.Graphics, carrier: Carrier, unit: number): void {
   const at = (x: number, y: number) => onCarrier(carrier, x, y);
@@ -116,15 +115,9 @@ export function paintCarrierDeck(graphics: Phaser.GameObjects.Graphics, carrier:
   for (const [x, y] of [[-0.36, 0.5], [-0.2, 0.52], [-0.38, -0.33]] as const) {
     const box = carrierBox(carrier, x, y, 0.07, 0.22);
     fill(box, DECK.elevator);
-    graphics.lineStyle(Math.max(1, unit * 0.0014), DECK.catapult, 0.8);
+    graphics.lineStyle(Math.max(1, unit * 0.0014), DECK.elevatorEdge, 0.8);
     tracePolygon(graphics, box);
     graphics.strokePath();
-  }
-  // Bow catapults: long thin tracks, each with a blast deflector raised behind its start.
-  for (const [from, to, y] of [[0.12, 0.47, 0.04], [0.1, 0.44, 0.2]] as const) {
-    graphics.lineStyle(Math.max(1.2, unit * 0.0022), DECK.catapult, 0.95);
-    deckLine(from, y, to, y);
-    fill(carrierBox(carrier, from - 0.02, y, 0.012, 0.13), DECK.catapult, 0.9);
   }
   // The deck edge: a dark catwalk rim with a pale safety line just inside it.
   graphics.lineStyle(Math.max(2, unit * 0.004), DECK.hullShade, 1);
@@ -172,4 +165,62 @@ export function paintCarrierIsland(graphics: Phaser.GameObjects.Graphics, carrie
   graphics.fillCircle(dome.x, dome.y, Math.max(1.5, height * 0.2));
   graphics.lineStyle(1, DECK.islandShade, 1);
   graphics.strokeCircle(dome.x, dome.y, Math.max(1.5, height * 0.2));
+}
+
+/**
+ * An escort sailing with the carrier, seen from above: its wake, a narrow haze-grey hull with a
+ * pointed bow, a stepped superstructure with a mast, a gun forward and a helicopter deck aft.
+ * `kind` "supply" draws a fuller replenishment ship with cargo hatches instead.
+ */
+export function paintEscortShip(
+  graphics: Phaser.GameObjects.Graphics,
+  center: Vector2,
+  angle: number,
+  length: number,
+  unit: number,
+  kind: "destroyer" | "supply" = "destroyer",
+): void {
+  const beam = length * (kind === "supply" ? 0.16 : 0.12);
+  const [cos, sin] = [Math.cos(angle), Math.sin(angle)];
+  const at = (x: number, y: number): Vector2 => ({ x: center.x + x * length * cos - y * beam * sin, y: center.y + x * length * sin + y * beam * cos });
+  const fill = (points: readonly Vector2[], color: number, alpha = 1) => {
+    graphics.fillStyle(color, alpha);
+    tracePolygon(graphics, points);
+    graphics.fillPath();
+  };
+  const box = (x: number, y: number, l: number, b: number) => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => at(x + (u * l) / 2, y + (v * b) / 2));
+  // Wake: two thin trails spreading astern, a faint wash between them, and a small bow wave.
+  fill([at(-0.5, -0.3), at(-1.6, -1.6), at(-1.6, 1.6), at(-0.5, 0.3)], DECK.wake, 0.06);
+  for (const side of [-1, 1]) {
+    fill([at(-0.48, side * 0.25), at(-1.5, side * 1.5), at(-1.5, side * 1.1), at(-0.48, side * 0.05)], DECK.wake, 0.16);
+    fill([at(0.52, 0), at(0.3, side * 0.9), at(0.22, side * 1.1), at(0.32, side * 0.6)], DECK.wake, 0.35);
+  }
+  const hull = [at(0.52, 0), at(0.3, 0.5), at(0.05, 0.5), at(-0.5, 0.42), at(-0.5, -0.42), at(0.05, -0.5), at(0.3, -0.5)];
+  fill(hull.map((p) => ({ x: p.x + unit * 0.006, y: p.y + unit * 0.009 })), DECK.shadow, 0.35);
+  fill(hull, DECK.hull);
+  fill([at(-0.5, 0.42), at(0.05, 0.5), at(0.3, 0.5), at(0.52, 0), at(0.1, 0)], DECK.hullShade, 0.45);
+  if (kind === "supply") {
+    // Cargo hatches along the deck, and the bridge block aft.
+    for (const x of [0.28, 0.12, -0.04]) fill(box(x, 0, 0.11, 0.6), DECK.deck);
+    fill(box(-0.3, 0, 0.18, 0.7), DECK.island);
+    fill(box(-0.27, 0, 0.08, 0.5), DECK.islandTop);
+    graphics.lineStyle(Math.max(1, beam * 0.08), DECK.hullShade, 1);
+    for (const x of [0.2, 0.04]) strokePolyline(graphics, [at(x, -0.55), at(x, 0.55)]);
+    return;
+  }
+  // Gun forward, the superstructure and mast amidships, and the helicopter deck aft.
+  graphics.fillStyle(DECK.islandShade, 1);
+  const gun = at(0.3, 0);
+  graphics.fillCircle(gun.x, gun.y, beam * 0.18);
+  strokePolyline(graphics, [gun, at(0.42, 0)]);
+  fill(box(0.02, 0, 0.3, 0.7), DECK.islandShade);
+  fill(box(0.04, 0, 0.22, 0.56), DECK.island);
+  fill(box(0.08, 0, 0.07, 0.36), DECK.islandTop);
+  const mast = at(-0.02, 0);
+  graphics.fillStyle(DECK.hullShade, 1);
+  graphics.fillCircle(mast.x, mast.y, beam * 0.12);
+  fill(box(-0.38, 0, 0.18, 0.66), DECK.deck);
+  graphics.lineStyle(Math.max(1, beam * 0.05), DECK.line, 0.6);
+  tracePolygon(graphics, box(-0.38, 0, 0.12, 0.44));
+  graphics.strokePath();
 }
