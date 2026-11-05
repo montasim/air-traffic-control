@@ -14,6 +14,8 @@ export interface SurfaceLayout {
   readonly apron: readonly Vector2[];
   /** Further aprons on maps with more than one (Twin Banks' west field). */
   readonly extraAprons?: readonly (readonly Vector2[])[];
+  /** A paved pocket off the apron edge holding the helipad (see settleHelipadsOnApron). */
+  readonly helipadApron?: readonly Vector2[];
   readonly landingZones: readonly LandingZone[];
   /** Raised buildings and the helipad keep their own finish, so the texture stays off them. */
   readonly buildings?: readonly MapBuilding[];
@@ -24,6 +26,12 @@ export interface SurfaceLayout {
 }
 
 let serial = 0;
+
+/** The polygon with its points in clockwise (screen) order. */
+function clockwise(polygon: readonly Vector2[]): readonly Vector2[] {
+  const area = polygon.reduce((sum, a, i) => { const b = polygon[(i + 1) % polygon.length]; return sum + a.x * b.y - b.x * a.y; }, 0);
+  return area >= 0 ? polygon : [...polygon].reverse();
+}
 
 /** A square of random light and dark pixels with random alpha: fine grain. */
 function noiseTile(size: number, strength: number, light = [255, 255, 255], dark = [0, 0, 0]): HTMLCanvasElement {
@@ -53,7 +61,7 @@ function fillWith(context: CanvasRenderingContext2D, tile: HTMLCanvasElement, sc
 function paved(context: CanvasRenderingContext2D, layout: SurfaceLayout, which: "asphalt" | "concrete"): void {
   context.fillStyle = context.strokeStyle = "#000";
   if (which === "concrete") {
-    for (const apron of [layout.apron, ...(layout.extraAprons ?? [])]) {
+    for (const apron of [layout.apron, ...(layout.extraAprons ?? []), ...(layout.helipadApron ? [layout.helipadApron] : [])]) {
       context.beginPath();
       apron.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
       context.closePath();
@@ -148,15 +156,26 @@ export function paintSurfaceTexture(
     // outline even where it is not square to the runways (Freight Junction, Twin Banks' west field).
     const slab = unit * 0.035;
     const reach = Math.hypot(width, height);
-    for (const apron of [layout.apron, ...(layout.extraAprons ?? [])]) {
+    const aprons = [layout.apron, ...(layout.extraAprons ?? [])];
+    const centre = (polygon: readonly Vector2[]) => polygon.reduce((sum, p) => ({ x: sum.x + p.x / polygon.length, y: sum.y + p.y / polygon.length }), { x: 0, y: 0 });
+    // The helipad pocket shares the grid of the apron it joins, so the joints run on without a seam.
+    const pocketHost = layout.helipadApron && aprons.reduce((best, apron) => {
+      const at = centre(layout.helipadApron!);
+      const d = (polygon: readonly Vector2[]) => Math.hypot(centre(polygon).x - at.x, centre(polygon).y - at.y);
+      return d(apron) < d(best) ? apron : best;
+    });
+    for (const apron of aprons) {
       const middle = apron.reduce((sum, p) => ({ x: sum.x + p.x / apron.length, y: sum.y + p.y / apron.length }), { x: 0, y: 0 });
       const edges = apron.map((point, index) => ({ from: point, to: apron[(index + 1) % apron.length] }));
       const longest = edges.reduce((best, edge) =>
         Math.hypot(edge.to.x - edge.from.x, edge.to.y - edge.from.y) > Math.hypot(best.to.x - best.from.x, best.to.y - best.from.y) ? edge : best);
       context.save();
       context.beginPath();
-      apron.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
-      context.closePath();
+      // Both outlines wound the same way, so the nonzero clip is their union, not a hole where they overlap.
+      for (const shape of apron === pocketHost ? [apron, layout.helipadApron!].map(clockwise) : [apron]) {
+        shape.forEach((point, index) => (index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y)));
+        context.closePath();
+      }
       context.clip();
       context.translate(middle.x, middle.y);
       context.rotate(Math.atan2(longest.to.y - longest.from.y, longest.to.x - longest.from.x));

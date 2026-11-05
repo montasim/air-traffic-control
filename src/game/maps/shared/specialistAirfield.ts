@@ -47,11 +47,11 @@ export function createSpecialistLayout(width: number, height: number, kind: Spec
     center: point(x,y), length: length * u, width: (i === 0 ? .045 : .038) * u, angle,
     designators: ['09', '27']
   }));
-  const helipads = plan.pads.map(([x,y], i) => ({ center: point(x,y), radius: u * .037, zoneId: `${kind}-pad-${i}` }));
   const terminal = point(...plan.terminal);
   // With buildings at the ends the apron runs a little longer, leaving its middle for the stands.
   const reach = kind === 'rescue' ? 0 : .05;
   const apron = [[-.2-reach,-.09],[.2+reach,-.09],[.22+reach,.1],[-.18-reach,.11]].map(([x,y]) => ({ x: terminal.x + x*u, y: terminal.y + y*u }));
+  const helipads = plan.pads.map(([x,y], i) => ({ center: point(x,y), radius: u * .037, zoneId: `${kind}-pad-${i}` }));
   const buildings: MapBuilding[] = [{ id: 'terminal', center: terminal, width: u * (kind === 'passenger' ? .22 : .13), height: u * .045, angle: 0, kind: 'terminal' }];
   if (kind === 'cargo') for (const side of [-1, 1]) buildings.push({ id: `warehouse-${side}`, center: { x: terminal.x + side*u*.11, y: terminal.y-u*.015 }, width:u*.065,height:u*.055,angle:0,kind:'hangar' });
   const count = kind === 'military' ? 4 : kind === 'cargo' ? 5 : kind === 'passenger' ? 3 : 2;
@@ -67,7 +67,8 @@ export function createSpecialistLayout(width: number, height: number, kind: Spec
   landingZones.push(...helipads.map((p,i) => ({ id:p.zoneId, label: helipads.length > 1 ? `H${i+1}` : 'H', accepts:'rotor' as const, position:p.center, angle:0, captureRadius:p.radius*.7, color:AIRCRAFT_COLORS.rotor })));
   const guidanceSurfaces = createAirfieldGuidanceSurfaces({runways});
   for (const p of helipads) guidanceSurfaces.push({kind:'pad',zoneId:p.zoneId,center:p.center,angle:0,radius:p.radius});
-  return {width,height,variant,kind,runways,helipads,taxiways,apron,buildings,fixtures,buildingsAtApronEnds:kind !== 'rescue',landingZones,guidanceSurfaces,hudExclusionZones:[{id:'score',x:0,y:0,width:width*.3,height:height*.12},{id:'pause',x:width*.86,y:height*.85,width:width*.14,height:height*.15},{id:'speed',x:0,y:height*.85,width:width*.14,height:height*.15}]};
+  // Rescue pads keep their own islets; every other field settles its pad onto the apron once stands are placed.
+  return {width,height,variant,kind,runways,helipads,helipadsOnApron:kind !== 'rescue',taxiways,apron,buildings,fixtures,buildingsAtApronEnds:kind !== 'rescue',landingZones,guidanceSurfaces,hudExclusionZones:[{id:'score',x:0,y:0,width:width*.3,height:height*.12},{id:'pause',x:width*.86,y:height*.85,width:width*.14,height:height*.15},{id:'speed',x:0,y:height*.85,width:width*.14,height:height*.15}]};
 }
 
 export function renderSpecialistAirfield(scene: Phaser.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {

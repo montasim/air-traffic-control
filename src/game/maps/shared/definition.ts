@@ -1,3 +1,4 @@
+import { settleHelipadsOnApron } from './apronHelipad';
 import { withBidirectionalApproaches } from './bidirectional';
 import { apronPolygons, createApronMarkings, DECK_LANE_CLEARANCE, deckRunwayIds } from './apronLayout';
 import { clearAirfieldSite } from './siteCleanup';
@@ -112,7 +113,7 @@ function groundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T,
     hud: layout.hudExclusionZones,
   };
   const apronMarkings = createApronMarkings({ ...markingInput, squareRows });
-  return { ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) };
+  return settleHelipadsOnApron({ ...layout, apronMarkings, groundRoutes: createGroundRoutes(layout.landingZones, layout, unit, obstacles, apronMarkings) }, unit);
 }
 
 /**

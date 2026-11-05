@@ -13,7 +13,7 @@ import { createAirfieldGuidanceSurfaces } from '../shared/guidance';
 import type { HudExclusionZone, MapLayoutVariant, PlayableMapLayout } from '../types';
 
 export type DesertRunwayId = 'mesa-runway' | 'wadi-runway';
-export type DesertTaxiwayId = 'taxiway-mesa' | 'taxiway-wadi' | 'taxiway-pad';
+export type DesertTaxiwayId = 'taxiway-mesa' | 'taxiway-wadi';
 export type DesertConnectionId = DesertRunwayId | 'apron' | 'helipad';
 
 export interface RoutingArea {
@@ -341,12 +341,6 @@ export function createDesertParallelLayout(
       path: [pointOnRunway(commuter, commuter.length * 0.08), interpolate(commuter.center, apronCenter, 0.58), apronCenter],
       width: taxiwayWidth * 0.9,
       connects: ['wadi-runway', 'apron']
-    },
-    {
-      id: 'taxiway-pad',
-      path: [apronCenter, interpolate(apronCenter, helipadCenter, 0.55), helipadCenter],
-      width: taxiwayWidth * 0.75,
-      connects: ['apron', 'helipad']
     }
   ];
   const holdShortMarkers: readonly HoldShortMarker<DesertRunwayId, DesertTaxiwayId>[] = [
@@ -420,6 +414,8 @@ export function createDesertParallelLayout(
     propAnchors,
     signs,
     helipad,
+    // Settled onto the apron once stands are placed; the authored spot is the fallback.
+    helipadsOnApron: true,
     apron,
     serviceLandmark,
     coastFragments,

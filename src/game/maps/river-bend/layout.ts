@@ -20,7 +20,7 @@ import type {
 
 export type RiverRunwayId = 'river-main' | 'river-commuter';
 export type RiverRunwayDesignator = '07' | '25' | '12' | '30';
-export type RiverTaxiwayId = 'river-alpha' | 'river-bravo' | 'river-pad-link';
+export type RiverTaxiwayId = 'river-alpha' | 'river-bravo';
 export type RiverConnectionId = RiverRunwayId | 'river-apron' | 'river-helipad';
 
 export interface RiverBankTree {
@@ -90,8 +90,9 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
       angle: 0.32,
       landingAlong: -0.32
     },
+    // The top-left corner reaches a little further over the open grass, leaving room for the helipad.
     apron: [
-      { x: 0.63, y: 0.29 },
+      { x: 0.6, y: 0.29 },
       { x: 0.8, y: 0.28 },
       { x: 0.95, y: 0.38 },
       { x: 0.89, y: 0.49 },
@@ -346,12 +347,6 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
       path: [runwayPoint(commuter, -commuter.length * 0.08), interpolate(apron[2], apron[3], 0.4)],
       width: taxiwayWidth * 0.9,
       connects: ['river-commuter', 'river-apron']
-    },
-    {
-      id: 'river-pad-link',
-      path: [interpolate(apron[4], apron[5], 0.45), helipad.center],
-      width: taxiwayWidth * 0.76,
-      connects: ['river-apron', 'river-helipad']
     }
   ];
   const captureScale = Math.max(0.86, Math.min(1.18, unit / 900));
@@ -495,6 +490,8 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
     propAnchors,
     signs,
     helipad,
+    // Settled onto the apron once stands are placed; the authored spot is the fallback.
+    helipadsOnApron: true,
     apron,
     riverPath,
     riverWidth: profile.riverWidth * unit,
