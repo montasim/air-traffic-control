@@ -124,6 +124,10 @@ export function defineMap<Layout extends PlayableMapLayout>(
   adapter: MapAdapter<Layout>
 ): MapDefinition {
   const privateLayouts = new WeakMap<PreparedMap, Layout>();
+  // Preparing is pure but costly (apron stands, ground routes, site clean-up), and the same size is
+  // asked for repeatedly: the scene's preload and create, a menu picture, a resize back. Layouts are
+  // read-only, so recent results are shared.
+  const recent = new Map<string, PreparedMap>();
 
   return {
     id: adapter.id,
@@ -132,6 +136,9 @@ export function defineMap<Layout extends PlayableMapLayout>(
     prepare(input): PreparedMap {
       requirePositiveDimension(input.width, 'width');
       requirePositiveDimension(input.height, 'height');
+      const key = `${input.width}x${input.height}:${input.detailLevel}:${input.twoEndLanding}`;
+      const known = recent.get(key);
+      if (known) return known;
       const approaches = withBidirectionalApproaches(adapter.createLayout(input), input.twoEndLanding);
       // Apron stands and ground routes follow the final landing zones, so they cover both runway-end modes.
       // Helipads settle once, onto the apron layout that was chosen.
@@ -145,6 +152,8 @@ export function defineMap<Layout extends PlayableMapLayout>(
         layout
       };
       privateLayouts.set(prepared, layout);
+      recent.set(key, prepared);
+      if (recent.size > 4) recent.delete(recent.keys().next().value!);
       return prepared;
     },
     render(scene, map): void {
