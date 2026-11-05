@@ -20,11 +20,40 @@ function mixColor(from: number, to: number, t: number): number {
   return (channel(16) << 16) | (channel(8) << 8) | channel(0);
 }
 
+type Outline = readonly (readonly [number, number])[];
+/**
+ * Military airframes seen from above, drawn in each type's place on the carrier maps. Each keeps
+ * its civil counterpart's vertex order, so wing shading picks out the same parts, and about its
+ * size; drawing only, collision keeps the civil outlines.
+ */
+export const MILITARY_OUTLINES: Readonly<Record<Aircraft["type"], Outline>> = {
+  // A four-engine transport: long straight high wings and a broad tailplane.
+  liner: [
+    [34,0], [26,-6], [6,-7], [4,-27], [-4,-27], [-4,-7],
+    [-22,-6], [-28,-14], [-34,-14], [-31,0], [-34,14], [-28,14],
+    [-22,6], [-4,7], [-4,27], [4,27], [6,7], [26,6],
+  ],
+  // A carrier fighter: a pointed nose, swept wings set well aft, and wide tailplanes.
+  commuter: [
+    [31,0], [18,-4], [8,-5], [-8,-22], [-14,-22], [-12,-6],
+    [-18,-6], [-27,-14], [-31,-13], [-28,0], [-31,13], [-27,14],
+    [-18,6], [-12,6], [-14,22], [-8,22], [8,5], [18,4],
+  ],
+  // A gunship: a slim cabin with stub wings for weapon pods, and a long tail boom.
+  rotor: [
+    [28,0], [20,-5], [8,-6], [4,-15], [-3,-15], [-5,-6],
+    [-10,-5], [-28,-2], [-29,-9], [-33,-9], [-32,0], [-33,9],
+    [-29,9], [-28,2], [-10,5], [-5,6], [-3,15], [4,15], [8,6], [20,5],
+  ],
+};
+
 export interface AircraftViewOptions {
   livery?: LiveryId;
   reducedMotion?: boolean;
   night?: boolean;
   presentationScale?: number;
+  /** Draw every type as its military counterpart (the carrier maps). */
+  military?: boolean;
 }
 
 /** Retained vector artwork: no cropped atlas, resampling or changing sprite pivots. */
@@ -38,6 +67,7 @@ export class AircraftView {
   private reducedMotion: boolean;
   private readonly livery: LiveryId;
   private readonly type: Aircraft["type"];
+  private readonly military: boolean;
   private readonly outline: Phaser.Math.Vector2[];
   private readonly shadow: Phaser.GameObjects.Graphics;
   private readonly body: Phaser.GameObjects.Graphics;
@@ -84,7 +114,9 @@ export class AircraftView {
       .setVisible(false);
     this.livery = options.livery ?? 'classic';
     this.type = aircraft.type;
-    this.outline = AIRCRAFT_OUTLINES[aircraft.type].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    this.military = Boolean(options.military);
+    const outline = (this.military ? MILITARY_OUTLINES : AIRCRAFT_OUTLINES)[aircraft.type];
+    this.outline = outline.map(([x, y]) => new Phaser.Math.Vector2(x, y));
     const shadow = (this.shadow = scene.add.graphics().setPosition(3, 4));
     const body = (this.body = scene.add.graphics());
     this.paint(0);
@@ -104,7 +136,6 @@ export class AircraftView {
     }
     // Each light sits on the wing, set in from the tip edge so none of it hangs off the airframe:
     // mid-tip on a wing, the forward edge point on a helicopter so it lands on the cabin, not the tail.
-    const outline = AIRCRAFT_OUTLINES[aircraft.type];
     const span = Math.max(...outline.map(([, y]) => y));
     const tipXs = outline.filter(([, y]) => y === span).map(([x]) => x);
     const tipX = aircraft.type === "rotor" ? Math.max(...tipXs) : tipXs.reduce((sum, x) => sum + x, 0) / tipXs.length;
@@ -204,14 +235,15 @@ export class AircraftView {
     // One generous livery panel and one cockpit remain readable at flight scale.
     body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
     body.fillRoundedRect(paint.panelX, -paint.panelHeight / 2, paint.panelWidth, paint.panelHeight, Math.min(4, paint.panelHeight / 2));
-    if (this.type !== "rotor") {
+    // Military airframes carry no airline wing stripe; their own details are drawn below instead.
+    if (this.type !== "rotor" && !this.military) {
       const wingX = this.type === "liner" ? -7 : -4;
       body.lineStyle(paint.wingWidth, mixColor(paint.wing, LANDED.livery, landed), 1);
       body.lineBetween(wingX, -19, wingX + 3, -9);
       body.lineBetween(wingX, 19, wingX + 3, 9);
     }
     // Engines under the wings and a light catching the spine give the airframe some depth.
-    if (this.type !== "rotor") {
+    if (this.type !== "rotor" && !this.military) {
       body.fillStyle(mixColor(INK.keyline, LANDED.keyline, landed), 0.85);
       const engineX = this.type === "liner" ? 0 : 2;
       body.fillEllipse(engineX, -13, 8, 4);
@@ -220,7 +252,24 @@ export class AircraftView {
     body.fillStyle(0xffffff, 0.28 * (1 - landed));
     body.fillRoundedRect(this.type === "rotor" ? -14 : -22, -1, this.type === "rotor" ? 26 : 42, 2, 1);
     body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
-    body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
+    const ink = mixColor(INK.keyline, LANDED.keyline, landed);
+    if (this.military && this.type === "commuter") {
+      // A long bubble canopy forward, and twin exhaust nozzles at the tail.
+      body.fillRoundedRect(10, -2.5, 13, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      body.fillRoundedRect(-30, -3.5, 5, 3, 1);
+      body.fillRoundedRect(-30, 0.5, 5, 3, 1);
+    } else if (this.military && this.type === "liner") {
+      // A short flight deck, and four engines along the straight wing.
+      body.fillRoundedRect(24, -3.5, 6, 7, 2);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-19, -11, 11, 19]) body.fillEllipse(8, y, 9, 3.5);
+    } else if (this.military) {
+      // A two-seat gunship canopy, and a weapon pod under each stub wing.
+      body.fillRoundedRect(10, -2.5, 12, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-12, 12]) body.fillRoundedRect(-4, y - 1.5, 9, 3, 1.5);
+    } else body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
   }
   /** Draw a landed aircraft from presentation-only ground state. */
   syncGround(
