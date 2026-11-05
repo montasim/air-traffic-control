@@ -30,6 +30,9 @@
   --button-height: 48px;
   --button-font: 1.125rem;
   --button-pad-x: 20px;
+  /* Two corner sizes: controls (buttons, chips, the difficulty track) and small parts (tags, segments inside a track). */
+  --radius-control: 10px;
+  --radius-small: 6px;
   --icon-gap: 8px;
   --title-size: 2.5rem;
   --section-title-size: 1.75rem;
@@ -171,7 +174,7 @@ h3 {
   min-height: var(--button-height);
   padding: 8px var(--button-pad-x);
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-control);
   font-family: var(--font-display);
   font-size: var(--button-font);
   line-height: 1.2;
@@ -497,7 +500,7 @@ dialog h2 {
 .shift-context { margin: 8px 0 0; }
 /* 8px between tags in both directions, the same as between a label and its tags. */
 .shift-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
-.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: #e5e6d3; font-size: 0.8rem; line-height: 1.4; }
+.shift-tags li { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: var(--radius-small); background: #e5e6d3; font-size: 0.8rem; line-height: 1.4; }
 .compact-panel p {
   font-size: 0.95rem;
   margin: 12px 0;
@@ -1601,9 +1604,9 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
 /* Difficulty is one segmented control: a single track, the chosen level filled. The track and the setting
    chips share one height, a step under the action buttons, so they read as one family. */
 :root { --chip-height: calc(var(--button-height) - 8px); }
-#start-panel .difficulty-choices { gap: 4px; padding: 4px; border-radius: 12px; background: #e5e6d3; }
+#start-panel .difficulty-choices { gap: 4px; padding: 4px; border-radius: var(--radius-control); background: #e5e6d3; }
 /* The whole track is one chip tall, so it sits level with the setting chips instead of matching the action buttons. */
-#start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 8px); border: 0; border-radius: 8px; background: transparent; font-size: 0.8125rem; }
+#start-panel .difficulty-choices span { min-height: calc(var(--chip-height) - 8px); border: 0; border-radius: var(--radius-small); background: transparent; font-size: 0.8125rem; }
 #start-panel .difficulty-choices label:hover input:not(:checked) + span { background: #203d3914; }
 #start-panel .difficulty-choices input:checked + span { background: #203d39; color: var(--paper); box-shadow: 0 2px 6px #203d3933; }
 /* One palette for every choice on the card: dark ink with light text means chosen or on (difficulty, chips,
@@ -1611,7 +1614,7 @@ body[data-screen="home"] .departure-board { margin-bottom: 0; }
    On/off settings are toggle chips: outlined when off, filled with ink when on. The real switch
    covers each chip invisibly, so clicks, keys and screen readers work as before. */
 #start-panel .flight-switches { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; border: 0; }
-.setting-chip { position: relative; display: inline-flex; align-items: center; gap: var(--icon-gap); min-height: var(--chip-height); padding: 0 16px 0 12px; border: 1px solid #b9bea6; border-radius: 999px; color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+.setting-chip { position: relative; display: inline-flex; align-items: center; gap: var(--icon-gap); min-height: var(--chip-height); padding: 0 16px 0 12px; border: 1px solid #b9bea6; border-radius: var(--radius-control); color: var(--ink); font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
 .setting-chip input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; border-radius: inherit; opacity: 0; cursor: pointer; }
 .setting-chip:hover { background: #203d3914; }
 .setting-chip:has(input:checked) { border-color: var(--ink); background: var(--ink); color: var(--paper); }
