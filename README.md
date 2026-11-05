@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Support on SupportKori](https://img.shields.io/badge/Support-SupportKori-00B8B5)](https://www.supportkori.com/montasim)
 
-Air Traffic Control is a browser arcade game for short, increasingly busy air-traffic shifts. Guide three aircraft types to matching destinations across nine airfields, unlock new locations through a local career, and collect achievements.
+Air Traffic Control is a browser arcade game for short, increasingly busy air-traffic shifts. Guide three aircraft types to matching runways and helipads across twelve airfields, unlock new locations through a local career, and collect achievements. It plays with a mouse, touch, or pen, on desktop and phone screens, upright or on their side.
 
 **[Play in your browser](https://airtrafficcontrol.netlify.app/) · [How to play](#how-to-play) · [Run locally](#run-locally) · [Report a bug](https://github.com/montasim/air-traffic-control/issues)**
 
@@ -16,30 +16,32 @@ Air Traffic Control is a browser arcade game for short, increasingly busy air-tr
 <a href="https://apps.microsoft.com/detail/9N5536ZQ2XZM"><img src="public/assets/stores/microsoft-store.svg" alt="Download Air Traffic Control from the Microsoft Store for Windows" height="48" /></a>
 <a href="https://snapcraft.io/air-traffic-control"><img src="public/assets/stores/snap-store.svg" alt="Get Air Traffic Control from the Snap Store for Linux" height="48" /></a>
 
-Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol). Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions and the live site may differ from the latest source.
+Android: [Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol). Windows: [Microsoft Store](https://apps.microsoft.com/detail/9N5536ZQ2XZM). Linux: [Snap Store](https://snapcraft.io/air-traffic-control). Check each listing for device requirements and the available release. Store versions can lag behind the browser version and the latest source.
 
-[![Air Traffic Control start screen with airfield selection, difficulty controls, and app store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
+[![Air Traffic Control start screen with Saltmarsh Gateway selected, difficulty controls, the Both side landing, Night shift, and Weather options, and app store links](docs/images/start-screen.png)](https://airtrafficcontrol.netlify.app/)
 
-*Start screen captured from the current local source. The published app may show an earlier version.*
+*Start screen for a new player, captured from the current source.*
 
 ## What you can do
 
-- Draw and revise routes with a mouse, touch, or pen across nine airfields.
+- Draw and revise routes with a mouse, touch, or pen across twelve airfields.
 - Match airliners, commuters, and helicopters to their landing destinations.
-- Choose three difficulty levels and optionally allow landings at either runway end.
+- Hold an aircraft in a circle while the way clears, and switch between normal, double, and half speed.
+- Choose Easy, Medium, or Hard, and optionally allow landings at either end of a runway.
+- Fly a night shift with runway and aircraft lights, with or without drifting clouds.
 - Learn in a practice flight with no timer or effect on your career.
-- Unlock airfields through seven ranks and earn nine achievements.
-- Keep progress on your device and play offline once the browser app is cached.
+- Unlock airfields through nine career ranks, earn nine achievements, and pick a fleet livery.
+- Pause and pick up an unfinished shift later, keep progress on your device, and play offline once the browser app is cached.
 
 ## How to play
 
 [Open Air Traffic Control](https://airtrafficcontrol.netlify.app/) in your browser, or launch an installed copy.
 
-Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start flight**. The **How to play** page includes a practice flight.
+Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start flight**. The **How to play** page includes a practice flight with a landing lesson and a holding lesson.
 
 1. Press an aircraft with your mouse, finger, or pen and hold.
-2. Draw a route to the destination with its matching color and letter. By default, use the highlighted end. Enable **Both side landing** below difficulty to use either end. Both settings accept any approach angle. Release when the landing area lights up.
-3. Keep aircraft apart. Red warning rings indicate nearby traffic; draw a new route to reroute an aircraft.
+2. Draw a route to the destination with its matching color and letter, ending on the highlighted landing area. Release when it lights up; the aircraft lands when it reaches its target.
+3. Keep aircraft apart. Red rings joined by a line warn that two aircraft are too close. Draw a new route to reroute one, or hold it.
 
 | Aircraft | Destination |
 | --- | --- |
@@ -47,27 +49,48 @@ Choose an airfield and **Easy**, **Medium**, or **Hard**, then select **Start fl
 | Amber commuter | Runway marked **C** |
 | Coral helicopter | Helipad marked **H** |
 
-The runway setting is remembered for your next shift and stays fixed during a shift, including resizing. Personal bests and career progress are shared across both settings.
+Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift.
 
-Any aircraft that reaches its matching runway end lands, even if another aircraft is landing on the same runway. Helipads keep their usual landing behavior.
+### Controls and options
 
-Each safe landing earns one point. A collision or an aircraft leaving the sector ends the shift. Pause with the on-screen control or **Escape**. Resizing preserves the shift and pauses when needed; select **Resume** once the field is large enough to play.
+| Control | What it does |
+| --- | --- |
+| **Hold** | Tap an aircraft to make it circle where it is: 5 loops on Easy, 3 on Medium, 2 on Hard. Its ring fades as the loops run out, then it flies on the way it was heading. Only two aircraft can hold at once. |
+| **Speed** | The bottom-left button switches between normal (1×), double (2×), and half (½×) speed. |
+| **Pause** | Use the on-screen control or **Escape**. |
+| **Both side landing** | Lets aircraft land at either end of a runway instead of only the highlighted end. Choose it before a flight; it stays fixed during a shift. |
+| **Night shift** | A darker map with runway lights, aircraft headlights, and red tail beacons. Same rules and records as day. |
+| **Weather** | Clouds drift over the map. They pass under aircraft and routes and thin out over the airfield, so play is unchanged. |
+| **Resume shift** | A shift is saved whenever it pauses, even if you leave the app; pick it up from the Play screen. |
+
+Night shift and Weather are chips on the Play screen. Difficulty can be changed on the Play screen or on **Choose airfield**. Any aircraft that reaches its matching runway end lands, even if another aircraft is landing on the same runway.
+
+Resizing the window keeps the shift and pauses it when needed; select **Resume** once the field is large enough to play. A shift keeps the screen orientation it started in, so turning a phone during a shift may require a new shift for a full-size field.
 
 ## Airfields and progression
 
-Start at **Saltmarsh Gateway** or **River Bend**. Career promotions unlock Desert Parallel, Twin Banks, Falcon Air Base, Executive Point, Metro International, Freight Junction, and Island Rescue. Military, business, passenger, cargo, and rescue settings share the game's visual style and core routing rules.
+Each airfield has its own landscape and runway layout but shares the same routing rules. New players start with Saltmarsh Gateway and River Bend; career promotions open the rest.
 
-The top of the career adds three frontier maps:
+| Airfield | Setting | Unlocks at |
+| --- | --- | --- |
+| Saltmarsh Gateway | Regional airport above tidal fields | Start |
+| River Bend | Compact airfield beside a curved river | Start |
+| Desert Parallel | Offset approaches across a mineral basin | Control Assistant |
+| Executive Point | Business aviation on a coastal headland | Control Assistant |
+| Twin Banks | Two fields sharing a river corridor | Tower Controller |
+| Metro International | Long parallel approaches around a passenger concourse | Tower Controller |
+| Falcon Air Base | Military aprons with separate fixed-wing and rotor approaches | Approach Controller |
+| Freight Junction | Warehouse aprons and offset runways in an industrial basin | Area Controller |
+| Island Rescue | A coastal airstrip and two island rescue pads | Senior Controller |
+| Frost Crossing | A snowbound island field with parallel runways either side of its apron | Chief Controller |
+| Carrier Coast | Liners land at a shore airfield; commuters land on a carrier offshore | Flight Director |
+| Blue Water | Open ocean and one carrier deck that takes every arrival; no liners | Air Boss |
 
-- **Frost Crossing** (Chief Controller): two runways cross in a snowbound archipelago.
-- **Carrier Coast** (Flight Director): liners land at a shore airfield, commuters on a carrier offshore.
-- **Blue Water** (Air Boss): open ocean and one carrier deck, with axial and angled lanes, two deck helipads, and no liners.
+On Carrier Coast and Blue Water, the fleet is drawn as military aircraft (a transport, a fighter, and a gunship) with the same destinations and behavior as their civil counterparts. Carrier decks are landed from the stern only, in both runway-end modes. Island Rescue, Carrier Coast, and Blue Water each have two helipads.
 
-Carrier decks are landed from the stern only, in both runway-end modes.
+Difficulty changes aircraft arrival frequency, speed, traffic limits, and how many loops a hold lasts. Best scores are tracked separately for each airfield, difficulty, and screen orientation, and are shared across both runway-end settings.
 
-Difficulty changes aircraft arrival frequency, speed, and traffic limits. Best scores are tracked separately for each airfield, difficulty, and screen orientation.
-
-Seven career ranks and nine achievements reward safe landings, mixed aircraft handling, exploring airfields, and completing demanding shifts. Progress is recorded when a shift finishes. Restarting or abandoning an unfinished shift discards that shift's progress; practice flights do not affect records or achievements.
+The nine career ranks run from Control Trainee to Air Boss. Ranks and nine achievements reward safe landings, mixed aircraft handling, exploring airfields, and demanding shifts. Progress is recorded when a shift finishes. Restarting or abandoning an unfinished shift discards that shift's progress; practice flights do not affect records or achievements.
 
 ### Aircraft liveries
 
@@ -75,7 +98,7 @@ Choose a fleet livery in **Your career → Aircraft liveries**. Classic is avail
 
 ## Run locally
 
-Use **Node.js 24** (`.nvmrc` and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`.
+Use **Node.js 24** (`.nvmrc`, `engines`, and CI) and **npm 11.13.0** (the declared package manager). The repository uses npm and `package-lock.json`.
 
 ```bash
 git clone https://github.com/montasim/air-traffic-control.git
@@ -84,7 +107,7 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight.
+Open the local URL printed by Vite, normally [http://localhost:5173](http://localhost:5173), choose an airfield, and start a flight. The development server listens on all interfaces, so a phone on the same network can open the network URL Vite prints.
 
 | Command | Purpose |
 | --- | --- |
@@ -95,48 +118,9 @@ Open the local URL printed by Vite, normally [http://localhost:5173](http://loca
 | `npm run build` | Type-check and build production assets into `dist/` |
 | `npm run preview` | Serve the production build locally |
 
-## Android (Google Play)
-
-Install [Air Traffic Control from Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol).
-
-The Android app wraps the same build in Capacitor (`android/`). Run
-`npm run android:sync` to build and copy the game into the Android project,
-`npm run android:open` to open it in Android Studio, and `npm run package:android`
-for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md)
-for signing, icons, verification, and Play Console setup.
-
-## Linux desktop
-
-The Electron version bundles the game for offline play on Linux x86-64, with separate
-local saves from the browser version.
-
-Install the published Linux release from the Snap Store:
-
-```bash
-sudo snap install air-traffic-control
-```
-
-```bash
-npm run desktop       # Build and run Electron
-npm run package:linux # Build an AppImage in release/
-npm run package:snap  # Build a strictly confined core24 Snap (requires Snapcraft + LXD)
-```
-
-The repository currently configures Linux x86-64 packaging; it does not include a Windows packaging or Microsoft Store publishing workflow.
-
-See [Linux builds and Snap Store publishing](docs/linux-release.md) for prerequisites,
-verification, installation, and publishing commands.
-
-## Microsoft Store (Windows)
-
-Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** with
-`npm run package:msix`; the registered Partner Center identity is configured.
-See [Microsoft Store release](docs/microsoft-store.md)
-for the exact commands, local test packaging, and submission checklist.
-
 ## Saves, sound, and offline use
 
-Career progress, achievements, records, selected airfield, difficulty, and audio settings are stored locally in IndexedDB. There is no account system or cloud synchronization. Clearing site data can erase progress; save export and import are not implemented. Development and production sites have separate browser storage.
+Career progress, achievements, records, the selected airfield and difficulty, and settings (runway-end mode, Night shift, Weather, livery, and audio) are stored locally in IndexedDB. A paused, unfinished shift is kept in `localStorage` so it survives the app closing. There is no account system or cloud synchronization. Clearing site data erases progress; save export and import are not implemented. Development and production sites have separate browser storage.
 
 Sound and effects volume are adjustable in Settings. Browsers may require a player interaction before audio starts.
 
@@ -148,7 +132,7 @@ Store links and the **Support** link in Settings open third-party websites in a 
 
 The project is in its **0.x release series**. It is an arcade game, not an operational air-traffic-control simulator.
 
-Menus support keyboard navigation, but drawing flight paths requires a pointer. Responsive layouts have been checked in Chromium; real-device Safari, native touch feel, and long-session difficulty balance still need broader playtesting. See the [end-to-end QA report](docs/end-to-end-qa-report.md) for verification scope.
+Menus support keyboard navigation, but drawing flight paths requires a pointer. An automated test checks every airfield at desktop, laptop, tablet, and phone sizes (including iPhone SE), upright and on its side, with both runway-end settings: landing areas stay on screen and clear of the on-screen panels, and an aircraft sent to each one lands. Layouts have been checked in Chromium-based browsers; real-device Safari, native touch feel, and long-session difficulty balance still need broader playtesting. See the [end-to-end QA report](docs/end-to-end-qa-report.md) for recorded verification scope.
 
 ## Build and deploy
 
@@ -159,25 +143,55 @@ npm run build
 npm run preview
 ```
 
-Deploy the repository to Netlify. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`; it needs no history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
+[`netlify.toml`](netlify.toml) configures Netlify: it builds with `npm run build` on Node 24, publishes `dist/`, serves `/sw.js` and `/index.html` without caching, and maps `/privacy` to the privacy policy. From a folder linked to the Netlify site, `netlify deploy --prod` builds and publishes to production. The app uses hash routes such as `/#help`, `/#career`, and `/#settings`, so it needs no history-route fallback. Asset paths assume the root of a domain, not a GitHub Pages repository subdirectory.
 
-The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not itself deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to either store.
+The [CI workflow](.github/workflows/ci.yml) runs the tests and production build on pushes to `main` and pull requests. CI validation does not deploy the game. The [Linux desktop workflow](.github/workflows/linux-desktop.yml) builds and smoke-tests an AppImage on manual dispatch or a `v*` tag, then uploads a workflow artifact; it does not publish to any store.
 
 For browser regression checks, start `npm run dev -- --port 4287` in one terminal. In another, run `npm run test:resize`, `npm run test:resize:maps`, or `npm run test:runway-ends`. Use `RESIZE_TEST_URL=http://localhost:4287/ npm run test:runway-mode` for the runway-option checks. These scripts use Playwright: provide Chrome through `CHROME_PATH`, use `/usr/bin/google-chrome`, or install its bundled browser with `npx playwright install chromium`. Desktop smoke-test prerequisites are in the [Linux release guide](docs/linux-release.md#verify).
+
+## Native and desktop builds
+
+### Android (Google Play)
+
+Install [Air Traffic Control from Google Play](https://play.google.com/store/apps/details?id=dev.montasim.airtrafficcontrol).
+
+The Android app wraps the same game in Capacitor (`android/`). Run `npm run android:sync` to build and copy the game into the Android project, `npm run android:open` to open it in Android Studio, and `npm run package:android` for a signed Play bundle. Gradle needs JDK 21. See [Android release](docs/android-release.md) for signing, icons, verification, and Play Console setup.
+
+### Linux desktop
+
+The Electron version bundles the game for offline play on Linux x86-64, with local saves separate from the browser version. Install the published release from the Snap Store:
+
+```bash
+sudo snap install air-traffic-control
+```
+
+```bash
+npm run desktop       # Build and run Electron
+npm run package:linux # Build an AppImage in release/
+npm run package:snap  # Build a strictly confined core24 Snap (requires Snapcraft + LXD)
+```
+
+See [Linux builds and Snap Store publishing](docs/linux-release.md) for prerequisites, verification, installation, and publishing commands.
+
+### Microsoft Store (Windows)
+
+Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** locally with `npm run package:msix`; the registered Partner Center identity is configured. There is no Windows CI workflow. See [Microsoft Store release](docs/microsoft-store.md) for the exact commands, local test packaging, and submission checklist.
 
 ## Project structure
 
 | Path | Responsibility |
 | --- | --- |
-| `src/core/` | Framework-independent traffic simulation and geometry |
-| `src/game/` | Phaser rendering, pointer input, and airfield definitions |
-| `src/progression/` | Career ranks and achievements |
-| `src/storage/` | IndexedDB saves and migrations |
+| `src/core/` | Framework-independent traffic simulation, holding, and geometry |
+| `src/game/` | Phaser rendering, pointer input, airfield layouts, and scenery |
+| `src/progression/` | Career ranks, achievements, and liveries |
+| `src/storage/` | IndexedDB saves, migrations, and the saved unfinished shift |
 | `src/audio/` | Game audio |
-| `src/ui/` | DOM menus and utility pages |
+| `src/ui/` | DOM menus, map previews, practice flight, and utility pages |
 | `src/platform/` | Android-only native integration (back button, outbound links) |
+| `electron/`, `desktop/` | Electron desktop shell and its packaging assets |
 | `android/` | Capacitor Android project |
-| `tests/` | Simulation, progression, storage, audio, and UI regression tests |
+| `scripts/` | Packaging, icon generation, and browser regression scripts |
+| `tests/` | Simulation, map, device-size, progression, storage, audio, and UI tests |
 | `public/` | Bundled fonts, graphics, and public assets |
 
 The DOM menus configure a shift; Phaser translates pointer input into routes for the simulation. Simulation events drive aircraft rendering, sound, and landing feedback. Completed shifts feed progression and local save storage.
@@ -189,15 +203,16 @@ Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies th
 - [Contribution guide](CONTRIBUTING.md): setup, required checks, and save compatibility.
 - [Linux builds and releases](docs/linux-release.md): packaging, installation, verification, and Snap publishing.
 - [Android release](docs/android-release.md): Capacitor build, signing, and Google Play publishing.
+- [Microsoft Store release](docs/microsoft-store.md): MSIX packaging and submission.
 - [End-to-end QA report](docs/end-to-end-qa-report.md): recorded browser checks and remaining coverage gaps.
 - [Mobile verification](docs/mobile-verification.md): device-layout verification notes.
 - [Visual design](DESIGN.md): interface conventions.
 
 ## Contributing and support
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report reproducible bugs or suggestions through [GitHub issues](https://github.com/montasim/air-traffic-control/issues), including browser, airfield, difficulty, and steps to reproduce. Do not post private information or exploitable security details in a public issue.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Report reproducible bugs or suggestions through [GitHub issues](https://github.com/montasim/air-traffic-control/issues), including browser or device, airfield, difficulty, and steps to reproduce. Do not post private information or exploitable security details in a public issue.
 
-For security-sensitive problems, do not open a public issue containing exploit details. The repository does not currently publish a dedicated security policy or private disclosure contact. It also has no separate code of conduct; keep contributions respectful and focused.
+The repository does not currently publish a dedicated security policy or private disclosure contact, and it has no separate code of conduct; keep contributions respectful and focused.
 
 ## Support the project
 
