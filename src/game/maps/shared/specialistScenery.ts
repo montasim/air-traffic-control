@@ -16,16 +16,13 @@ import {
 import type { SpecialistLayout } from './specialistAirfield';
 
 /**
- * The signature landscape of each specialist field, so no two of them look alike: a railway
- * junction with freight trains, the edge of a city with a busy motorway, a coastal headland with
- * a marina and golf course, and wooded hills around a fenced military base. Everything keeps
- * clear of the runways, aprons and pads.
+ * The signature landscape of each specialist field, so no two of them look alike: an open-pit
+ * quarry and a wind farm, a city district with its stadium, a coastal headland with a marina and
+ * golf course, and wooded hills around a fenced military base. Everything keeps clear of the
+ * runways, aprons and pads.
  */
 
 type Graphics = Phaser.GameObjects.Graphics;
-/** A straight strip across the map: its two ends and its direction. */
-interface Corridor { readonly from: Vector2; readonly to: Vector2; readonly angle: number; readonly length: number }
-
 const unitOf = (layout: SpecialistLayout) => Math.min(layout.width, layout.height);
 const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 const fill = (graphics: Graphics, points: readonly Vector2[], color: number, alpha = 1) => {
@@ -38,33 +35,6 @@ const box = (center: Vector2, length: number, width: number, angle: number): Vec
   const [c, s] = [Math.cos(angle), Math.sin(angle)];
   return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([a, b]) => ({ x: center.x + (a * length * c) / 2 - (b * width * s) / 2, y: center.y + (a * length * s) / 2 + (b * width * c) / 2 }));
 };
-/** A point `along` the corridor and `across` it (positive to the corridor's right). */
-const onCorridor = (corridor: Corridor, along: number, across: number): Vector2 => {
-  const [c, s] = [Math.cos(corridor.angle), Math.sin(corridor.angle)];
-  return { x: corridor.from.x + c * along - s * across, y: corridor.from.y + s * along + c * across };
-};
-
-/**
- * The first straight strip of `halfWidth` either side that crosses the whole map well clear of the
- * airfield: tried along the bottom and top edges, then the left and right ones, a little further
- * in each time.
- */
-function findCorridor(layout: SpecialistLayout, halfWidth: number): Corridor | undefined {
-  const { width: w, height: h } = layout;
-  const unit = unitOf(layout);
-  const candidates: [Vector2, Vector2][] = [];
-  for (const share of [0.93, 0.07, 0.88, 0.12, 0.83, 0.17]) candidates.push([{ x: -unit * 0.1, y: h * share }, { x: w + unit * 0.1, y: h * share }]);
-  for (const share of [0.06, 0.94, 0.11, 0.89, 0.16, 0.84]) candidates.push([{ x: w * share, y: -unit * 0.1 }, { x: w * share, y: h + unit * 0.1 }]);
-  for (const [from, to] of candidates) {
-    const length = Math.hypot(to.x - from.x, to.y - from.y);
-    const steps = Math.ceil(length / (unit * 0.02));
-    let clear = true;
-    for (let i = 0; i <= steps && clear; i += 1) clear = clearOfAirfield(layout, lerp(from, to, i / steps), halfWidth + unit * 0.03);
-    if (clear) return { from, to, angle: Math.atan2(to.y - from.y, to.x - from.x), length };
-  }
-  return undefined;
-}
-
 /** Whether a circle stays clear of the airfield and inside the map. */
 const freeAt = (layout: SpecialistLayout, point: Vector2, radius: number) =>
   point.x > radius * 0.3 && point.y > radius * 0.3 && point.x < layout.width - radius * 0.3 && point.y < layout.height - radius * 0.3 && clearOfAirfield(layout, point, radius);
@@ -83,180 +53,134 @@ function animate(scene: Phaser.Scene, graphics: Graphics, draw: (seconds: number
   scene.events.once('shutdown', () => scene.events.off('update', step));
 }
 
-// ─── Freight Junction: a railway junction ────────────────────────────────────────────────────
+// ─── Freight Junction: a quarry and a wind farm ─────────────────────────────────────────────
 
-const RAIL = { ballast: 0x8d8475, ballastEdge: 0x6f6759, sleeper: 0x5a4a3c, rail: 0x3b3d3e };
-const WAGON_COLORS = [0x9b4f34, 0x3f6d8f, 0x5d7c4a, 0xa88c55, 0x7a7f84, 0xb4652e];
+/** Whether a point lies under one of the on-screen panels, with a margin. */
+const underPanel = (layout: SpecialistLayout, point: Vector2, margin: number) =>
+  layout.hudExclusionZones.some((zone) => point.x > zone.x - margin && point.x < zone.x + zone.width + margin && point.y > zone.y - margin && point.y < zone.y + zone.height + margin);
 
-function paintTrack(graphics: Graphics, from: Vector2, to: Vector2, unit: number): void {
-  const angle = Math.atan2(to.y - from.y, to.x - from.x);
-  const length = Math.hypot(to.x - from.x, to.y - from.y);
-  const [c, s] = [Math.cos(angle), Math.sin(angle)];
-  const gauge = unit * 0.006;
-  graphics.lineStyle(Math.max(1, unit * 0.0022), RAIL.sleeper, 0.9);
-  for (let d = 0; d < length; d += unit * 0.006) {
-    const p = { x: from.x + c * d, y: from.y + s * d };
-    graphics.lineBetween(p.x + s * gauge * 1.6, p.y - c * gauge * 1.6, p.x - s * gauge * 1.6, p.y + c * gauge * 1.6);
-  }
-  graphics.lineStyle(Math.max(1, unit * 0.0018), RAIL.rail, 1);
-  for (const side of [-1, 1]) strokePolyline(graphics, [{ x: from.x + s * gauge * side, y: from.y - c * gauge * side }, { x: to.x + s * gauge * side, y: to.y - c * gauge * side }]);
-}
-
-interface Railway { readonly main: Corridor; readonly tracks: readonly number[]; readonly unit: number }
-
-/** A double-track main line along a clear edge, a rail yard of sidings with wagons, and a stack of containers. */
-export function paintRailway(graphics: Graphics, layout: SpecialistLayout): Railway | undefined {
+/** Open spots for a feature of `radius`, farthest from the terminal first. */
+function openSites(layout: SpecialistLayout, radius: number, avoid: (point: Vector2, radius: number) => boolean): Vector2[] {
   const unit = unitOf(layout);
-  const main = findCorridor(layout, unit * 0.03);
-  if (!main) return undefined;
-  const tracks = [-unit * 0.011, unit * 0.011];
-  // Ballast bed under both tracks.
-  fill(graphics, box(lerp(main.from, main.to, 0.5), main.length, unit * 0.05, main.angle), RAIL.ballastEdge, 0.9);
-  fill(graphics, box(lerp(main.from, main.to, 0.5), main.length, unit * 0.04, main.angle), RAIL.ballast, 1);
-  for (const across of tracks) paintTrack(graphics, onCorridor(main, 0, across), onCorridor(main, main.length, across), unit);
-  // The yard: sidings on the side toward the map's middle, wherever they stay clear.
-  const middle = { x: layout.width / 2, y: layout.height / 2 };
-  const [right, left] = [onCorridor(main, main.length / 2, unit * 0.1), onCorridor(main, main.length / 2, -unit * 0.1)];
-  const inward = Math.hypot(right.x - middle.x, right.y - middle.y) < Math.hypot(left.x - middle.x, left.y - middle.y) ? 1 : -1;
-  const sidings: [number, number, number][] = [];
-  for (const k of [1, 2, 3, 4]) {
-    const across = inward * (unit * 0.035 + k * unit * 0.022);
-    const [start, end] = [main.length * 0.12, main.length * 0.5];
-    let clear = true;
-    for (let d = start; d <= end && clear; d += unit * 0.02) clear = freeAt(layout, onCorridor(main, d, across), unit * 0.03);
-    if (!clear) break;
-    sidings.push([across, start, end]);
+  const terminal = layout.buildings[0].center;
+  const sites: Vector2[] = [];
+  for (let x = radius; x < layout.width - radius * 0.5; x += unit * 0.04) for (let y = radius; y < layout.height - radius * 0.5; y += unit * 0.04) {
+    const at = { x, y };
+    if (freeAt(layout, at, radius + unit * 0.04) && !avoid(at, radius) && !underPanel(layout, at, radius * 0.5)) sites.push(at);
   }
-  if (sidings.length) {
-    const outer = sidings[sidings.length - 1][0];
-    const yardCenter = onCorridor(main, main.length * 0.31, (inward * unit * 0.035 + outer) / 2);
-    fill(graphics, box(yardCenter, main.length * 0.42, Math.abs(outer) - unit * 0.02, main.angle), RAIL.ballast, 0.85);
-    sidings.forEach(([across, start, end], k) => {
-      paintTrack(graphics, onCorridor(main, start, across), onCorridor(main, end, across), unit);
-      // A switch back to the main line at the yard throat.
-      paintTrack(graphics, onCorridor(main, start - unit * 0.05, tracks[inward > 0 ? 1 : 0]), onCorridor(main, start, across), unit);
-      // A rake of wagons standing on each siding, with gaps.
-      for (let d = start + unit * 0.02, n = 0; d < end - unit * 0.03; d += unit * 0.034, n += 1) {
-        if (deterministicUnit(k * 31 + n, 811) < 0.22) continue;
-        const color = WAGON_COLORS[Math.floor(deterministicUnit(k * 31 + n, 813) * WAGON_COLORS.length)];
-        const wagon = box(onCorridor(main, d, across), unit * 0.03, unit * 0.011, main.angle);
-        fill(graphics, wagon.map((p) => ({ x: p.x + unit * 0.002, y: p.y + unit * 0.003 })), 0x2d3a33, 0.3);
-        fill(graphics, wagon, color);
-        fill(graphics, box(onCorridor(main, d, across), unit * 0.026, unit * 0.004, main.angle), mixColor(color, 0xffffff, 0.25), 0.8);
-      }
-    });
-    // A container stack yard beyond the sidings: rows of stacked boxes in shipping colours.
-    for (let row = 0; row < 3; row += 1) for (let col = 0; col < 8; col += 1) {
-      const across = outer + inward * (unit * 0.035 + row * unit * 0.016);
-      const at = onCorridor(main, main.length * 0.14 + col * unit * 0.034, across);
-      if (!freeAt(layout, at, unit * 0.025)) continue;
-      const color = WAGON_COLORS[Math.floor(deterministicUnit(row * 17 + col, 821) * WAGON_COLORS.length)];
-      const container = box(at, unit * 0.03, unit * 0.012, main.angle);
-      fill(graphics, container.map((p) => ({ x: p.x + unit * 0.003, y: p.y + unit * 0.004 })), 0x2d3a33, 0.3);
-      fill(graphics, container, color);
-      graphics.lineStyle(1, mixColor(color, 0x000000, 0.25), 0.7);
-      for (const t of [-0.25, 0, 0.25]) {
-        const [a, b] = [onCorridor(main, main.length * 0.14 + col * unit * 0.034 + t * unit * 0.03, across - unit * 0.006), onCorridor(main, main.length * 0.14 + col * unit * 0.034 + t * unit * 0.03, across + unit * 0.006)];
-        graphics.lineBetween(a.x, a.y, b.x, b.y);
-      }
-    }
-  }
-  return { main, tracks, unit };
+  return sites.sort((a, b) => Math.hypot(b.x - terminal.x, b.y - terminal.y) - Math.hypot(a.x - terminal.x, a.y - terminal.y));
 }
 
-/** Freight trains running through on the main line, one each way, with long gaps between them. */
-export function addFreightTrains(scene: Phaser.Scene, railway: Railway | undefined, depth = -19.6): void {
-  if (!railway || !scene.add?.graphics) return;
-  const { main, tracks, unit } = railway;
-  const graphics = scene.add.graphics().setDepth(depth);
-  const wagons = 16;
-  const wagonLength = unit * 0.032;
-  const trainLength = (wagons + 1) * wagonLength;
-  const lap = main.length + trainLength;
-  const speed = unit * 0.09;
-  animate(scene, graphics, (seconds) => {
-    graphics.clear();
-    tracks.forEach((across, index) => {
-      // Each train runs its lap, then the line stays empty for a while before the next.
-      const cycle = lap / speed + 9;
-      const t = ((seconds + index * cycle * 0.5) % cycle) * speed;
-      if (t > lap) return;
-      const direction = index ? -1 : 1;
-      for (let k = 0; k <= wagons; k += 1) {
-        const head = direction > 0 ? t - k * wagonLength : main.length - t + k * wagonLength;
-        if (head < -wagonLength || head > main.length + wagonLength) continue;
-        const center = onCorridor(main, head, across);
-        const loco = k === 0;
-        const color = loco ? 0xd8a03a : WAGON_COLORS[(k * 7 + index * 3) % WAGON_COLORS.length];
-        const body = box(center, wagonLength * 0.9, unit * 0.012, main.angle);
-        fill(graphics, body.map((p) => ({ x: p.x + unit * 0.002, y: p.y + unit * 0.003 })), 0x1f2a24, 0.3);
-        fill(graphics, body, color);
-        fill(graphics, box(center, wagonLength * (loco ? 0.4 : 0.8), unit * (loco ? 0.008 : 0.004), main.angle), loco ? 0x3b3f42 : mixColor(color, 0xffffff, 0.25), 0.85);
+/**
+ * An open-pit quarry: stepped terraces descending to a pooled floor, a haul road spiralling down,
+ * stockpiles of crushed stone by the rim, and the crusher shed. Returns where it lies.
+ */
+export function paintQuarry(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
+  const unit = unitOf(layout);
+  const radius = unit * 0.15;
+  const center = openSites(layout, radius * 1.3, avoid)[0];
+  if (!center) return () => false;
+  const outline = Array.from({ length: 14 }, (_, k) => {
+    const turn = (k / 14) * Math.PI * 2;
+    const reach = radius * (0.85 + deterministicUnit(k, 921) * 0.25);
+    return { x: center.x + Math.cos(turn) * reach * 1.3, y: center.y + Math.sin(turn) * reach };
+  });
+  const level = (share: number, shift = 0) => outline.map((p) => ({ x: center.x + (p.x - center.x) * share + shift, y: center.y + (p.y - center.y) * share + shift * 1.2 }));
+  // Spoil and dust around the rim, then each terrace a little deeper and darker, its drop in shade.
+  fill(graphics, level(1.12), 0xcdbf9c, 0.85);
+  for (let step = 0; step < 6; step += 1) {
+    const share = 1 - step * 0.15;
+    const tone = mixColor(0xc9b892, 0x7f7058, step / 5);
+    fill(graphics, level(share), mixColor(tone, 0x3b3226, 0.45));
+    fill(graphics, level(share * 0.97, radius * 0.025), tone);
+  }
+  // A green pool lying on the quarry floor.
+  graphics.fillStyle(0x5e8f86, 1);
+  graphics.fillEllipse(center.x + radius * 0.08, center.y + radius * 0.1, radius * 0.38, radius * 0.22);
+  // The haul road, spiralling from the rim down to the floor.
+  const ramp: Vector2[] = [];
+  for (let t = 0; t <= 1; t += 0.02) {
+    const turn = -0.6 + t * Math.PI * 2.4;
+    const reach = radius * (1.02 - t * 0.78);
+    ramp.push({ x: center.x + Math.cos(turn) * reach * 1.25, y: center.y + Math.sin(turn) * reach * 0.95 });
+  }
+  graphics.lineStyle(Math.max(1.5, unit * 0.005), 0xe0d3b2, 0.9);
+  strokePolyline(graphics, ramp);
+  // Stockpiles of crushed stone by the rim: cones lit on their north-west side.
+  for (let k = 0; k < 4; k += 1) {
+    const turn = 0.6 + k * 0.45;
+    const at = { x: center.x + Math.cos(turn) * radius * 1.55, y: center.y + Math.sin(turn) * radius * 1.2 };
+    if (!freeAt(layout, at, unit * 0.025)) continue;
+    const r = unit * (0.014 + deterministicUnit(k, 923) * 0.008);
+    graphics.fillStyle(0x3b3226, 0.3);
+    graphics.fillCircle(at.x + r * 0.5, at.y + r * 0.6, r);
+    graphics.fillStyle(0x9a8e78, 1);
+    graphics.fillCircle(at.x, at.y, r);
+    graphics.fillStyle(0xc4b99f, 1);
+    graphics.fillCircle(at.x - r * 0.3, at.y - r * 0.35, r * 0.55);
+  }
+  // The crusher shed at the top of the haul road.
+  const shed = { x: ramp[0].x + unit * 0.035, y: ramp[0].y + unit * 0.01 };
+  if (freeAt(layout, shed, unit * 0.03)) {
+    paintRaisedBuilding(graphics, { id: 'quarry-crusher', center: shed, width: unit * 0.045, height: unit * 0.028, angle: 0.3, kind: 'hangar' }, { ...palette, building: 0x9a978a, buildingRoof: 0xc9c5b6 }, unit);
+  }
+  return (point, r) => Math.hypot(point.x - center.x, point.y - center.y) < radius * 1.75 + r;
+}
+
+/** Turbines turning on a hilltop row, each with its pad, tower shadow and nacelle; the blades are animated. */
+export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: SpecialistLayout, avoid: (point: Vector2, radius: number) => boolean, depth = -19.6): (point: Vector2, radius: number) => boolean {
+  const unit = unitOf(layout);
+  const turbines: Vector2[] = [];
+  for (const at of openSites(layout, unit * 0.045, avoid)) {
+    if (turbines.length >= 6) break;
+    if (turbines.every((other) => Math.hypot(other.x - at.x, other.y - at.y) > unit * 0.1)
+      && (turbines.length === 0 || turbines.some((other) => Math.hypot(other.x - at.x, other.y - at.y) < unit * 0.2))) turbines.push(at);
+  }
+  if (!turbines.length) return () => false;
+  const blade = unit * 0.04;
+  // The rotors face into a south-westerly wind.
+  const facing = Math.PI * 0.75;
+  for (const at of turbines) {
+    graphics.fillStyle(0xb3ad98, 1);
+    graphics.fillCircle(at.x, at.y, unit * 0.008);
+    // The tall tower casts a long shadow, and so do the turning blades, as a faint disc.
+    graphics.lineStyle(Math.max(1.5, unit * 0.004), 0x2d3a33, 0.3);
+    graphics.lineBetween(at.x, at.y, at.x + unit * 0.06, at.y + unit * 0.075);
+    graphics.fillStyle(0x2d3a33, 0.08);
+    graphics.fillCircle(at.x + unit * 0.06, at.y + unit * 0.075, blade);
+  }
+  if (!scene.add?.graphics) return () => false;
+  const rotors = scene.add.graphics().setDepth(depth);
+  animate(scene, rotors, (seconds) => {
+    rotors.clear();
+    turbines.forEach((at, i) => {
+      const nacelle = box(at, unit * 0.016, unit * 0.006, facing);
+      fill(rotors, nacelle, 0xe9ebe6);
+      const hub = { x: at.x + Math.cos(facing) * unit * 0.009, y: at.y + Math.sin(facing) * unit * 0.009 };
+      for (let k = 0; k < 3; k += 1) {
+        const turn = seconds * 1.6 + i * 1.3 + (k * Math.PI * 2) / 3;
+        const tip = { x: hub.x + Math.cos(turn) * blade, y: hub.y + Math.sin(turn) * blade };
+        const side = { x: -Math.sin(turn) * unit * 0.0035, y: Math.cos(turn) * unit * 0.0035 };
+        rotors.fillStyle(0xf4f5f2, 1);
+        rotors.fillTriangle(hub.x + side.x, hub.y + side.y, hub.x - side.x, hub.y - side.y, tip.x, tip.y);
+        rotors.lineStyle(1, 0x9ea39b, 0.8);
+        rotors.lineBetween(hub.x, hub.y, tip.x, tip.y);
       }
+      rotors.fillStyle(0xcfd3cd, 1);
+      rotors.fillCircle(hub.x, hub.y, unit * 0.004);
     });
   });
+  return (point, r) => turbines.some((at) => Math.hypot(at.x - point.x, at.y - point.y) < blade * 1.2 + r);
 }
 
-// ─── Metro International: the edge of the city ──────────────────────────────────────────────
-
-const CAR_COLORS = [0xe9e6dc, 0xc4453a, 0x3f6d9a, 0x2f3437, 0xd9b247, 0x8f969a, 0x4f7a5a];
-
-/** A dual carriageway along a clear edge: two roadways, a green median, edge and lane lines. */
-export function paintMotorway(graphics: Graphics, layout: SpecialistLayout): Corridor | undefined {
-  const unit = unitOf(layout);
-  const road = findCorridor(layout, unit * 0.034);
-  if (!road) return undefined;
-  const middle = lerp(road.from, road.to, 0.5);
-  fill(graphics, box(middle, road.length, unit * 0.07, road.angle), 0x9a9c8e, 0.8);
-  fill(graphics, box(middle, road.length, unit * 0.062, road.angle), 0x4a5154);
-  fill(graphics, box(middle, road.length, unit * 0.007, road.angle), 0x5f7d4f);
-  graphics.lineStyle(Math.max(1, unit * 0.0016), 0xe8e4d4, 0.85);
-  for (const across of [-0.029, 0.029, -0.005, 0.005]) strokePolyline(graphics, [onCorridor(road, 0, unit * across), onCorridor(road, road.length, unit * across)]);
-  graphics.lineStyle(Math.max(1, unit * 0.0014), 0xe8e4d4, 0.7);
-  for (const across of [-0.017, 0.017]) for (let d = 0; d < road.length; d += unit * 0.03) {
-    const [a, b] = [onCorridor(road, d, unit * across), onCorridor(road, d + unit * 0.014, unit * across)];
-    graphics.lineBetween(a.x, a.y, b.x, b.y);
-  }
-  return road;
-}
-
-/** Traffic on the motorway: cars and the odd lorry in each lane, each lane at its own pace. */
-export function addMotorwayTraffic(scene: Phaser.Scene, road: Corridor | undefined, unit: number, depth = -19.6): void {
-  if (!road || !scene.add?.graphics) return;
-  const graphics = scene.add.graphics().setDepth(depth);
-  const lanes = [
-    { across: -0.023, direction: 1, speed: 0.16 }, { across: -0.011, direction: 1, speed: 0.12 },
-    { across: 0.011, direction: -1, speed: 0.13 }, { across: 0.023, direction: -1, speed: 0.17 },
-  ];
-  const perLane = 7;
-  animate(scene, graphics, (seconds) => {
-    graphics.clear();
-    lanes.forEach((lane, l) => {
-      for (let i = 0; i < perLane; i += 1) {
-        const seed = l * 50 + i;
-        const lorry = deterministicUnit(seed, 831) < 0.18;
-        const spacing = road.length / perLane;
-        const travelled = (seconds * unit * lane.speed + i * spacing + deterministicUnit(seed, 833) * spacing * 0.6) % road.length;
-        const along = lane.direction > 0 ? travelled : road.length - travelled;
-        const center = onCorridor(road, along, unit * lane.across);
-        const length = unit * (lorry ? 0.026 : 0.013);
-        const body = box(center, length, unit * (lorry ? 0.008 : 0.0065), road.angle);
-        const color = lorry ? 0xe2ddd0 : CAR_COLORS[Math.floor(deterministicUnit(seed, 835) * CAR_COLORS.length)];
-        fill(graphics, body, color);
-        // The windscreen at the front, so cars read as facing their way.
-        const front = onCorridor(road, along + lane.direction * length * 0.18, unit * lane.across);
-        fill(graphics, box(front, length * (lorry ? 0.15 : 0.22), unit * 0.005, road.angle), 0x26323a, 0.85);
-      }
-    });
-  });
-}
+// ─── Metro International: the city and its stadium ──────────────────────────────────────────
 
 const ROOFS = [0xb7b2a6, 0xa98f7a, 0x9aa3a6, 0xc4bba8, 0x8f8a82, 0xb59b80, 0xd0c8b8];
 
 /**
- * A city district on the largest open ground clear of the airfield and the on-screen panels: a grid of blocks between
- * streets, filled with buildings of mixed sizes and roofs, a few taller towers near its heart,
- * and street trees.
+ * A city district on the largest open ground clear of the airfield and the on-screen panels: a grid
+ * of blocks between streets, filled with buildings of mixed sizes and roofs, a stadium at its heart
+ * with a few taller towers around it, and street trees.
  */
 export function paintCityDistrict(graphics: Graphics, layout: SpecialistLayout, palette: CivilMapPalette, avoid: (point: Vector2, radius: number) => boolean): (point: Vector2, radius: number) => boolean {
   const unit = unitOf(layout);
@@ -264,8 +188,7 @@ export function paintCityDistrict(graphics: Graphics, layout: SpecialistLayout, 
   const cells: Vector2[] = [];
   for (let x = cell / 2; x < layout.width; x += cell) for (let y = cell / 2; y < layout.height; y += cell) {
     const at = { x, y };
-    const underPanel = layout.hudExclusionZones.some((zone) => x > zone.x - cell && x < zone.x + zone.width + cell && y > zone.y - cell && y < zone.y + zone.height + cell);
-    if (!underPanel && freeAt(layout, at, cell * 0.8) && !avoid(at, cell * 0.6)) cells.push(at);
+    if (!underPanel(layout, at, cell) && freeAt(layout, at, cell * 0.8) && !avoid(at, cell * 0.6)) cells.push(at);
   }
   if (!cells.length) return () => false;
   const reach = unit * 0.34;
@@ -275,7 +198,10 @@ export function paintCityDistrict(graphics: Graphics, layout: SpecialistLayout, 
   const district = cells.filter((at) => Math.hypot(at.x - heart.x, at.y - heart.y) < reach);
   // Streets: the ground between blocks, then each block's own paving.
   for (const at of district) fill(graphics, box(at, cell * 1.02, cell * 1.02, 0), 0x6f7468, 0.95);
+  // The stadium takes the blocks at the district's heart.
+  const onStadium = (at: Vector2) => Math.hypot(at.x - heart.x, at.y - heart.y) < cell * 1.2;
   district.forEach((at, i) => {
+    if (onStadium(at)) return;
     fill(graphics, box(at, cell * 0.78, cell * 0.78, 0), 0x9a9b8d);
     const toward = Math.hypot(at.x - heart.x, at.y - heart.y) / reach;
     const tower = toward < 0.3 && deterministicUnit(i, 841) < 0.6;
@@ -288,10 +214,38 @@ export function paintCityDistrict(graphics: Graphics, layout: SpecialistLayout, 
       paintRaisedBuilding(graphics, building, { ...palette, building: roof, buildingRoof: mixColor(roof, 0xffffff, 0.35) }, unit * (tower ? 1.8 : 0.9));
     }
   });
+  paintStadium(graphics, heart, cell, unit);
   // Street trees along the edge of the district.
   const crowns = district.filter((_, i) => deterministicUnit(i, 851) < 0.45).map((at, i) => ({ x: at.x + cell * 0.46, y: at.y + (deterministicUnit(i, 853) - 0.5) * cell * 0.6, r: unit * 0.007 }));
   paintCanopy(graphics, crowns, palette);
   return (point, radius) => district.some((at) => Math.hypot(at.x - point.x, at.y - point.y) < cell * 0.75 + radius);
+}
+
+/** A football stadium seen from above: roofed stands around a bowl of seating, the pitch and its markings, and floodlights. */
+function paintStadium(graphics: Graphics, center: Vector2, cell: number, unit: number): void {
+  const [rx, ry] = [cell * 1.15, cell * 0.85];
+  graphics.fillStyle(0x2d3a33, 0.3);
+  graphics.fillEllipse(center.x + unit * 0.012, center.y + unit * 0.016, rx * 2, ry * 2);
+  graphics.fillStyle(0xd8d5ca, 1);
+  graphics.fillEllipse(center.x, center.y, rx * 2, ry * 2);
+  graphics.fillStyle(0xeeebe2, 1);
+  graphics.fillEllipse(center.x - rx * 0.05, center.y - ry * 0.06, rx * 1.86, ry * 1.8);
+  // The seating bowl in club colours, then the pitch.
+  graphics.fillStyle(0x8e5a52, 1);
+  graphics.fillEllipse(center.x, center.y, rx * 1.55, ry * 1.5);
+  const pitch = box(center, rx * 1.05, ry * 0.95, 0);
+  fill(graphics, pitch, 0x5f9a4c);
+  graphics.fillStyle(0x6aa556, 1);
+  for (let k = 0; k < 6; k += 2) graphics.fillRect(center.x - rx * 0.525 + (k * rx * 1.05) / 6, center.y - ry * 0.475, (rx * 1.05) / 6, ry * 0.95);
+  graphics.lineStyle(Math.max(1, unit * 0.0016), 0xf4f1e8, 0.9);
+  tracePolygon(graphics, pitch);
+  graphics.strokePath();
+  graphics.lineBetween(center.x, center.y - ry * 0.475, center.x, center.y + ry * 0.475);
+  graphics.strokeCircle(center.x, center.y, ry * 0.18);
+  for (const side of [-1, 1]) graphics.strokeRect(center.x + side * rx * 0.525 - (side > 0 ? rx * 0.18 : 0), center.y - ry * 0.25, rx * 0.18, ry * 0.5);
+  // Floodlight masts at the four corners.
+  graphics.fillStyle(0x5a5f5c, 1);
+  for (const [a, b] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) graphics.fillCircle(center.x + a * rx * 0.72, center.y + b * ry * 0.72, unit * 0.004);
 }
 
 // ─── Executive Point: a coastal headland ────────────────────────────────────────────────────

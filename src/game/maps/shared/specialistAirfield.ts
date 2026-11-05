@@ -2,13 +2,13 @@ import { PHASER_TEXT_STYLES } from '../../typography';
 import type Phaser from 'phaser';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
-import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, nearRiver, addDriftingClouds, addMovingWaves, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
+import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, addDriftingClouds, addMovingWaves, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
 import { RIVER_BEND_PALETTE } from '../river-bend/render';
 import type { PlayableMapLayout, MapLayoutVariant } from '../types';
 import type { MapRunway, MapHelipad, MapTaxiway } from './airfield';
 import { createAirfieldGuidanceSurfaces } from './guidance';
 import { pointInPolygon } from './apronLayout';
-import { addFreightTrains, addMotorwayTraffic, addRadarStation, paintCityDistrict, paintCoast, paintGolfCourse, paintHills, paintMotorway, paintPerimeter, paintRailway } from './specialistScenery';
+import { addRadarStation, addWindFarm, paintCityDistrict, paintCoast, paintGolfCourse, paintHills, paintPerimeter, paintQuarry } from './specialistScenery';
 
 export type SpecialistKind = 'military' | 'business' | 'passenger' | 'cargo' | 'rescue';
 /** Authored coordinates are fractions of viewport; runway lengths use the shorter side. */
@@ -97,40 +97,30 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
   const land = COUNTRYSIDE[kind];
   const palette = { ...RIVER_BEND_PALETTE, terrain: land.base, vegetation: land.vegetation, vegetationLight: land.vegetationLight, apron: kind === 'cargo' ? 0x969487 : 0x89938a };
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
-  const terminal = layout.buildings[0].center;
-  const road = [{ x: 0, y: h * .86 }, { x: w * .44, y: h * .86 }, terminal];
   const fields = fieldPatchwork(w, h, u * .22);
   // A pond in the quiet lower-left, if the airfield leaves it clear.
   const pondCenter = { x: w * .2, y: h * .7 };
-  const pond = land.pond && clearOfAirfield(layout, pondCenter, u * .12) && !nearRiver(road, u * .018, pondCenter, u * .1)
+  const pond = land.pond && clearOfAirfield(layout, pondCenter, u * .12)
     ? Array.from({ length: 10 }, (_, i) => {
       const turn = (i / 10) * Math.PI * 2;
       const reach = u * (.055 + deterministicUnit(i, 701) * .02);
       return { x: pondCenter.x + Math.cos(turn) * reach * 1.4, y: pondCenter.y + Math.sin(turn) * reach };
     })
     : undefined;
-  const avoid = (point: Vector2, radius: number) => nearRiver(road, u * .018, point, radius + u * .01)
-    || (pond !== undefined && Math.hypot(point.x - pondCenter.x, point.y - pondCenter.y) < radius + u * .11);
+  const avoid = (point: Vector2, radius: number) => (pond !== undefined && Math.hypot(point.x - pondCenter.x, point.y - pondCenter.y) < radius + u * .11);
   paintGroundTexture(scene, { width: w, height: h, fieldPolygons: fields }, { base: land.base, fields: land.fields, light: land.light, dark: land.dark });
-  // Each field's own signature landscape; trains and traffic are set going once it is painted.
-  let railway: ReturnType<typeof paintRailway>;
-  let motorway: ReturnType<typeof paintMotorway>;
+  // Each field's own signature landscape.
   composeStaticMap(scene, layout, detailLevel, {
     scenery: ({ graphics: g }) => {
       // The ground and fields are painted underneath by paintGroundTexture; this layer holds scenery on top.
-      g.lineStyle(u * .018, 0xc7c8ac, .5);
-      g.lineBetween(road[0].x, road[0].y, road[1].x, road[1].y);
-      g.lineBetween(road[1].x, road[1].y, road[2].x, road[2].y);
       if (pond) paintShoredPool(g, pond, palette);
       let signature: (point: Vector2, radius: number) => boolean = () => false;
       if (kind === 'cargo') {
-        railway = paintRailway(g, layout);
-        signature = (point, radius) => !!railway && distanceToStrip(railway.main, point) < u * .1 + radius;
+        const quarry = paintQuarry(g, layout, palette, avoid);
+        const wind = addWindFarm(scene, g, layout, (point, radius) => avoid(point, radius) || quarry(point, radius));
+        signature = (point, radius) => quarry(point, radius) || wind(point, radius);
       } else if (kind === 'passenger') {
-        motorway = paintMotorway(g, layout);
-        const onMotorway = (point: Vector2, radius: number) => !!motorway && distanceToStrip(motorway, point) < u * .045 + radius;
-        const city = paintCityDistrict(g, layout, palette, (point, radius) => avoid(point, radius) || onMotorway(point, radius));
-        signature = (point, radius) => onMotorway(point, radius) || city(point, radius);
+        signature = paintCityDistrict(g, layout, palette, avoid);
       } else if (kind === 'business') {
         const sea = paintCoast(g, layout);
         const inSea = (point: Vector2, radius: number) => !!sea && (pointInPolygon(point, sea) || sea.some((p) => Math.hypot(p.x - point.x, p.y - point.y) < radius + u * .03));
@@ -164,15 +154,8 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
     }
   });
   paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
-  addFreightTrains(scene, railway);
-  addMotorwayTraffic(scene, motorway, u);
   // Clouds drifting over the field, thinning to a haze over its runways and apron.
   addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
-}
-
-/** Distance from a point to a straight strip's centre line. */
-function distanceToStrip(strip: { readonly from: Vector2; readonly angle: number }, point: Vector2): number {
-  return Math.abs(-(point.x - strip.from.x) * Math.sin(strip.angle) + (point.y - strip.from.y) * Math.cos(strip.angle));
 }
 
 /** The small apron fixtures in a row by the terminal: shelters, containers, gates or kiosks. */
