@@ -116,5 +116,5 @@ export function renderSaltmarshGateway(
   });
   paintSurfaceTexture(scene, layout, { raisedBuildings: true });
   // Clouds drifting over the marsh on the wind, their shadows sliding across the fields.
-  addDriftingClouds(scene, layout);
+  addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
 }

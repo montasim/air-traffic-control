@@ -243,10 +243,17 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
 
 let cloudSerial = 0;
 
-/** One soft cloud: overlapping puffs, each a radial fade, so it has no hard edge anywhere. */
+/** Cloud texture size; clouds are scaled from this. */
+const CLOUD_SIZE = { width: 512, height: 320 };
+
+/**
+ * One cumulus seen from above: a cluster of billows grown outward from the middle, each drawn as a
+ * grey-blue shaded underside offset away from the light, a white body over it, and a bright cap
+ * toward the north-west sun, so the cloud has volume and soft cauliflower edges.
+ */
 function cloudTexture(scene: Phaser.Scene, seed: number): string {
   const key = `cloud-${(cloudSerial += 1)}`;
-  const [width, height] = [320, 200];
+  const { width, height } = CLOUD_SIZE;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
@@ -255,19 +262,29 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
     const value = Math.sin((index + 1) * 12.9898 + (seed + salt) * 78.233) * 43758.5453;
     return value - Math.floor(value);
   };
-  for (let i = 0; i < 11; i += 1) {
-    // Puffs gather along a gentle horizontal band, biggest in the middle.
-    const along = noise(i, 1);
-    const x = width * (0.18 + along * 0.64);
-    const y = height * (0.42 + (noise(i, 2) - 0.5) * 0.3);
-    const radius = height * (0.18 + noise(i, 3) * 0.16) * (1 - Math.abs(along - 0.5) * 0.8);
-    const puff = context.createRadialGradient(x, y, 0, x, y, radius);
-    puff.addColorStop(0, "rgba(255,255,255,0.55)");
-    puff.addColorStop(0.6, "rgba(255,255,255,0.3)");
-    puff.addColorStop(1, "rgba(255,255,255,0)");
-    context.fillStyle = puff;
-    context.fillRect(0, 0, width, height);
-  }
+  // Billows: a few big ones near the middle, smaller ones spreading toward a ragged rim.
+  const billows = Array.from({ length: 34 }, (_, i) => {
+    const angle = noise(i, 1) * Math.PI * 2;
+    const reach = Math.sqrt(noise(i, 2));
+    const r = height * (0.2 - reach * 0.12) * (0.75 + noise(i, 3) * 0.5);
+    return { x: width / 2 + Math.cos(angle) * reach * width * 0.32, y: height / 2 + Math.sin(angle) * reach * height * 0.26, r };
+  }).sort((p, q) => q.r - p.r);
+  const puff = (x: number, y: number, r: number, inner: string, outer: string, hardness: number) => {
+    const gradient = context.createRadialGradient(x, y, 0, x, y, r);
+    gradient.addColorStop(0, inner);
+    gradient.addColorStop(hardness, inner);
+    gradient.addColorStop(1, outer);
+    context.fillStyle = gradient;
+    context.beginPath();
+    context.arc(x, y, r, 0, Math.PI * 2);
+    context.fill();
+  };
+  // Shaded undersides first, offset down-right, away from the light.
+  for (const { x, y, r } of billows) puff(x + r * 0.22, y + r * 0.28, r, "rgba(168,184,198,0.9)", "rgba(168,184,198,0)", 0.55);
+  // White bodies over them, leaving the shade showing along each billow's lower-right edge.
+  for (const { x, y, r } of billows) puff(x - r * 0.06, y - r * 0.08, r * 0.92, "rgba(250,252,253,0.97)", "rgba(250,252,253,0)", 0.62);
+  // Sunlit caps on the larger billows.
+  for (const { x, y, r } of billows.slice(0, 14)) puff(x - r * 0.28, y - r * 0.32, r * 0.45, "rgba(255,255,255,0.9)", "rgba(255,255,255,0)", 0.3);
   scene.textures.addCanvas(key, canvas);
   return key;
 }
@@ -276,12 +293,16 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
  * Clouds drifting slowly across the map on the wind, each with its shadow sliding over the ground
  * below and to the side. The clouds sit above the scenery and parked traffic but under routes,
  * aircraft and landing circles, so they never hide play; when one drifts off, it returns on the
- * far side. Drawn once, still, when the player prefers reduced motion.
+ * far side. Where `thinOver` says a cloud covers part of the airfield, it eases to a light haze so
+ * runways and stands stay readable. Drawn once, still, when the player prefers reduced motion.
  */
 export function addDriftingClouds(
   scene: Phaser.Scene,
   bounds: { readonly width: number; readonly height: number },
-  { count = 7, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5 }: { count?: number; wind?: number; speed?: number; depth?: number; shadowDepth?: number } = {},
+  { count = 9, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5, thinOver }: {
+    count?: number; wind?: number; speed?: number; depth?: number; shadowDepth?: number;
+    thinOver?: (point: Vector2, radius: number) => boolean;
+  } = {},
 ): void {
   if (typeof document === "undefined" || !scene.textures || !scene.add?.image) return;
   const unit = Math.min(bounds.width, bounds.height);
@@ -299,11 +320,12 @@ export function addDriftingClouds(
   };
   const clouds = Array.from({ length: count }, (_, i) => {
     const key = keys[i % keys.length];
-    const scale = (unit * (0.4 + noise(i, 1) * 0.35)) / 320;
-    const shadow = scene.add.image(0, 0, key).setScale(scale).setTint(0x1d3a2a).setAlpha(0.22).setDepth(shadowDepth);
-    const cloud = scene.add.image(0, 0, key).setScale(scale).setAlpha(0.75 + noise(i, 2) * 0.25).setDepth(depth);
+    const scale = (unit * (0.28 + noise(i, 1) * 0.22)) / CLOUD_SIZE.width;
+    const shadow = scene.add.image(0, 0, key).setScale(scale).setTint(0x1d3a2a).setAlpha(0.26).setDepth(shadowDepth);
+    const cloud = scene.add.image(0, 0, key).setScale(scale).setAlpha(0.62 + noise(i, 2) * 0.18).setDepth(depth);
     // Spread evenly along the wind, scattered across it.
-    return { cloud, shadow, distance: -reach + ((i + noise(i, 3)) / count) * reach * 2, offset: (noise(i, 4) - 0.5) * span, pace: 0.7 + noise(i, 5) * 0.6, laps: 0 };
+    const opacity = cloud.alpha;
+    return { cloud, shadow, opacity, haze: 1, radius: scale * CLOUD_SIZE.width * 0.35, distance: -reach + ((i + noise(i, 3)) / count) * reach * 2, offset: (noise(i, 4) - 0.5) * span, pace: 0.7 + noise(i, 5) * 0.6, laps: 0 };
   });
   const shadowShift = { x: unit * 0.07, y: unit * 0.09 };
   const place = () => {
@@ -311,6 +333,11 @@ export function addDriftingClouds(
       const x = centre.x + along.x * item.distance + across.x * item.offset;
       const y = centre.y + along.y * item.distance + across.y * item.offset;
       item.cloud.setPosition(x, y);
+      // Ease toward a haze over the airfield and back to full cloud beyond it.
+      const target = thinOver?.({ x, y }, item.radius) ? 0.25 : 1;
+      item.haze += (target - item.haze) * (still ? 1 : 0.05);
+      item.cloud.setAlpha(item.opacity * item.haze);
+      item.shadow.setAlpha(0.26 * item.haze);
       item.shadow.setPosition(x + shadowShift.x, y + shadowShift.y);
     }
   };
