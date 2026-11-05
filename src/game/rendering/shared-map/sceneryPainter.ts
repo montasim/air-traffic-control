@@ -304,7 +304,8 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
  * below and to the side. The clouds sit above the scenery and parked traffic but under routes,
  * aircraft and landing circles, so they never hide play; when one drifts off, it returns on the
  * far side. Where `thinOver` says a cloud covers part of the airfield, it eases to a light haze so
- * runways and stands stay readable. Drawn once, still, when the player prefers reduced motion.
+ * runways and stands stay readable. At night (the scene's "night-mode" event) they turn a dim,
+ * moonlit blue-grey and cast no shadows. Drawn once, still, when the player prefers reduced motion.
  */
 export function addDriftingClouds(
   scene: Phaser.Scene,
@@ -325,6 +326,7 @@ export function addDriftingClouds(
   const span = Math.abs(bounds.width * across.x) + Math.abs(bounds.height * across.y);
   const keys = [0, 1, 2, 3, 4, 5].map((seed) => cloudTexture(scene, seed * 7 + 3));
   let draws = 0;
+  let night = false;
   /** A fresh pseudo-random number in [0, 1); each call moves on to the next. */
   const random = () => {
     const value = Math.sin((draws += 1) * 91.73 + 37.71) * 43758.5453;
@@ -343,6 +345,7 @@ export function addDriftingClouds(
     const stretch = 0.7 + random() * 0.55;
     // Only a slight tilt, so the sunlit side baked into each build stays toward the north-west.
     const tilt = (random() - 0.5) * 0.3;
+    if (night) item.cloud.setTint(0x8798a8);
     for (const image of [item.cloud, item.shadow]) image.setTexture(key).setScale(scale, scale * stretch).setRotation(tilt);
     item.opacity = 0.55 + random() * 0.3;
     item.radius = size * 0.35;
@@ -361,6 +364,17 @@ export function addDriftingClouds(
     return item;
   });
   const shadowShift = { x: unit * 0.07, y: unit * 0.09 };
+  const onNight = (enabled: boolean) => {
+    night = enabled;
+    for (const item of clouds) {
+      if (night) item.cloud.setTint(0x8798a8);
+      else item.cloud.clearTint();
+      item.shadow.setVisible(!night);
+    }
+    place();
+  };
+  scene.events.on("night-mode", onNight);
+  scene.events.once("shutdown", () => scene.events.off("night-mode", onNight));
   const place = () => {
     for (const item of clouds) {
       const x = centre.x + along.x * item.distance + across.x * item.offset;
@@ -369,7 +383,7 @@ export function addDriftingClouds(
       // Ease toward a haze over the airfield and back to full cloud beyond it.
       const target = thinOver?.({ x, y }, item.radius) ? 0.25 : 1;
       item.haze += (target - item.haze) * (still ? 1 : 0.05);
-      item.cloud.setAlpha(item.opacity * item.haze);
+      item.cloud.setAlpha(item.opacity * item.haze * (night ? 0.45 : 1));
       item.shadow.setAlpha(0.18 * item.haze);
       item.shadow.setPosition(x + shadowShift.x, y + shadowShift.y);
     }

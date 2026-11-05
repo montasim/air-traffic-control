@@ -315,6 +315,8 @@ export class PlayScene extends Phaser.Scene {
     this.night = enabled;
     for (const layer of this.nightLayer) layer.setVisible(enabled);
     for (const view of this.aircraftViews.values()) view.setNight(enabled);
+    // Scenery that changes with the time of day (the drifting clouds) listens for this.
+    this.events.emit("night-mode", enabled);
   }
 
   setTimeScale(scale: number): void {
