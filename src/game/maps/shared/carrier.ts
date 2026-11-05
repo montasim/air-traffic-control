@@ -108,13 +108,13 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     while (from < to && !fits(from - Math.max(2, laneWidth * 0.08))) from += step;
     while (to > from && !fits(to + Math.max(2, laneWidth * 0.08))) to -= step;
     const middle = (from + to) / 2;
-    return { center: world(start.x + along.x * middle, start.y + along.y * middle), length: to - from };
+    return { center: world(start.x + along.x * middle, start.y + along.y * middle), length: to - from, forwardEnd: start.x + along.x * to };
   };
   const axial = fitted(axialStart, 0.7 * length, 0);
   const angled = fitted(angledStart, 0.6 * length, 0);
   const lanes: CarrierLanePaint[] = [
-    { kind: 'axial', ...axial, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
-    { kind: 'angled', ...angled, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('angled') },
+    { kind: 'axial', center: axial.center, length: axial.length, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('axial') },
+    { kind: 'angled', center: angled.center, length: angled.length, width: laneWidth, angle: spec.angle, operational: spec.lanes.includes('angled') },
   ];
   const runways: MapRunway[] = lanes.filter((lane) => lane.operational).map((lane) => ({
     id: `${spec.id}-${lane.kind}`,
@@ -128,17 +128,19 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     designators: lane.kind === 'axial' ? ['AX', 'AX'] : ['AN', 'AN'],
   }));
 
-  // Both lanes taxi to one parking point aft of the island, on the starboard side.
-  const parking = world(-0.15 * length, 0.18 * beam);
+  // Parking is the aft starboard shelf. The axial lane taxis straight across to it; the port lane
+  // taxis forward round the axial lane's end and back, so no taxi line crosses a landing lane.
+  const parking = world(-0.15 * length, 0.2 * beam);
+  const around = axial.forwardEnd + laneWidth * 1.2;
   const taxiways: MapTaxiway[] = runways.map((runway) => {
-    const kind = runway.id.endsWith('angled') ? 'angled' : 'axial';
-    const from = kind === 'axial'
-      ? world(-0.15 * length, axialStart.y)
-      : world(-0.15 * length, angledStart.y);
-    return { id: `${runway.id}-taxi`, path: [from, parking], width: spec.taxiwayWidth, connects: [runway.id, `${spec.id}-deck`] };
+    const path = runway.id.endsWith('angled')
+      ? [world(angled.forwardEnd - laneWidth, angledStart.y), world(around, -0.14 * beam), world(around, 0.2 * beam), parking]
+      : [world(-0.15 * length, axialStart.y), parking];
+    return { id: `${runway.id}-taxi`, path, width: spec.taxiwayWidth, connects: [runway.id, `${spec.id}-deck`] };
   });
 
-  const padSpots = spec.pads === 2 ? [[0.38, 0], [0.24, 0.24]] : [[0.38, 0.04]];
+  // Helicopter spots at the bow, ahead of the lanes and clear of the taxi route round them.
+  const padSpots = spec.pads === 2 ? [[0.4, -0.02], [0.4, 0.2]] : [[0.38, 0.04]];
   const helipads: MapHelipad[] = padSpots.map(([x, y], index) => ({ center: at(x, y), radius: spec.padRadius, zoneId: `${spec.id}-pad-${index + 1}` }));
 
   const island = { center: at(0.05, 0.4), width: length * 0.14, height: beam * 0.12, angle: spec.angle };

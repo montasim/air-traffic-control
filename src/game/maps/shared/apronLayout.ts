@@ -197,7 +197,10 @@ export function createApronMarkings(input: ApronInput): ApronMarkings {
     const step = span * 0.35;
     // Square rows run only along or across this type's own taxiway, so its guide goes straight on and
     // turns at most once, at a right angle, as on Saltmarsh Gateway; other runways' angles do not apply.
-    const typeAngles = input.squareRows ? rowAngles([{ center: start, width: 0, height: 0, angle: exit.heading }], [], true) : angles;
+    // On a carrier deck, rows run across the ship so each parked aircraft lies along it, as on a real deck.
+    const deckLane = deck ? runways.find((rect) => rect.clearance !== undefined) : undefined;
+    const typeAngles = deckLane ? [normalizeAngle(deckLane.angle + Math.PI / 2)]
+      : input.squareRows ? rowAngles([{ center: start, width: 0, height: 0, angle: exit.heading }], [], true) : angles;
 
     // A first pass keeps the groups well apart; if nothing fits, a second accepts a tighter apron.
     let relaxed = false;
