@@ -8,8 +8,8 @@ import type { PlayableMapLayout } from '../types';
 
 /**
  * Frost Crossing: a winter archipelago with two parallel runways, the long liner
- * runway below the apron and the commuter runway above it, so they never meet. Rock ridges and snowy pines fill the
- * land, and open water edges the map.
+ * runway below the apron and the commuter runway above it, so they never meet. Slate rock and snowy pine forest fill
+ * the ice-blue land, and open sea with drifting floes edges the map.
  */
 export interface FrostCrossingLayout extends PlayableMapLayout {
   readonly runways: readonly MapRunway[];
@@ -31,18 +31,24 @@ const COMMUTER = { x: 0.0, y: -0.34 };
 const APRON = [[-0.36, -0.1], [0.0, -0.2], [0.21, -0.16], [0.24, 0.06], [-0.3, 0.07]];
 const HELIPAD = { x: -0.56, y: -0.12 };
 const WATER = [
-  [[0.55, 0.3], [0.75, 0.22], [1.3, 0.25], [1.3, 0.9], [0.4, 0.9], [0.45, 0.45]],
-  [[0.72, -0.9], [1.3, -0.9], [1.3, -0.3], [0.98, -0.36], [0.82, -0.5]],
-  [[-1.3, 0.36], [-0.82, 0.39], [-0.64, 0.56], [-0.72, 0.9], [-1.3, 0.9]],
+  // Open sea along the whole right side, its shore winding in and out past the runway ends.
+  [[0.62, -0.9], [1.3, -0.9], [1.3, 0.9], [0.3, 0.9], [0.38, 0.62], [0.58, 0.5], [0.66, 0.28], [0.8, 0.1], [0.74, -0.12], [0.86, -0.3], [0.72, -0.5]],
+  // Small bays in the far corners on the left.
+  [[-1.3, -0.9], [-0.55, -0.9], [-0.6, -0.72], [-0.85, -0.62], [-1.3, -0.6]],
+  [[-1.3, 0.6], [-0.95, 0.56], [-0.75, 0.7], [-0.7, 0.9], [-1.3, 0.9]],
 ];
-/** Long, low ridges rather than single peaks. */
+/** A broken mass of slate rock in the upper left, as many jagged blocks, and one low outcrop below the liner runway. */
 const ROCKS = [
-  [[-0.98, -0.4], [-0.84, -0.47], [-0.62, -0.45], [-0.5, -0.4], [-0.64, -0.36], [-0.86, -0.35]],
-  [[-0.46, -0.5], [-0.3, -0.53], [-0.16, -0.5], [-0.3, -0.46]],
-  [[0.28, -0.47], [0.44, -0.53], [0.66, -0.48], [0.5, -0.43]],
-  [[-0.32, 0.4], [-0.16, 0.36], [0.06, 0.39], [-0.12, 0.44]],
+  [[-0.86, -0.4], [-0.78, -0.45], [-0.68, -0.43], [-0.7, -0.36], [-0.8, -0.34]],
+  [[-0.66, -0.42], [-0.58, -0.46], [-0.5, -0.42], [-0.54, -0.36], [-0.62, -0.36]],
+  [[-0.84, -0.3], [-0.74, -0.32], [-0.68, -0.26], [-0.76, -0.21], [-0.86, -0.24]],
+  [[-0.66, -0.32], [-0.56, -0.33], [-0.5, -0.27], [-0.58, -0.22], [-0.66, -0.25]],
+  [[-0.78, -0.18], [-0.68, -0.2], [-0.62, -0.14], [-0.7, -0.09], [-0.8, -0.12]],
+  [[-0.9, -0.48], [-0.86, -0.5], [-0.8, -0.47], [-0.84, -0.44]],
+  [[0.0, 0.42], [0.14, 0.38], [0.26, 0.42], [0.12, 0.47]],
 ];
-const PINE_CLUSTERS = [[-0.42, -0.3], [0.08, -0.36], [0.34, 0.32], [-0.46, 0.3], [0.64, 0.06], [-0.8, 0.04], [-0.02, 0.4], [0.5, -0.26]];
+/** Dense pine forest: below the rocks, west of the apron, and in a band below the liner runway. */
+const PINE_CLUSTERS = [[-0.88, 0.04], [-0.6, 0.04], [-0.45, 0.3], [-0.18, 0.3], [0.42, 0.26], [0.45, -0.24], [0.12, -0.46], [-0.92, 0.3], [-0.4, -0.46]];
 
 const unitNoise = (index: number, salt: number) => {
   const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
@@ -89,9 +95,9 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
     { id: 'frost-hangar', center: frame.point(0.14, -0.12), width: frame.length(0.085), height: frame.length(0.048), angle: frame.angle(0), kind: 'hangar' },
   ];
 
-  const pines = PINE_CLUSTERS.flatMap(([x, y], cluster) => Array.from({ length: 7 }, (_, i) => ({
-    center: frame.point(x + (unitNoise(i, cluster) - 0.5) * 0.14, y + (unitNoise(i, cluster + 9) - 0.5) * 0.1),
-    radius: unit * (0.011 + unitNoise(i, cluster + 17) * 0.006),
+  const pines = PINE_CLUSTERS.flatMap(([x, y], cluster) => Array.from({ length: 36 }, (_, i) => ({
+    center: frame.point(x + (unitNoise(i, cluster) - 0.5) * 0.2, y + (unitNoise(i, cluster + 9) - 0.5) * 0.12),
+    radius: unit * (0.014 + unitNoise(i, cluster + 17) * 0.008),
   })));
 
   return {

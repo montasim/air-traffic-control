@@ -15,10 +15,10 @@ const toward = (points: readonly Vector2[], k: number): Vector2[] => {
  * north-west light, with snow lying on the lit faces.
  */
 export function paintRockRidge(graphics: Phaser.GameObjects.Graphics, ridge: readonly Vector2[], unit: number): void {
-  graphics.fillStyle(0x2f3c45, 0.18);
+  graphics.fillStyle(0x23384a, 0.3);
   tracePolygon(graphics, ridge.map((p) => ({ x: p.x + unit * 0.008, y: p.y + unit * 0.012 })));
   graphics.fillPath();
-  graphics.fillStyle(0x67757e, 1);
+  graphics.fillStyle(0x4a6276, 1);
   tracePolygon(graphics, ridge);
   graphics.fillPath();
   // The ridge line joins points part-way toward the two outline vertices farthest apart.
@@ -39,7 +39,8 @@ export function paintRockRidge(graphics: Phaser.GameObjects.Graphics, ridge: rea
     const normal = { x: b.y - a.y, y: -(b.x - a.x) };
     const length = Math.hypot(normal.x, normal.y) || 1;
     const lit = (normal.x * light.x + normal.y * light.y) / length;
-    graphics.fillStyle(lit > 0.35 ? 0x8a989f : lit > -0.2 ? 0x67757e : 0x4b5862, 1);
+    // Slate blue, the shaded faces near navy, as in a cold northern light.
+    graphics.fillStyle(lit > 0.35 ? 0x6f879a : lit > -0.2 ? 0x4a6276 : 0x33475a, 1);
     tracePolygon(graphics, [a, b, peak]);
     graphics.fillPath();
     if (lit > 0.35) {
