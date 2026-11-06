@@ -82,6 +82,13 @@ describe('preview library', () => {
     }
   });
 
+  it('shows only existing pictures when asked not to draw', async () => {
+    const library = createPreviewLibrary(() => {});
+    library.configure({ ...settings, world: { width: 900, height: 1951.1 } });
+    await library.request(['river-bend'], false);
+    expect(draws).toHaveLength(0);
+  });
+
   it('lets the live frame replace a picture already shown', async () => {
     const shown: string[] = [];
     const library = createPreviewLibrary((id, picture) => shown.push(`${id}=${picture.url}`));

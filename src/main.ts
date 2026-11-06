@@ -189,6 +189,7 @@ const menuPictures = mountMenuPictures({
   settings: () => currentSave.settings,
   selectedId: () => activeMapId,
   listing: () => !utilityScreen.hidden && (utilityScreen.dataset.page === "airfields" || utilityScreen.dataset.page === "career"),
+  liveFrameComing: () => !sceneReady,
 });
 const previews = menuPictures.pictures;
 if (
@@ -827,11 +828,12 @@ landingModeInput.addEventListener('change', async () => {
   try {
     currentSave = await gameStore.setTwoEndLanding(landingModeInput.checked);
     resetPractice();
-    menuPictures.refresh();
   } finally {
     savingLandingMode = false;
   }
   rebuildForTarget(profileForViewport(), activeMapId, false);
+  // After the rebuild starts, so the selected airfield's picture comes from the new live frame.
+  menuPictures.refresh();
 });
 // Night only changes the look, so the live map updates without a rebuild; the store queue orders rapid toggles.
 nightModeInput.addEventListener("change", () => {
@@ -839,9 +841,9 @@ nightModeInput.addEventListener("change", () => {
   redraw(30);
   void gameStore.setNight(nightModeInput.checked).then(save => {
     currentSave = save;
-    menuPictures.refresh();
     // Shadows are drawn into the map (long by day, contact only at night), so it is redrawn to match.
     if (activeNight !== save.settings.night) rebuildForTarget(profileForViewport(), activeMapId, false);
+    menuPictures.refresh();
   });
 });
 // Weather only changes the look too: the live map shows or hides its clouds at once.

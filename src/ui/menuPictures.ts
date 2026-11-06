@@ -12,6 +12,8 @@ export interface MenuPictureState {
   readonly selectedId: () => MapId;
   /** A screen listing every airfield (Choose airfield, Career) is open. */
   readonly listing: () => boolean;
+  /** The live game is being built for the selected airfield; its first frame will become that picture. */
+  readonly liveFrameComing: () => boolean;
 }
 
 /** The world a new shift would get on this window; pictures are drawn at it so they match play. */
@@ -47,9 +49,16 @@ export function mountMenuPictures(state: MenuPictureState) {
     const { night, weather, twoEndLanding } = state.settings();
     library.configure({ night, weather, twoEndLanding, world, detailLevel });
   }
+  /** Shows these pictures, drawing any that are missing, except the selected one while the live frame is coming. */
+  function show(ids: readonly MapId[]): void {
+    const selected = state.selectedId();
+    const waitForLive = state.liveFrameComing();
+    void library.request(ids.filter((id) => !waitForLive || id !== selected));
+    if (waitForLive && ids.includes(selected)) void library.request([selected], false);
+  }
   function refresh(): void {
     configure();
-    void library.request(state.listing() ? everyAirfield() : [state.selectedId()]);
+    show(state.listing() ? everyAirfield() : [state.selectedId()]);
   }
   window.addEventListener("pagehide", () => library.dispose(), { once: true });
   configure();
@@ -64,10 +73,10 @@ export function mountMenuPictures(state: MenuPictureState) {
       if (`${world.width}x${world.height}:${detailLevel}` !== worldKey) refresh();
     },
     showSelected(): void {
-      void library.request([state.selectedId()]);
+      show([state.selectedId()]);
     },
     showAll(): void {
-      void library.request(everyAirfield());
+      show(everyAirfield());
     },
     /**
      * The selected airfield is already on screen, so its picture is cut from the live frame instead of

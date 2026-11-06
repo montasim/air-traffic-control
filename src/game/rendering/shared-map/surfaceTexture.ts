@@ -3,7 +3,7 @@ import type { LandingZone, Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { MapBuilding } from "./airfieldPainter";
 import { buildingCenterClearOfRunways, rotatedRectangle } from "./geometry";
-import { renderScaleOf } from "./composer";
+import { markBaked, renderScaleOf } from "./composer";
 
 /** What the surface texture needs from a map: its paved shapes and where aircraft touch down. */
 export interface SurfaceLayout {
@@ -252,7 +252,7 @@ export function paintSurfaceTexture(
 
   const key = `surface-texture-${serial += 1}`;
   addCanvasTexture(scene, key, canvas);
-  const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
+  const image = markBaked(scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth));
   image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
 }
@@ -314,7 +314,7 @@ export function paintGroundTexture(
   context.fillRect(0, 0, width, height);
   const key = `ground-texture-${serial += 1}`;
   addCanvasTexture(scene, key, canvas);
-  const image = scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth);
+  const image = markBaked(scene.add.image(0, 0, key).setOrigin(0, 0).setDisplaySize(width, height).setDepth(depth));
   image.once("destroy", () => removeCanvasTexture(scene, key));
   return image;
 }

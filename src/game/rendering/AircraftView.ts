@@ -3,6 +3,7 @@ import Phaser from "phaser";
 import { AIRCRAFT_OUTLINES } from "../../core/aircraftCollision";
 import type { Aircraft } from "../../core/types";
 import { AIRCRAFT_STYLE } from "../content";
+import { withoutAbandonedTexture } from "./shared-map/composer";
 import { initialRotorPhase, rotorMotion } from "../animation/rotorMotion";
 import {
   AIRCRAFT_VISUAL_TOKENS as INK,
@@ -173,7 +174,7 @@ function paintAirframe(body: Phaser.GameObjects.Graphics, outline: Phaser.Math.V
 function bakedTexture(scene: Phaser.Scene, key: string, half: number, scale: number, draw: (graphics: Phaser.GameObjects.Graphics) => void): string {
   if (scene.textures.exists(key)) return key;
   const size = Math.ceil(half * 2 * scale);
-  const texture = scene.textures.addDynamicTexture(key, size, size)!;
+  const texture = withoutAbandonedTexture(scene, () => scene.textures.addDynamicTexture(key, size, size)!, (made) => made);
   texture.camera.setOrigin(0, 0).setZoom(scale);
   const graphics = scene.make.graphics({ x: half, y: half }, false);
   draw(graphics);

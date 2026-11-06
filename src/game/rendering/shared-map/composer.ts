@@ -26,14 +26,69 @@ const MAX_BAKE_SIZE = 4096;
  */
 export const VECTOR_SUPERSAMPLE_KEY = "vector-supersample";
 
+type TextureWrapperList = { readonly glTextureWrappers?: unknown[]; deleteTexture?(wrapper: unknown): void };
+
+/**
+ * Makes a dynamic texture with `make` and frees the GPU texture Phaser 4.2.1 abandons while doing so: a
+ * dynamic texture allocates a full-size texture when constructed, then switches to its framebuffer's own
+ * texture and never deletes the first, so every render texture held twice its memory.
+ */
+export function withoutAbandonedTexture<T>(scene: Phaser.Scene, make: () => T, textureOf: (made: T) => Phaser.Textures.Texture): T {
+  const renderer = scene.sys?.renderer as unknown as TextureWrapperList | undefined;
+  const wrappers = renderer?.glTextureWrappers;
+  // The canvas renderer has no GPU textures to leak.
+  if (!wrappers || !renderer.deleteTexture) return make();
+  const before = new Set(wrappers);
+  const made = make();
+  const used = textureOf(made).source[0]?.glTexture;
+  for (const wrapper of wrappers.filter((candidate) => !before.has(candidate) && candidate !== used)) renderer.deleteTexture(wrapper);
+  return made;
+}
+
 export function sceneRenderTexture(scene: Phaser.Scene, width: number, height: number, supersample = 1): Phaser.GameObjects.RenderTexture {
   // Supersampling bakes at a higher scale and lets texture filtering smooth it back down: render textures
   // have no multisampling, so angled edges drawn into them at display scale come out stepped.
   const scale = renderScaleOf(scene) * Math.max(1, Math.min(supersample, MAX_BAKE_SIZE / (Math.max(width, height) * renderScaleOf(scene))));
-  const texture = scene.add.renderTexture(0, 0, Math.ceil(width * scale), Math.ceil(height * scale)).setOrigin(0, 0);
+  const texture = withoutAbandonedTexture(scene, () => scene.add.renderTexture(0, 0, Math.ceil(width * scale), Math.ceil(height * scale)), (made) => made.texture).setOrigin(0, 0);
   if (scale === 1) return texture;
   texture.camera.setOrigin(0, 0).setZoom(scale);
   return texture.setDisplaySize(width, height);
+}
+
+const baked = new WeakSet<Phaser.GameObjects.GameObject>();
+
+/** Marks a full-screen layer that never changes once drawn, so `flattenBakedLayers` may merge it. */
+export function markBaked<T extends Phaser.GameObjects.GameObject>(layer: T): T {
+  baked.add(layer);
+  return layer;
+}
+
+/**
+ * Merges each run of baked layers that are next to each other in depth, with nothing live between them,
+ * into one render texture, and frees the originals. Each full-screen layer cost the GPU a full pass every
+ * frame and held its own texture (the runway layer at twice screen sharpness): a land map drew four, now one.
+ * Live effects between layers (waves, ship wakes) split the runs, so they keep their place.
+ */
+export function flattenBakedLayers(scene: Phaser.Scene, width: number, height: number): void {
+  scene.children.depthSort();
+  const runs: Phaser.GameObjects.GameObject[][] = [[]];
+  for (const child of scene.children.list) {
+    if (baked.has(child) && (child as unknown as Phaser.GameObjects.Components.Visible).visible) runs[runs.length - 1].push(child);
+    else if (runs[runs.length - 1].length) runs.push([]);
+  }
+  // Exactly the game canvas's pixels, so the merged layer reaches the screen one texel per pixel; any other
+  // size would resample (and soften) everything in it a second time.
+  const { width: pixelsWide, height: pixelsHigh } = scene.game.canvas;
+  for (const layers of runs.filter((run) => run.length > 1)) {
+    const merged = withoutAbandonedTexture(scene, () => scene.add.renderTexture(0, 0, pixelsWide, pixelsHigh), (made) => made.texture).setOrigin(0, 0);
+    // Drawn at the main camera's own zoom, so each source lands on the same pixels it covered on screen.
+    const zoom = renderScaleOf(scene);
+    merged.camera.setOrigin(0, 0).setZoom(zoom);
+    markBaked(merged.setDisplaySize(pixelsWide / zoom, pixelsHigh / zoom).setDepth((layers[0] as unknown as Phaser.GameObjects.Components.Depth).depth));
+    merged.draw(layers);
+    merged.render();
+    for (const layer of layers) layer.destroy();
+  }
 }
 
 function isLayeredPaintPlan<Layout>(
@@ -68,7 +123,7 @@ export function composeStaticMap<
   options: StaticMapComposeOptions = {},
 ): Phaser.GameObjects.RenderTexture {
   const graphics = scene.add.graphics();
-  const texture = sceneRenderTexture(scene, layout.width, layout.height).setDepth(options.depth ?? -20);
+  const texture = markBaked(sceneRenderTexture(scene, layout.width, layout.height).setDepth(options.depth ?? -20));
   const sceneryTextureKey = options.sceneryTextureKey;
   const hasSceneryTexture =
     sceneryTextureKey !== undefined &&
@@ -115,7 +170,7 @@ export function composeStaticMap<
       paint.operational(context);
       paint.detail(context);
       const supersample = (scene.registry?.get(VECTOR_SUPERSAMPLE_KEY) as number | undefined) ?? 2;
-      const vectors = sceneRenderTexture(scene, layout.width, layout.height, supersample).setDepth((options.depth ?? -20) + 0.1);
+      const vectors = markBaked(sceneRenderTexture(scene, layout.width, layout.height, supersample).setDepth((options.depth ?? -20) + 0.1));
       vectors.draw(graphics);
       vectors.render();
     } else {

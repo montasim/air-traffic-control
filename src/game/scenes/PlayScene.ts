@@ -55,6 +55,7 @@ import {
 import { profileForViewport } from "../viewport";
 import { aircraftSelectionRadius } from "../../core/aircraftSelection";
 import { drawUnder } from "../rendering/shared-map/lighting";
+import { flattenBakedLayers } from "../rendering/shared-map/composer";
 
 const GUIDANCE_REJECTION_DURATION = 380;
 const GUIDANCE_CONFIRMATION_DURATION = 400;
@@ -173,7 +174,8 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, 0, width, height);
     this.cameras.main.setBackgroundColor("#263e38");
     drawUnder(this.drawnAtNight, () => this.mapDefinition.render(this, this.preparedMap));
-    this.nightLayer = drawNight(this, this.layout);
+    flattenBakedLayers(this, width, height);
+    this.nightLayer = [];
     this.setNight(this.night);
     this.approachLabels = this.layout.landingZones.map(zone => this.add.text(
       zone.position.x, zone.position.y + zone.captureRadius + 8,
@@ -316,6 +318,8 @@ export class PlayScene extends Phaser.Scene {
 
   setNight(enabled: boolean): void {
     this.night = enabled;
+    // The night shade and lights are made the first time night falls: by day they only held memory.
+    if (enabled && !this.nightLayer.length) this.nightLayer = drawNight(this, this.layout);
     for (const layer of this.nightLayer) layer.setVisible(enabled);
     for (const view of this.aircraftViews.values()) view.setNight(enabled);
     // Scenery that changes with the time of day (the drifting clouds) listens for this.

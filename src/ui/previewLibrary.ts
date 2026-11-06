@@ -95,8 +95,11 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
       drawing?.();
       drawing = undefined;
     },
-    /** Shows these airfields' pictures, from memory, the cache, or a fresh drawing, in this order. */
-    async request(ids: readonly MapId[]): Promise<void> {
+    /**
+     * Shows these airfields' pictures, from memory, the build, the cache, or a fresh drawing, in this order;
+     * with `draw` false, only pictures that already exist.
+     */
+    async request(ids: readonly MapId[], draw = true): Promise<void> {
       const key = settingsKey;
       for (const id of ids) {
         const known = memory.get(keyOf(id));
@@ -109,7 +112,7 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
         if (cached) {
           memory.set(keyOf(id), cached);
           show(id, cached);
-        } else if (!queue.includes(id) && !inFlight.has(id)) {
+        } else if (draw && !queue.includes(id) && !inFlight.has(id)) {
           queue.push(id);
         }
       }
