@@ -15,10 +15,11 @@ import type { LandingZone } from "../core/types";
  * size (which apron end a building takes, for one), so a fixed size could show a mirrored map.
  * On desktop they draw at twice the density (camera zoom), then shrink in halving steps so thin
  * runway markings stay smooth instead of breaking up in one big downscale. Phones and tablets draw
- * at single density: their tall world is already about twice the finished picture, and a doubled
- * one (1800x3900 on an iPhone) runs Safari out of memory.
+ * at most 1.5 times the finished picture: enough for one smooth shrink, at about half the pixels of
+ * their full world (a doubled one, 1800x3900 on an iPhone, runs Safari out of memory).
  */
-const densityFor = (detailLevel: WorldDetailLevel) => (detailLevel === "desktop" ? 2 : 1);
+const densityFor = (detailLevel: WorldDetailLevel, longestSide: number) =>
+  detailLevel === "desktop" ? 2 : Math.min(1, (OUTPUT_SIZE * 1.5) / longestSide);
 /** Longest side of a finished picture: enough for the largest preview box on a sharp screen. */
 const OUTPUT_SIZE = 960;
 
@@ -77,7 +78,7 @@ export function createMapPreviews(
 ): () => void {
   const WIDTH = Math.round(options.world.width);
   const HEIGHT = Math.round(options.world.height);
-  const DENSITY = densityFor(options.detailLevel);
+  const DENSITY = densityFor(options.detailLevel, Math.max(WIDTH, HEIGHT));
   const maps = options.maps.map((id) => MAP_DEFINITIONS.find((map) => map.id === id)!);
   const host = document.createElement("div");
   host.style.cssText =
