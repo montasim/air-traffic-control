@@ -53,19 +53,43 @@ describe('preview library', () => {
 
   it('shows pictures the build shipped instead of drawing them', async () => {
     const shown: string[] = [];
-    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ hash: 'x', focus: { 'portrait-day-one': { 'river-bend': { x: 0.4, y: 0.6 } } } })));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ hash: 'x', focus: { 'portrait-day-one-weather': { 'river-bend': { x: 0.4, y: 0.6 } } } })));
     vi.stubGlobal('fetch', fetchMock);
     try {
       const library = createPreviewLibrary((id, picture) => shown.push(`${id}=${picture.url}`));
       library.configure(settings);
       await library.request(['river-bend', 'saltmarsh-gateway']);
-      expect(shown).toEqual(['river-bend=/menu-pictures/portrait-day-one/river-bend.jpg']);
+      expect(shown).toEqual(['river-bend=/menu-pictures/portrait-day-one-weather/river-bend.jpg']);
       // Only what the build did not ship is drawn on the device.
       expect(draws.map((d) => d.maps)).toEqual([['saltmarsh-gateway']]);
       expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('draws on the device when the screen world differs from every shipped one, since layouts change with it', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const library = createPreviewLibrary(() => {});
+      library.configure({ ...settings, world: { width: 900, height: 1951.1 } });
+      await library.request(['river-bend']);
+      expect(draws.map((d) => d.maps)).toEqual([['river-bend']]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('lets the live frame replace a picture already shown', async () => {
+    const shown: string[] = [];
+    const library = createPreviewLibrary((id, picture) => shown.push(`${id}=${picture.url}`));
+    library.configure({ ...settings, world: { width: 900, height: 1951.1 } });
+    await library.request(['river-bend']);
+    finish(draws[0]);
+    library.expect('river-bend')({ url: 'live', focus: { x: 0.5, y: 0.5 } });
+    expect(shown).toEqual(['river-bend=url:river-bend', 'river-bend=live']);
   });
 
   it('stops a drawing for old settings and redraws for the new ones', async () => {

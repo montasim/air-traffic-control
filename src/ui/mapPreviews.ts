@@ -108,7 +108,8 @@ export function createMapPreviews(
       for (const child of [...this.children.list]) child.destroy();
       // The renderers read the camera zoom as their render scale, exactly as in PlayScene.
       this.cameras.main.setZoom(DENSITY).centerOn(WIDTH / 2, HEIGHT / 2);
-      const prepared = map.prepare({ width: WIDTH, height: HEIGHT, detailLevel: options.detailLevel, twoEndLanding: options.twoEndLanding });
+      // Laid out at the exact world a shift gets (layouts switch at precise sizes); only the canvas is rounded.
+      const prepared = map.prepare({ width: options.world.width, height: options.world.height, detailLevel: options.detailLevel, twoEndLanding: options.twoEndLanding });
       drawUnder(options.night, () => map.render(this, prepared));
       if (options.night) drawNight(this, prepared.layout);
       // Time of day and weather reach the drifting clouds the same way as in a shift.

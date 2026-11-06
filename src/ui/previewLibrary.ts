@@ -37,11 +37,12 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
   const keyOf = (id: MapId) => `/${settingsKey}/${id}`;
   let manifest: Promise<ShippedManifest | undefined> | undefined;
 
-  /** A picture drawn at build time, when the build shipped one for these settings. */
+  /** A picture drawn at build time, when the build shipped one for exactly these settings. */
   async function shipped(id: MapId): Promise<MapPicture | undefined> {
-    manifest ??= fetch(`${SHIPPED_ROOT}/manifest.json`).then((response) => (response.ok ? response.json() : undefined)).catch(() => undefined);
     const set = settings && shippedSet(settings);
-    const focus = set ? (await manifest)?.focus[set]?.[id] : undefined;
+    if (!set) return undefined;
+    manifest ??= fetch(`${SHIPPED_ROOT}/manifest.json`).then((response) => (response.ok ? response.json() : undefined)).catch(() => undefined);
+    const focus = (await manifest)?.focus[set]?.[id];
     return focus && { url: `${SHIPPED_ROOT}/${set}/${id}.jpg`, focus };
   }
 
@@ -120,7 +121,8 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
      */
     expect(id: MapId): (picture?: MapPicture) => void {
       const key = settingsKey;
-      if (!memory.has(keyOf(id))) inFlight.add(id);
+      // The live frame is exactly what the player will see (clouds included), so it replaces any other picture.
+      inFlight.add(id);
       return (picture) => {
         if (key !== settingsKey || !inFlight.delete(id)) return;
         if (picture) keep(id, picture);
