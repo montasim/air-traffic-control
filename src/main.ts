@@ -292,8 +292,15 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
     scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale, activeNight)],
   });
 
+  // A menu covers a still picture: the game draws only until the frames still owed are shown, then sleeps.
+  stillFrames = Infinity;
+  nextGame.events.on(Phaser.Core.Events.POST_RENDER, () => {
+    if (document.body.dataset.screen !== "play" && --stillFrames <= 0) nextGame.loop.sleep();
+  });
   nextGame.events.on("scene-ready", () => {
     sceneReady = true;
+    stillFrames = 0;
+    redraw(30);
     playScene()?.setNight(currentSave.settings.night);
     playScene()?.setWeather(currentSave.settings.weather);
     if (!restore) offerLivePreview(nextGame);
@@ -368,7 +375,23 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   return nextGame;
 }
 
+let stillFrames = Infinity;
+/** Wakes the game, resetting its clock so the time it slept never reaches the world as one big step. */
+function wakeGame(): void {
+  if (game.loop.running) return;
+  game.loop.wake();
+  game.loop.resetDelta();
+}
+/** Draws a few frames behind a menu (its look changed), then lets the game sleep again. */
+function redraw(frames = 10): void {
+  stillFrames = Math.max(stillFrames, frames);
+  wakeGame();
+}
 let game = createGame(activeProfile, activeMapId);
+// Every screen change runs through body[data-screen]; only play keeps the game drawing every frame.
+new MutationObserver(() => (document.body.dataset.screen === "play" ? wakeGame() : redraw()))
+  .observe(document.body, { attributes: true, attributeFilter: ["data-screen"] });
+window.addEventListener("resize", () => redraw());
 updateResumeOffer();
 
 function playScene(): PlayScene | undefined {
@@ -789,6 +812,7 @@ landingModeInput.addEventListener('change', async () => {
 // Night only changes the look, so the live map updates without a rebuild; the store queue orders rapid toggles.
 nightModeInput.addEventListener("change", () => {
   playScene()?.setNight(nightModeInput.checked);
+  redraw(30);
   void gameStore.setNight(nightModeInput.checked).then(save => {
     currentSave = save;
     menuPictures.refresh();
@@ -799,6 +823,8 @@ nightModeInput.addEventListener("change", () => {
 // Weather only changes the look too: the live map shows or hides its clouds at once.
 weatherInput.addEventListener("change", () => {
   playScene()?.setWeather(weatherInput.checked);
+  // Clouds may fade in or out, so the menu keeps drawing a moment longer.
+  redraw(60);
   void gameStore.setWeather(weatherInput.checked).then(save => {
     currentSave = save;
     menuPictures.refresh();

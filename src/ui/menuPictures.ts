@@ -78,10 +78,14 @@ export function mountMenuPictures(state: MenuPictureState) {
       const { world } = newShiftWorld();
       const deliver = library.expect(state.selectedId());
       const idle = window.requestIdleCallback ?? ((callback: () => void) => window.setTimeout(callback, 600));
-      idle(() => source.events.once(Phaser.Core.Events.POST_RENDER, () => {
-        if (!current()) return deliver();
-        deliver({ url: shrink(source.canvas, world.width, world.height), focus: airfieldFocus(zones, world.width, world.height) });
-      }));
+      idle(() => {
+        source.events.once(Phaser.Core.Events.POST_RENDER, () => {
+          if (!current()) return deliver();
+          deliver({ url: shrink(source.canvas, world.width, world.height), focus: airfieldFocus(zones, world.width, world.height) });
+        });
+        // Behind a menu the game sleeps; one more frame is drawn for the picture, then it sleeps again.
+        source.loop.wake();
+      });
     },
   };
 }
