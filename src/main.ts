@@ -298,6 +298,11 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   nextGame.events.on(Phaser.Core.Events.POST_RENDER, () => {
     if (document.body.dataset.screen !== "play" && --stillFrames <= 0) nextGame.loop.sleep();
   });
+  nextGame.events.once(Phaser.Core.Events.READY, () => {
+    if (nextGame.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
+      nextGame.renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, () => window.setTimeout(redrawAfterContextLoss));
+    }
+  });
   let frameRateCapped = false;
   nextGame.events.on("scene-ready", () => {
     // Phones step at 30 frames a second (aircraft move slowly), and at full rate while a finger draws a route.
@@ -588,6 +593,18 @@ function rebuildForTarget(
   game.destroy(true);
   game = createGame(profile, mapId, restore);
   renderShell();
+}
+
+/**
+ * A phone short of memory may take the WebGL context away and later hand a fresh one back. Everything drawn
+ * into textures at runtime (the map, the aircraft) is gone then, so the game is rebuilt, and a shift in
+ * progress comes back paused where it was.
+ */
+function redrawAfterContextLoss(): void {
+  pauseRun();
+  const scene = playScene();
+  const shift = scene && activeRunId && scene.getPhase() === "paused" ? loadActiveShift() : undefined;
+  rebuildForTarget(activeProfile, activeMapId, false, shift ?? undefined);
 }
 
 function persistShift(): void {
