@@ -308,10 +308,18 @@ function paintTypeGlyph(graphics: Phaser.GameObjects.Graphics, at: Vector2, size
  * Whether scenery (a tree, bush, or stone) of `radius` at `point` stays off the
  * airfield: helipads, aprons, and runways are always drawn clear of it.
  */
+/** A prepared layout's aprons, found once: drifting clouds ask about the same layout every frame. */
+const layoutAprons = new WeakMap<PlayableMapLayout, Vector2[][]>();
+function aprons(layout: PlayableMapLayout): Vector2[][] {
+  let found = layoutAprons.get(layout);
+  if (!found) layoutAprons.set(layout, (found = apronPolygons(layout)));
+  return found;
+}
+
 export function clearOfAirfield(layout: PlayableMapLayout, point: Vector2, radius: number): boolean {
   const margin = radius + 4;
   if (layout.landingZones.some((zone) => zone.accepts === "rotor" && Math.hypot(zone.position.x - point.x, zone.position.y - point.y) < zone.captureRadius * 1.6 + margin)) return false;
-  if (onApron(point, apronPolygons(layout), margin)) return false;
+  if (onApron(point, aprons(layout), margin)) return false;
   const runways = (layout as Partial<{ runways: readonly MapRunway[] }>).runways ?? [];
   return !runways.some((runway) => {
     const dx = point.x - runway.center.x;
