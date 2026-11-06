@@ -105,27 +105,107 @@ function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number,
   }
 }
 
-/** Retained vector artwork: no cropped atlas, resampling or changing sprite pivots. */
+/** The airframe in flight colours (landed 0) or landed colours (1), in its own coordinates. */
+function paintAirframe(body: Phaser.GameObjects.Graphics, outline: Phaser.Math.Vector2[], type: Aircraft["type"], livery: LiveryId, military: boolean, landed: number): void {
+    const paint = aircraftLiveryPaint(livery, type);
+    const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
+    const edge = mixColor(paint.edge, LANDED.keyline, landed);
+    body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
+    body.fillPoints(outline, true);
+    // Wings and tailplanes sit lower than the fuselage, so they read a shade darker.
+    if (type !== "rotor") {
+      body.fillStyle(INK.keyline, 0.14);
+      for (const [from, to] of [[2, 5], [13, 16], [6, 9], [9, 12]]) body.fillPoints(outline.slice(from, to + 1), true);
+    }
+    // Midnight needs a pale edge on dark scenery, backed by dark ink on snow.
+    if (livery === 'midnight') {
+      body.lineStyle(4.4, keyline, 1);
+      body.strokePoints(outline, true);
+    }
+    // A bold outline keeps the silhouette crisp against busier, textured ground.
+    body.lineStyle(3, edge, 1);
+    body.strokePoints(outline, true);
+    // One generous livery panel and one cockpit remain readable at flight scale.
+    body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
+    body.fillRoundedRect(paint.panelX, -paint.panelHeight / 2, paint.panelWidth, paint.panelHeight, Math.min(4, paint.panelHeight / 2));
+    // Military airframes carry no airline wing stripe; their own details are drawn below instead.
+    if (type !== "rotor" && !military) {
+      const wingX = type === "liner" ? -7 : -4;
+      body.lineStyle(paint.wingWidth, mixColor(paint.wing, LANDED.livery, landed), 1);
+      body.lineBetween(wingX, -19, wingX + 3, -9);
+      body.lineBetween(wingX, 19, wingX + 3, 9);
+    }
+    // Engines under the wings and a light catching the spine give the airframe some depth.
+    if (type !== "rotor" && !military) {
+      body.fillStyle(mixColor(INK.keyline, LANDED.keyline, landed), 0.85);
+      const engineX = type === "liner" ? 0 : 2;
+      body.fillEllipse(engineX, -13, 8, 4);
+      body.fillEllipse(engineX, 13, 8, 4);
+    }
+    body.fillStyle(0xffffff, 0.28 * (1 - landed));
+    body.fillRoundedRect(type === "rotor" ? -14 : -22, -1, type === "rotor" ? 26 : 42, 2, 1);
+    body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
+    const ink = mixColor(INK.keyline, LANDED.keyline, landed);
+    if (military && type === "commuter") {
+      // A long bubble canopy forward, and twin exhaust nozzles at the tail.
+      body.fillRoundedRect(10, -2.5, 13, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      body.fillRoundedRect(-30, -3.5, 5, 3, 1);
+      body.fillRoundedRect(-30, 0.5, 5, 3, 1);
+    } else if (military && type === "liner") {
+      // A short flight deck, and four engines along the straight wing.
+      body.fillRoundedRect(24, -3.5, 6, 7, 2);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-19, -11, 11, 19]) body.fillEllipse(8, y, 9, 3.5);
+    } else if (military) {
+      // A two-seat gunship canopy, and a weapon pod under each stub wing.
+      body.fillRoundedRect(10, -2.5, 12, 5, 2.5);
+      body.fillStyle(ink, 0.85);
+      for (const y of [-12, 12]) body.fillRoundedRect(-4, y - 1.5, 9, 3, 1.5);
+    } else body.fillRoundedRect(type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
+}
+
+/**
+ * Draws `draw` once into a shared texture named `key`, `half` units either side of the origin at `scale`
+ * texture pixels per unit, and returns the key. Every aircraft of a kind shows the same texture: live
+ * vector shapes were re-triangulated every frame for every aircraft, the main cost of a busy shift.
+ */
+function bakedTexture(scene: Phaser.Scene, key: string, half: number, scale: number, draw: (graphics: Phaser.GameObjects.Graphics) => void): string {
+  if (scene.textures.exists(key)) return key;
+  const size = Math.ceil(half * 2 * scale);
+  const texture = scene.textures.addDynamicTexture(key, size, size)!;
+  texture.camera.setOrigin(0, 0).setZoom(scale);
+  const graphics = scene.make.graphics({ x: half, y: half }, false);
+  draw(graphics);
+  texture.draw(graphics);
+  texture.render();
+  graphics.destroy();
+  return key;
+}
+
+/** Aircraft artwork baked once per type, livery and look into textures, then moved and turned. */
 export class AircraftView {
   readonly container: Phaser.GameObjects.Container;
   readonly ring: Phaser.GameObjects.Arc;
   private readonly innerRing: Phaser.GameObjects.Arc;
   private readonly presentationScale: number;
-  private readonly rotorAssembly?: Phaser.GameObjects.Graphics;
+  private readonly rotorAssembly?: Phaser.GameObjects.Image;
   private rotorAngle: number;
   private reducedMotion: boolean;
   private readonly livery: LiveryId;
   private readonly type: Aircraft["type"];
   private readonly military: boolean;
-  private readonly outline: Phaser.Math.Vector2[];
-  private readonly shadow: Phaser.GameObjects.Graphics;
-  private readonly body: Phaser.GameObjects.Graphics;
+  private readonly shadow: Phaser.GameObjects.Image;
+  private readonly body: Phaser.GameObjects.Image;
+  /** The landed colours, fading in over the flight colours after touchdown. */
+  private readonly landedBody: Phaser.GameObjects.Image;
+  private shadowFill = 0.28;
   /** 0 = flight colours, 1 = landed colours. */
   private landedBlend = -1;
   /** Scale on the ground, at most GROUND_SCALE and small enough to fit this type's stand. */
   private groundScale = GROUND_SCALE;
   /** Night lights: landing lights at the nose throwing a beam ahead, and a red beacon that flashes. */
-  private readonly headlight: Phaser.GameObjects.Graphics;
+  private readonly headlight: Phaser.GameObjects.Image;
   private readonly noseLight: Phaser.GameObjects.Arc;
   private readonly beacon: Phaser.GameObjects.Arc[];
   private night = false;
@@ -166,24 +246,36 @@ export class AircraftView {
     this.type = aircraft.type;
     this.military = Boolean(options.military);
     const outline = (this.military ? MILITARY_OUTLINES : AIRCRAFT_OUTLINES)[aircraft.type];
-    this.outline = outline.map(([x, y]) => new Phaser.Math.Vector2(x, y));
-    const shadow = (this.shadow = scene.add.graphics().setPosition(3, 4));
-    const body = (this.body = scene.add.graphics());
-    this.paint(0);
+    const points = outline.map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    // Texture pixels per unit: as many as the screen shows, doubled so turned edges stay smooth.
+    const shown = (scene.cameras?.main?.zoom ?? 1) * this.presentationScale;
+    const sharp = Math.round(shown * 2 * 100) / 100;
+    const kind = `${this.military ? "military" : "civil"}-${aircraft.type}`;
+    const image = (key: string, scale: number) => scene.add.image(0, 0, key).setScale(1 / scale);
+    const shadow = (this.shadow = image(bakedTexture(scene, `aircraft-shadow-${kind}-${sharp}`, 40, sharp, (graphics) => {
+      graphics.fillStyle(INK.shadow, 1);
+      graphics.fillPoints(points, true);
+    }), sharp).setPosition(3, 4));
+    const airframe = (landed: 0 | 1) => image(bakedTexture(scene, `aircraft-${kind}-${this.livery}-${landed}-${sharp}`, 40, sharp,
+      (graphics) => paintAirframe(graphics, points, aircraft.type, this.livery, this.military, landed)), sharp);
+    const body = (this.body = airframe(0));
+    this.landedBody = airframe(1).setVisible(false);
     // The landing lights' beam lies on the ground ahead, under the airframe, glowing where it falls.
+    // It is soft, so it bakes at screen sharpness.
     const nose = Math.max(...outline.map(([x]) => x));
-    this.headlight = scene.add.graphics().setBlendMode(Phaser.BlendModes.ADD);
-    paintHeadlightBeam(this.headlight, nose, aircraft.type);
-    const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body];
+    const beamScale = Math.round(shown * 100) / 100;
+    this.headlight = image(bakedTexture(scene, `aircraft-beam-${kind}-${beamScale}`, nose + NIGHT_LIGHTS[aircraft.type].reach + 4, beamScale,
+      (graphics) => paintHeadlightBeam(graphics, nose, aircraft.type)), beamScale).setBlendMode(Phaser.BlendModes.ADD);
+    const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body, this.landedBody];
     if (aircraft.type === "rotor") {
       // A centered, symmetric rotor avoids the lopsided atlas wobble.
-      this.rotorAssembly = scene.add.graphics().setPosition(5, 0);
-      this.rotorAssembly.fillStyle(INK.bodyHighlight, 0.08);
-      this.rotorAssembly.fillCircle(0, 0, 25);
-      this.rotorAssembly.fillStyle(aircraftLiveryPaint(this.livery, this.type).rotor, 0.42);
-      this.rotorAssembly.fillRoundedRect(-25, -1.5, 50, 3, 1.5);
-      this.rotorAssembly.fillRoundedRect(-1.5, -25, 3, 50, 1.5);
-      this.rotorAssembly.setRotation(this.rotorAngle);
+      this.rotorAssembly = image(bakedTexture(scene, `aircraft-rotor-${this.livery}-${sharp}`, 27, sharp, (graphics) => {
+        graphics.fillStyle(INK.bodyHighlight, 0.08);
+        graphics.fillCircle(0, 0, 25);
+        graphics.fillStyle(aircraftLiveryPaint(this.livery, aircraft.type).rotor, 0.42);
+        graphics.fillRoundedRect(-25, -1.5, 50, 3, 1.5);
+        graphics.fillRoundedRect(-1.5, -25, 3, 50, 1.5);
+      }), sharp).setPosition(5, 0).setRotation(this.rotorAngle);
       children.push(this.rotorAssembly);
       const hub = scene.add.circle(5, 0, 3, INK.bodyHighlight).setStrokeStyle(1.5, INK.keyline);
       children.push(hub);
@@ -246,7 +338,7 @@ export class AircraftView {
     const x = (3 + altitude * 9) * reach;
     const y = (4 + altitude * 12) * reach;
     const cos = Math.cos(heading), sin = Math.sin(heading);
-    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(this.night ? (1 - altitude) * 0.55 : 1 - altitude * 0.3);
+    this.shadow.setPosition(x * cos + y * sin, -x * sin + y * cos).setAlpha(this.shadowFill * (this.night ? (1 - altitude) * 0.55 : 1 - altitude * 0.3));
   }
   setGroundScale(scale: number): void {
     this.groundScale = scale;
@@ -261,70 +353,13 @@ export class AircraftView {
     this.grounded = true;
     this.updateLights();
     this.landedBlend = muteImmediately ? 1 : 0;
-    if (muteImmediately) this.paint(1);
+    if (muteImmediately) this.blendToLanded(1);
   }
-  /** Draw the airframe, blending from flight colours (0) to landed colours (1). */
-  private paint(landed: number): void {
-    const paint = aircraftLiveryPaint(this.livery, this.type);
-    const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
-    const edge = mixColor(paint.edge, LANDED.keyline, landed);
-    this.shadow.clear();
-    this.shadow.fillStyle(INK.shadow, 0.28 + (LANDED.shadowAlpha - 0.28) * landed);
-    this.shadow.fillPoints(this.outline, true);
-    const body = this.body.clear();
-    body.fillStyle(mixColor(paint.body, LANDED.body, landed), 1);
-    body.fillPoints(this.outline, true);
-    // Wings and tailplanes sit lower than the fuselage, so they read a shade darker.
-    if (this.type !== "rotor") {
-      body.fillStyle(INK.keyline, 0.14);
-      for (const [from, to] of [[2, 5], [13, 16], [6, 9], [9, 12]]) body.fillPoints(this.outline.slice(from, to + 1), true);
-    }
-    // Midnight needs a pale edge on dark scenery, backed by dark ink on snow.
-    if (this.livery === 'midnight') {
-      body.lineStyle(4.4, keyline, 1);
-      body.strokePoints(this.outline, true);
-    }
-    // A bold outline keeps the silhouette crisp against busier, textured ground.
-    body.lineStyle(3, edge, 1);
-    body.strokePoints(this.outline, true);
-    // One generous livery panel and one cockpit remain readable at flight scale.
-    body.fillStyle(mixColor(paint.panel, LANDED.livery, landed), 1);
-    body.fillRoundedRect(paint.panelX, -paint.panelHeight / 2, paint.panelWidth, paint.panelHeight, Math.min(4, paint.panelHeight / 2));
-    // Military airframes carry no airline wing stripe; their own details are drawn below instead.
-    if (this.type !== "rotor" && !this.military) {
-      const wingX = this.type === "liner" ? -7 : -4;
-      body.lineStyle(paint.wingWidth, mixColor(paint.wing, LANDED.livery, landed), 1);
-      body.lineBetween(wingX, -19, wingX + 3, -9);
-      body.lineBetween(wingX, 19, wingX + 3, 9);
-    }
-    // Engines under the wings and a light catching the spine give the airframe some depth.
-    if (this.type !== "rotor" && !this.military) {
-      body.fillStyle(mixColor(INK.keyline, LANDED.keyline, landed), 0.85);
-      const engineX = this.type === "liner" ? 0 : 2;
-      body.fillEllipse(engineX, -13, 8, 4);
-      body.fillEllipse(engineX, 13, 8, 4);
-    }
-    body.fillStyle(0xffffff, 0.28 * (1 - landed));
-    body.fillRoundedRect(this.type === "rotor" ? -14 : -22, -1, this.type === "rotor" ? 26 : 42, 2, 1);
-    body.fillStyle(mixColor(paint.cockpit, LANDED.keyline, landed), 1);
-    const ink = mixColor(INK.keyline, LANDED.keyline, landed);
-    if (this.military && this.type === "commuter") {
-      // A long bubble canopy forward, and twin exhaust nozzles at the tail.
-      body.fillRoundedRect(10, -2.5, 13, 5, 2.5);
-      body.fillStyle(ink, 0.85);
-      body.fillRoundedRect(-30, -3.5, 5, 3, 1);
-      body.fillRoundedRect(-30, 0.5, 5, 3, 1);
-    } else if (this.military && this.type === "liner") {
-      // A short flight deck, and four engines along the straight wing.
-      body.fillRoundedRect(24, -3.5, 6, 7, 2);
-      body.fillStyle(ink, 0.85);
-      for (const y of [-19, -11, 11, 19]) body.fillEllipse(8, y, 9, 3.5);
-    } else if (this.military) {
-      // A two-seat gunship canopy, and a weapon pod under each stub wing.
-      body.fillRoundedRect(10, -2.5, 12, 5, 2.5);
-      body.fillStyle(ink, 0.85);
-      for (const y of [-12, 12]) body.fillRoundedRect(-4, y - 1.5, 9, 3, 1.5);
-    } else body.fillRoundedRect(this.type === "rotor" ? 14 : 20, -3.5, 6, 7, 2);
+  /** Fades from flight colours (0) to landed colours (1): the landed airframe over the flight one, which never shows through. */
+  private blendToLanded(landed: number): void {
+    this.landedBody.setVisible(landed > 0).setAlpha(landed);
+    this.body.setVisible(landed < 1);
+    this.shadowFill = 0.28 + (LANDED.shadowAlpha - 0.28) * landed;
   }
   /** Draw a landed aircraft from presentation-only ground state. */
   syncGround(
@@ -334,7 +369,7 @@ export class AircraftView {
   ): void {
     if (this.landedBlend >= 0 && this.landedBlend < 1) {
       this.landedBlend = this.reducedMotion ? 1 : Math.min(1, this.landedBlend + deltaMilliseconds / LANDED.blendMilliseconds);
-      this.paint(this.landedBlend);
+      this.blendToLanded(this.landedBlend);
     }
     this.container
       .setPosition(state.position.x, state.position.y)
