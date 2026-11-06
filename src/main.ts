@@ -22,6 +22,7 @@ import {
   profileForViewport,
   type ViewportProfile,
 } from "./game/viewport";
+import { capFrameRate } from "./game/frameRate";
 import {
   RANK_CATALOG,
   isMapUnlocked,
@@ -297,7 +298,13 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   nextGame.events.on(Phaser.Core.Events.POST_RENDER, () => {
     if (document.body.dataset.screen !== "play" && --stillFrames <= 0) nextGame.loop.sleep();
   });
+  let frameRateCapped = false;
   nextGame.events.on("scene-ready", () => {
+    // Phones step at 30 frames a second (aircraft move slowly), and at full rate while a finger draws a route.
+    if (!frameRateCapped && profile.detailLevel === "mobile") {
+      frameRateCapped = true;
+      capFrameRate(nextGame.loop, () => nextGame.input.pointers.some((pointer) => pointer.isDown));
+    }
     sceneReady = true;
     stillFrames = 0;
     redraw(30);
