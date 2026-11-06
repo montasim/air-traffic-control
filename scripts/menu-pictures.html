@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Menu pictures</title>
+<!-- Opened by build-menu-pictures.mjs on the dev server: draws every airfield with the game's own renderers. -->
+<script type="module">
+  import { createMapPreviews } from "/src/ui/mapPreviews.ts";
+  import { MAP_IDS } from "/src/game/maps/mapIds.ts";
+  import { shippedSets } from "/src/ui/shippedPictures.ts";
+  const drawSet = (settings) => new Promise((resolve) => {
+    const pictures = [];
+    createMapPreviews((id, url, focus) => pictures.push({ id, url, focus }), { ...settings, maps: MAP_IDS, onDone: () => resolve(pictures) });
+  });
+  window.sets = () => shippedSets().map(({ set }) => set);
+  window.drawSet = (name) => drawSet(shippedSets().find(({ set }) => set === name).settings);
+</script>

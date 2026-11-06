@@ -1,5 +1,6 @@
 import type { MapId } from "../game/maps/mapIds";
 import { createMapPreviews, type PreviewSettings } from "./mapPreviews";
+import { SHIPPED_ROOT, shippedSet, type ShippedManifest } from "./shippedPictures";
 
 export interface MapPicture {
   readonly url: string;
@@ -8,7 +9,8 @@ export interface MapPicture {
 }
 
 /**
- * Airfield pictures drawn only when asked for, once per setting, and kept across visits.
+ * Airfield pictures drawn only when asked for, once per setting, and kept across visits. Pictures
+ * the build shipped come first; the device draws only what the build could not.
  *
  * Drawing all twelve at startup cost a phone seconds of blocked main thread and most of its memory,
  * so the menu asks only for what it shows: the selected airfield at first, the rest when a screen
@@ -33,6 +35,15 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
   }
 
   const keyOf = (id: MapId) => `/${settingsKey}/${id}`;
+  let manifest: Promise<ShippedManifest | undefined> | undefined;
+
+  /** A picture drawn at build time, when the build shipped one for these settings. */
+  async function shipped(id: MapId): Promise<MapPicture | undefined> {
+    manifest ??= fetch(`${SHIPPED_ROOT}/manifest.json`).then((response) => (response.ok ? response.json() : undefined)).catch(() => undefined);
+    const set = settings && shippedSet(settings);
+    const focus = set ? (await manifest)?.focus[set]?.[id] : undefined;
+    return focus && { url: `${SHIPPED_ROOT}/${set}/${id}.jpg`, focus };
+  }
 
   async function stored(id: MapId): Promise<MapPicture | undefined> {
     if (!cacheName) return undefined;
@@ -92,7 +103,7 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
           show(id, known);
           continue;
         }
-        const cached = await stored(id);
+        const cached = (await shipped(id)) ?? (await stored(id));
         if (key !== settingsKey) return;
         if (cached) {
           memory.set(keyOf(id), cached);

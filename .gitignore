@@ -23,3 +23,6 @@ android/keystore.properties
 
 # Large marketing media stays outside version control.
 marketing/*.mp4
+
+# Menu pictures are drawn by the build (npm run pictures).
+public/menu-pictures/

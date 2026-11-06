@@ -47,8 +47,25 @@ describe('preview library', () => {
     const giveUp = library.expect('river-bend');
     await library.request(['river-bend']);
     giveUp();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(draws.map((d) => d.maps)).toEqual([['river-bend']]);
+  });
+
+  it('shows pictures the build shipped instead of drawing them', async () => {
+    const shown: string[] = [];
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ hash: 'x', focus: { 'portrait-day-one': { 'river-bend': { x: 0.4, y: 0.6 } } } })));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const library = createPreviewLibrary((id, picture) => shown.push(`${id}=${picture.url}`));
+      library.configure(settings);
+      await library.request(['river-bend', 'saltmarsh-gateway']);
+      expect(shown).toEqual(['river-bend=/menu-pictures/portrait-day-one/river-bend.jpg']);
+      // Only what the build did not ship is drawn on the device.
+      expect(draws.map((d) => d.maps)).toEqual([['saltmarsh-gateway']]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('stops a drawing for old settings and redraws for the new ones', async () => {
