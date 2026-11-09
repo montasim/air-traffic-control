@@ -8,7 +8,7 @@ export const CARRIER_COAST_DEFINITION = defineMap<CarrierCoastLayout>({
   metadata: {
     name: 'Carrier Coast',
     description: 'A shore airfield takes the liners; commuters land on the carrier offshore.',
-    category: 'naval',
+    category: 'military',
     layoutLabel: 'Shore field and carrier',
     unlockRankId: 'flight-director',
   },

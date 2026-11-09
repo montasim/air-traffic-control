@@ -8,7 +8,7 @@ export const BLUE_WATER_DEFINITION = defineMap<BlueWaterLayout>({
   metadata: {
     name: 'Blue Water',
     description: 'Open ocean and one carrier deck: every arrival lands on it.',
-    category: 'naval',
+    category: 'military',
     layoutLabel: 'Carrier deck only',
     unlockRankId: 'air-boss',
   },
