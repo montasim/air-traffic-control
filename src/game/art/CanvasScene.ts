@@ -35,6 +35,9 @@ export class GameObject {
 
 /** Records the original vector artwork. Only rasterization depends on a browser canvas. */
 export class Graphics extends GameObject {
+  /** Opt-in for frequently changing feedback. Map and aircraft artwork remains rasterized. */
+  vectorRendering=false;
+  useVectorRendering(){this.vectorRendering=true;return this;}
   private commands:((context:Context)=>void)[]=[];
   private loX=Infinity;private loY=Infinity;private hiX=-Infinity;private hiY=-Infinity;private pad=2;
   private point(x:number,y:number){this.loX=Math.min(this.loX,x);this.loY=Math.min(this.loY,y);this.hiX=Math.max(this.hiX,x);this.hiY=Math.max(this.hiY,y);}

@@ -42,11 +42,11 @@ export class FlightOverlay {
       { fontFamily: 'Atkinson Hyperlegible', fontSize: '20px', color: '#fff5df', backgroundColor: '#203d39', padding: { x: 4, y: 2 } }
     ).setOrigin(.5,0).setDepth(7).setVisible(false));
 
-  this.routeGraphics=scene.add.graphics().setDepth(4);
-  this.warningGraphics=scene.add.graphics().setDepth(6);
-  this.previewGraphics=scene.add.graphics().setDepth(8);
-  this.failureMarker=scene.add.graphics().setDepth(12);
-  this.flash=scene.add.graphics().setDepth(100).setAlpha(0);
+  this.routeGraphics=scene.add.graphics().useVectorRendering().setDepth(4);
+  this.warningGraphics=scene.add.graphics().useVectorRendering().setDepth(6);
+  this.previewGraphics=scene.add.graphics().useVectorRendering().setDepth(8);
+  this.failureMarker=scene.add.graphics().useVectorRendering().setDepth(12);
+  this.flash=scene.add.graphics().useVectorRendering().setDepth(100).setAlpha(0);
   this.routeGuidance=new RouteGuidanceRenderer(scene,this.guidanceTarget(layout.landingZones[0]),{depth:5});
   this.routeGuidance.setVisible(false);
  }
