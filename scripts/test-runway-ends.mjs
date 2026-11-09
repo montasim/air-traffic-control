@@ -2,14 +2,13 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { chromium, expect } from '@playwright/test';
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args:['--disable-gpu'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args:['--enable-unsafe-swiftshader'] });
 await mkdir('test-results/runway-ends',{recursive:true});
 try {
   for (const type of (process.env.AIRCRAFT_TYPE ? [process.env.AIRCRAFT_TYPE] : ['commuter','liner'])) for (const end of (process.env.RUNWAY_END ? [Number(process.env.RUNWAY_END)] : [0,1])) {
     const page=await browser.newPage({viewport:{width:Number(process.env.TEST_WIDTH || 1280),height:Number(process.env.TEST_HEIGHT || 800)}});
     let mainUrl; page.on('request',r=>{if(new URL(r.url()).pathname==='/src/main.ts') mainUrl=r.url()});
     const errors=[]; page.on('pageerror',e=>errors.push(e.message));
-    await page.addInitScript(()=>{const original=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(type,...args){return type.includes('webgl')?null:original.call(this,type,...args)};});
     await page.clock.install({time:new Date(2026,8,30,12,0,0)});
     await page.goto(process.env.RESIZE_TEST_URL || 'http://localhost:4287/');
     await expect(page.locator('#start-button')).toBeEnabled();

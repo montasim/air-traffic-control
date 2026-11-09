@@ -3,14 +3,8 @@ import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { chromium, expect } from '@playwright/test';
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--disable-gpu'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--enable-unsafe-swiftshader'] });
 const page = await browser.newPage();
-await page.addInitScript(() => {
-  const original = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(type, ...args) {
-    return type.includes('webgl') ? null : original.call(this, type, ...args);
-  };
-});
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
 const snapshot = () => page.evaluate(async () => {
@@ -32,7 +26,7 @@ try {
         const { IndexedDbSavePersistence } = await import('/src/storage/persistence.ts');
         const save = createDefaultGameSave();
         save.selectedMapId = mapId;
-        save.career.earnedRankId = save.career.acknowledgedRankId = 'chief-controller';
+        save.career.earnedRankId = save.career.acknowledgedRankId = 'air-boss';
         await new IndexedDbSavePersistence().write(save);
       }, map);
       await page.reload();
@@ -40,6 +34,11 @@ try {
       await page.locator('#start-button').click();
       await page.locator('#pause-button').click();
       const before = await snapshot();
+      const expectedZones=await page.evaluate(async ({map,world})=>{
+        const {mapDefinitionById}=await import('/src/game/maps/registry.ts');
+        return mapDefinitionById(map).prepare({...world,detailLevel:'desktop',twoEndLanding:false}).layout.landingZones.map(zone=>zone.id);
+      },{map,world:before.world});
+      assert.deepEqual(before.landingZones.map(zone=>zone.id),expectedZones,'The requested map is actually active');
       await page.setViewportSize(end);
       await expect(page.locator('#resume-button')).toBeEnabled();
       assert.deepEqual(await snapshot(), before);

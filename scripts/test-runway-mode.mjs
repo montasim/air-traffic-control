@@ -2,18 +2,14 @@ import assert from 'node:assert/strict';
 import { mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { chromium, expect } from '@playwright/test';
-const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--disable-gpu'] });
+const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1100, height: 800 } });
 const errors = [];
 let mainUrl;
 page.on('request', r => { if (new URL(r.url()).pathname === '/src/main.ts') mainUrl = r.url(); });
 page.on('pageerror', e => errors.push(e.message));
-await page.addInitScript(() => {
-  const original = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(type, ...args) { return type.includes('webgl') ? null : original.call(this, type, ...args); };
-});
 const snapshot = () => page.evaluate(async url => (await import(url)).inspectShift(), mainUrl);
-async function ready() { await expect(page.locator('#app')).not.toHaveAttribute('inert', ''); await expect(page.locator('#start-button')).toBeEnabled(); await expect(page.locator('#two-end-landing')).toBeEnabled(); }
+async function ready() { await expect(page.locator('#app')).not.toHaveAttribute('inert', ''); await expect(page.locator('#start-button')).toBeEnabled(); await expect(page.locator('#two-end-landing')).toBeEnabled(); await expect(page.locator('#game canvas')).toHaveCount(1); }
 async function setMode(enabled) { await page.locator('#two-end-landing').setChecked(enabled); await ready(); }
 async function practice(enabled) {
   await page.locator('#start-panel [data-screen="help"]').click();

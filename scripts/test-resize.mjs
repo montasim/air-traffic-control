@@ -3,16 +3,9 @@ import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { chromium, expect } from '@playwright/test';
 
-const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--disable-gpu'] });
+const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH || (existsSync('/usr/bin/google-chrome') ? '/usr/bin/google-chrome' : undefined), args: ['--enable-unsafe-swiftshader'] });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-// Canvas rendering keeps headless timing representative on hosts without a GPU.
-await page.addInitScript(() => {
-  const getContext = HTMLCanvasElement.prototype.getContext;
-  HTMLCanvasElement.prototype.getContext = function(type, ...args) {
-    if (type.includes('webgl')) return null;
-    return getContext.call(this, type, ...args);
-  };
-});
+// Exercise the shipping WebGL renderer, including software WebGL on headless hosts.
 await mkdir('test-results', { recursive: true });
 const more = async () => {
   if (!await page.locator('#pause-panel .menu-more').evaluate(el => el.open)) await page.locator('#pause-panel .menu-more summary').click();
