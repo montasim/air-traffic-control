@@ -1,0 +1,21 @@
+// Shared fixture: no menu, audio, service worker, or diagnostics overlay.
+import { mapDefinitionById } from './src/game/maps/registry';
+import { worldSizeForViewport, profileForViewport, renderScaleFor } from './src/game/viewport';
+import { GAME_FONT_LOAD_DESCRIPTORS } from './src/game/typography';
+const params=new URLSearchParams(location.search),mapId=params.get('map')||'saltmarsh-gateway';
+const count=Number(params.get('aircraft')||24),night=params.get('night')==='1';
+const world=worldSizeForViewport(innerWidth,innerHeight),profile=profileForViewport();
+await Promise.all(GAME_FONT_LOAD_DESCRIPTORS.map(font=>document.fonts.load(font)));
+let runtime,game,sim;
+const setup=performance.now();
+/*ENGINE_SETUP*/
+const seedTraffic=()=>{
+ sim=/*SIMULATION*/;
+ sim.nextSpawnAt=Infinity;
+ sim.aircraft=Array.from({length:count},(_,i)=>{const position={x:world.width*(.1+.2*(i%4)),y:world.height*(.1+.145*Math.floor(i/4))};const vertices=Number(params.get('routePoints')||2);const points=Array.from({length:vertices},(_,j)=>{const t=j/(vertices-1);return{x:position.x+(world.width*.96-position.x)*t,y:position.y+(vertices>2?Math.sin(t*Math.PI*4)*12:0)};});return{id:100+i,type:['liner','commuter','rotor'][i%3],position,heading:0,speed:8,collisionRadius:18,state:'flying',hasEntered:true,landingProgress:0,route:{destinationZoneId:'benchmark-no-capture',points,segmentIndex:1}};});
+ sim.events=[];
+};
+seedTraffic();
+window.fixture=()=>({phase:sim.snapshot().phase,count:sim.snapshot().aircraft.length,flying:sim.snapshot().aircraft.filter(a=>a.state==='flying').length,elapsed:sim.snapshot().elapsed,canvas:{width:document.querySelector('#game canvas').width,height:document.querySelector('#game canvas').height},world,engine:'/*ENGINE*/',map:mapId,requestedAircraft:count,detail:profile.detailLevel,dpr:devicePixelRatio,cap:/*CAP*/});
+window.reseed=seedTraffic;
+window.ready={setupMs:performance.now()-setup,navigationToReadyMs:performance.now(),fixture:window.fixture()};
