@@ -467,21 +467,18 @@ h3 {
   top: max(16px, var(--safe-top));
   right: max(16px, var(--safe-right));
   max-width: min(245px, calc(100vw - 112px));
-  padding: 7px 9px;
+  padding: 5px 7px;
   border-radius: 8px;
   background: #fff5dfee;
   color: #203d39;
   box-shadow: 0 3px 10px #203d3920;
   pointer-events: none;
-  font: 10px/1.45 ui-monospace, monospace;
+  font: clamp(8px, 2.3vw, 10px)/1.4 ui-monospace, monospace;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
   contain: layout paint;
 }
 .game-diagnostics[hidden] { display: none; }
-.game-diagnostics > :first-child { font: 700 14px/1.2 var(--font-display); text-transform: uppercase; margin-bottom: 4px; }
-@media (max-width: 520px) {
-  .game-diagnostics { font-size: 10px; padding: 6px 8px; }
-}
 .icon-button {
   position: absolute;
   bottom: max(18px, var(--safe-bottom));
@@ -505,8 +502,11 @@ h3 {
 #speed-button {
   right: auto;
   left: max(18px, var(--safe-left));
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 14px;
   font-weight: 700;
 }
 .hud[inert] {

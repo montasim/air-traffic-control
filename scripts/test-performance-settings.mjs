@@ -11,7 +11,7 @@ try{for(const viewport of [{width:1280,height:800},{width:390,height:844}]){
  await page.goto(base);await ready();await expect(page.locator('.hud-best')).toHaveCount(0);
  await page.locator('#start-button').click();await expect(page.locator('.game-diagnostics')).toBeVisible();
  await expect.poll(async()=>/\b[1-9]\d* FPS/.test(await page.locator('.game-diagnostics').innerText())).toBe(true);
- const metrics=await page.locator('.game-diagnostics').innerText();assert.match(metrics,/Game CPU work/);assert.match(metrics,/Process CPU unavailable/);assert.doesNotMatch(metrics,/NaN|undefined/);
+ const metrics=await page.locator('.game-diagnostics').innerText();assert.match(metrics,/FPS \u00b7 MEM (?:~[\d.]+ MB|N\/A) \u00b7 GPU ~[\d.]+ MB/);assert.ok(!metrics.includes('\n'));assert.doesNotMatch(metrics,/NaN|undefined/);
  assert.ok(await page.evaluate(()=>{const p=document.querySelector('.game-diagnostics').getBoundingClientRect(),s=document.querySelector('.hud-score').getBoundingClientRect();return p.left>=s.right&&p.right<=innerWidth&&p.top<25;}));
  await page.screenshot({path:`test-results/performance/play-${viewport.width}.png`});
  await page.locator('#pause-button').click();await expect(page.locator('.game-diagnostics')).toContainText('paused');

@@ -15,14 +15,9 @@ export function mountGameDiagnostics(source: DiagnosticsSource): () => void {
   const panel = document.createElement('aside');
   panel.className = 'game-diagnostics';
   panel.setAttribute('aria-label', 'Gameplay performance diagnostics');
-  const lines = Array.from({ length: 7 }, () => {
-    const line = document.createElement('div');
-    panel.append(line);
-    return line;
-  });
+  panel.title = 'Memory and GPU values are estimates in MB; GPU shows allocated memory, not utilization.';
   panel.hidden = true;
   document.body.append(panel);
-  let peak = 0;
   let previousPhase: GamePhase = 'idle';
   let previousSession = '';
   let visible = false;
@@ -37,22 +32,16 @@ export function mountGameDiagnostics(source: DiagnosticsSource): () => void {
     panel.hidden = !show;
     if (phase !== previousPhase || visible !== active) source.metrics.reset();
     const session = source.sessionId();
-    if (session !== previousSession) {peak = 0;source.metrics.reset();previousSession=session;}
+    if (session !== previousSession) {source.metrics.reset();previousSession=session;}
     previousPhase = phase;
     visible = active;
     if (!show) return;
     const memory = source.memory();
     const known = memory.externalCpu + memory.gpu;
     const total = memory.heap === undefined ? undefined : memory.heap + known;
-    if (total !== undefined) peak = Math.max(peak, total);
     const sample = source.metrics.sample(performance.now());
-    lines[0].textContent = paused ? 'Performance ? paused' : 'Performance';
-    lines[1].textContent = paused ? 'FPS ? ? paused' : `${sample.fps.toFixed(0)} FPS ? ${sample.frameMs.toFixed(1)} ms/frame`;
-    lines[2].textContent = `Game CPU work ${sample.cpuPerFrame.toFixed(1)} ms/frame`;
-    lines[3].textContent = `Memory ${total === undefined ? 'unavailable' : '~'+mb(total)+' MB'}`;
-    lines[4].textContent = `GPU ~${mb(memory.gpu)} MB ? ${sample.drawCalls ?? '?'} draws/frame`;
-    lines[5].textContent = `Peak ${total === undefined ? 'unavailable' : '~'+mb(peak)+' MB'}`;
-    lines[6].textContent = 'Process CPU unavailable';
+    panel.textContent = `${paused ? 'paused' : sample.fps.toFixed(0) + ' FPS'} \u00b7 MEM ${total === undefined ? 'N/A' : '~' + mb(total) + ' MB'} \u00b7 GPU ~${mb(memory.gpu)} MB`;
+
   };
   document.addEventListener(PERFORMANCE_SETTINGS_EVENT, update);
   update();
