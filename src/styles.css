@@ -1099,9 +1099,6 @@ dialog::backdrop {
 }
 
 @media (max-width: 650px) and (min-height: 501px) {
-  body[data-screen="home"] .game-canvas {
-    transform: translateY(48px);
-  }
   .career-summary {
     display: none;
   }

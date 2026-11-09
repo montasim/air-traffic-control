@@ -81,12 +81,11 @@ export class ThreeRuntime implements GameplayRuntime, GameplaySession {
     this.ledger.set('drawing-buffers',0,size.width*size.height*8);
     const canvas = this.renderer.domElement;
     canvas.dataset.renderer = 'three';
-    canvas.style.cssText = 'position:absolute;touch-action:none;display:block;';
+    canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block;';
     document.querySelector('#game')!.append(canvas);
     this.camera = new THREE.OrthographicCamera(0,this.world.width,0,this.world.height,.1,100);
     this.camera.position.z = 10;
     const signal = this.abort.signal;
-    window.addEventListener('resize',this.fit,{signal});
     canvas.addEventListener('pointerdown',this.pointerDown,{signal});
     canvas.addEventListener('pointermove',this.pointerMove,{signal});
     canvas.addEventListener('pointerup',this.pointerUp,{signal});
@@ -94,7 +93,6 @@ export class ThreeRuntime implements GameplayRuntime, GameplaySession {
     canvas.addEventListener('lostpointercapture',this.cancelPointer,{signal});
     canvas.addEventListener('webglcontextlost',event => {event.preventDefault();this.pauseRun();this.sleep();},{signal});
     canvas.addEventListener('webglcontextrestored',() => options.onContextRestored(),{signal});
-    this.fit();
     void this.load().catch(error => { if (!this.disposed) this.events.emit('runtime-error', error); });
   }
 
@@ -116,11 +114,9 @@ export class ThreeRuntime implements GameplayRuntime, GameplaySession {
     this.wake();
   }
 
-  private fit = () => {
-    const fit = Math.min(innerWidth/this.world.width,innerHeight/this.world.height);
-    const width=this.world.width*fit,height=this.world.height*fit;
-    Object.assign(this.renderer.domElement.style,{width:`${width}px`,height:`${height}px`,left:`${(innerWidth-width)/2}px`,top:`${(innerHeight-height)/2}px`});
-  };
+  // CSS fills the game host even when mobile browser chrome changes its height.
+  // Keep the logical world stable: pointerToWorld uses the actual canvas bounds,
+  // so saved games and in-progress routes remain aligned without cropping.
   get running() {return this.active;}
   getSession() {return this.ready && !this.disposed ? this : undefined;}
   wake() {

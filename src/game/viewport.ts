@@ -47,7 +47,7 @@ export function isSameProfile(
   return left.id === right.id && left.detailLevel === right.detailLevel;
 }
 
-/** Expand once at creation; FIT then keeps this world stable through display resizes. */
+/** Match the initial viewport; the canvas fills its host while this logical world stays stable. */
 export function worldSizeForViewport(width: number, height: number) {
   const profile = profileForSize(width, height);
   const scale = Math.min(width / profile.width, height / profile.height);
