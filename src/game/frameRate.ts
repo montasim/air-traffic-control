@@ -8,7 +8,6 @@ interface Loop {
 /**
  * Steps the game (update and draw) about 30 times a second, unless `fullRate()` says otherwise (a finger
  * drawing a route). Each step gets all the time since the last one, so the world keeps real time.
- * Phaser's own fps limit is not used: it hands over leftover time twice, so the world ran a few percent fast.
  */
 export function capFrameRate(loop: Loop, fullRate: () => boolean): void {
   const step = loop.callback;

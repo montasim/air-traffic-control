@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import {
   addDriftingClouds,
   composeStaticMap,
@@ -79,7 +79,7 @@ export function eastBankPolygon(layout: TwinBanksLayout): readonly { x: number; 
 }
 
 function paintVectorLabel(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   sign: AirfieldSign,
   unit: number
 ): void {
@@ -135,7 +135,7 @@ function bankFields(layout: TwinBanksLayout): { polygons: Vector2[][]; colors: n
 }
 
 function paintTerrain(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: TwinBanksLayout,
   unit: number,
   detailLevel: WorldDetailLevel
@@ -182,7 +182,7 @@ function paintTerrain(
 }
 
 function paintScenicRunways(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: TwinBanksLayout
 ): void {
   for (const runway of layout.scenicRunways) {
@@ -217,7 +217,7 @@ const facilityBuildings = (layout: TwinBanksLayout): MapBuilding[] =>
   layout.propAnchors.filter((prop) => prop.kind !== 'windsock').map(propBuilding);
 
 function paintFacilities(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: TwinBanksLayout,
   unit: number
 ): void {
@@ -245,7 +245,7 @@ function paintFacilities(
 }
 
 export function renderTwinBanksMap(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   layout: TwinBanksLayout,
   detailLevel: WorldDetailLevel
 ): void {

@@ -1,5 +1,5 @@
 import { AIRCRAFT_COLORS } from "../../palette";
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { LandingZone, Vector2 } from "../../../core/types";
 import type {
   MapHelipad,
@@ -27,7 +27,7 @@ export interface MapBuilding {
 }
 
 export function paintFieldPolygon(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   points: readonly Vector2[],
   palette: CivilMapPalette,
   alternate = false,
@@ -41,7 +41,7 @@ export function paintFieldPolygon(
 }
 
 export function paintWaterPolygon(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   points: readonly Vector2[],
   palette: CivilMapPalette,
 ): void {
@@ -62,7 +62,7 @@ export function paintWaterPolygon(
 }
 
 export function paintRiver(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   path: readonly Vector2[],
   width: number,
   palette: CivilMapPalette,
@@ -76,7 +76,7 @@ export function paintRiver(
 }
 
 export function paintApron(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   apron: readonly Vector2[],
   palette: CivilMapPalette,
 ): void {
@@ -97,7 +97,7 @@ export function paintApron(
 }
 
 export function paintTaxiway(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   taxiway: MapTaxiway,
   palette: CivilMapPalette,
 ): void {
@@ -110,7 +110,7 @@ export function paintTaxiway(
 
 /** A landing strip reads as one bold target at gameplay scale. */
 export function paintRunway(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   runway: MapRunway,
   palette: CivilMapPalette,
   _wearCount = 0,
@@ -170,7 +170,7 @@ export function paintRunway(
  * landing end showing which way aircraft land.
  */
 export function paintMarkedRunway(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   runway: MapRunway,
   palette: CivilMapPalette,
   landingZones: readonly LandingZone[],
@@ -279,7 +279,7 @@ export function paintMarkedRunway(
 }
 
 export function paintHelipad(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   helipad: MapHelipad,
   palette: CivilMapPalette,
 ): void {
@@ -323,7 +323,7 @@ export function paintHelipad(
 }
 
 export function paintBuilding(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   building: MapBuilding,
   palette: CivilMapPalette,
   runways: readonly MapRunway[] = [],
@@ -381,7 +381,7 @@ export function convexHull(points: readonly Vector2[]): Vector2[] {
  * with a lit edge and kind-specific detail (hangar ribs, terminal glazing, rooftop plant).
  */
 export function paintRaisedBuilding(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   building: MapBuilding,
   palette: CivilMapPalette,
   unit: number,
@@ -446,7 +446,7 @@ export function paintRaisedBuilding(
 
 /** A tree crown lit from the north-west, with a longer shadow to the south-east. */
 export function paintShadedTree(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   center: Vector2,
   radius: number,
   palette: CivilMapPalette,
@@ -464,7 +464,7 @@ export function paintShadedTree(
 }
 
 export function paintTree(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   center: Vector2,
   radius: number,
   palette: CivilMapPalette,

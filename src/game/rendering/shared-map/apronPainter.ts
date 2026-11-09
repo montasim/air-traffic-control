@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { ApronMarkings, ApronStand, GroundRoute, PlayableMapLayout } from "../../maps/types";
@@ -117,7 +117,7 @@ export function pavedApronShapes(
  * take in the stand rows laid out on it, so the parking area reads as one surface.
  */
 export function paintApronArea(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   aprons: readonly (readonly Vector2[])[],
   markings: ApronMarkings | undefined,
   palette: CivilMapPalette,
@@ -213,7 +213,7 @@ function cutAtPoint(points: readonly Vector2[], target: Vector2, tolerance: numb
  * the two always join. Guides are painted separately after the runways.
  */
 export function paintTaxiwaySurface(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   taxiway: MapTaxiway,
   palette: CivilMapPalette,
   options: {
@@ -292,7 +292,7 @@ export function paintTaxiwaySurface(
 }
 
 /** A tiny vector "L" or "C" so stand labels need no font at any scale. */
-function paintTypeGlyph(graphics: Phaser.GameObjects.Graphics, at: Vector2, size: number, type: ApronStand["accepts"]): void {
+function paintTypeGlyph(graphics: Art.Graphics, at: Vector2, size: number, type: ApronStand["accepts"]): void {
   // Always upright so the letter reads at a glance whatever the stand heading.
   const p = (x: number, y: number) => ({ x: at.x + x * size, y: at.y - y * size });
   const strokes: [number, number][][] = type === "liner"
@@ -368,7 +368,7 @@ const SAFETY_RED = 0xc0564a;
  * Everything stays quiet so the parking area never draws the eye from traffic.
  */
 export function paintApronMarkings(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   markings: ApronMarkings | undefined,
   palette: CivilMapPalette,
   options: { readonly unit: number; readonly detailLevel: WorldDetailLevel; readonly approaches?: readonly StandApproach[] },
@@ -424,7 +424,7 @@ export function paintApronMarkings(
  * Runways and shared movement guides are painted after these surfaces.
  */
 export function paintAirfieldGround(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: PlayableMapLayout & { readonly runways: readonly MapRunway[]; readonly taxiways: readonly MapTaxiway[] },
   palette: CivilMapPalette,
   detailLevel: WorldDetailLevel,
@@ -441,7 +441,7 @@ export function paintAirfieldGround(
 
 /** Paint after runway surfaces so the exit curves remain visible, below aircraft. */
 export function paintAirfieldGuides(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: PlayableMapLayout & { readonly runways: readonly MapRunway[]; readonly taxiways: readonly MapTaxiway[] },
   palette: CivilMapPalette,
   detailLevel: WorldDetailLevel,

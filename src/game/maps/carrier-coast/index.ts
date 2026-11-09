@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createCarrierCoastLayout, type CarrierCoastLayout } from './layout';
-import { renderCarrierCoastMap } from './renderer';
 
 export { createCarrierCoastLayout, type CarrierCoastLayout } from './layout';
 
@@ -15,5 +14,5 @@ export const CARRIER_COAST_DEFINITION = defineMap<CarrierCoastLayout>({
   },
   trafficProfileId: 'carrier-coast',
   createLayout: ({ width, height }) => createCarrierCoastLayout(width, height),
-  render: (scene, layout, { detailLevel }) => renderCarrierCoastMap(scene, layout, detailLevel),
+
 });

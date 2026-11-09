@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from "../../../core/types";
 import type { PlayableMapLayout } from "../../maps/types";
 import type { MapRunway } from "../../maps/shared/airfield";
@@ -17,7 +17,7 @@ type Airfield = PlayableMapLayout & { readonly runways: readonly MapRunway[] };
 type TowerAirfield = Airfield & { readonly apron: readonly Vector2[]; readonly buildings: readonly MapBuilding[] };
 
 /** A pond with a sandy shore, a pale shallow band and a deeper centre. */
-export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: readonly Vector2[], palette: CivilMapPalette): void {
+export function paintShoredPool(graphics: Art.Graphics, points: readonly Vector2[], palette: CivilMapPalette): void {
   const center = points.reduce((sum, point) => ({ x: sum.x + point.x / points.length, y: sum.y + point.y / points.length }), { x: 0, y: 0 });
   const scaled = (factor: number) => points.map((point) => ({ x: center.x + (point.x - center.x) * factor, y: center.y + (point.y - center.y) * factor }));
   for (const [factor, color] of [[1.16, palette.waterEdge], [1, palette.waterShallow], [0.8, palette.water], [0.5, mixColor(palette.water, palette.shadow, 0.25)]] as const) {
@@ -28,7 +28,7 @@ export function paintShoredPool(graphics: Phaser.GameObjects.Graphics, points: r
 }
 
 /** Overlapping crowns painted in passes (shadows, dark base, crown, highlight) so a clump reads as one canopy. */
-export function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
+export function paintCanopy(graphics: Art.Graphics, crowns: readonly { x: number; y: number; r: number }[], palette: CivilMapPalette): void {
   graphics.fillStyle(palette.shadow, castAlpha(0.3));
   for (const c of crowns) graphics.fillCircle(c.x + c.r * 0.6 * castReach(), c.y + c.r * 0.5 * castReach(), c.r);
   graphics.fillStyle(mixColor(palette.vegetation, palette.shadow, 0.35), 1);
@@ -41,7 +41,7 @@ export function paintCanopy(graphics: Phaser.GameObjects.Graphics, crowns: reado
 
 /** Forest clumps in the band along the map edges, wherever they stay clear of the airfield and of `avoid` (water). */
 export function paintForests(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: Airfield,
   palette: CivilMapPalette,
   clumps: number,
@@ -73,7 +73,7 @@ export function paintForests(
 
 /** Loose hedgerows along some field edges: uneven bushes with gaps, nudged off the line, off the airfield. */
 export function paintHedgerows(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: Airfield,
   fieldPolygons: readonly (readonly Vector2[])[],
   palette: CivilMapPalette,
@@ -135,7 +135,7 @@ export function raggedOutline(outline: readonly Vector2[], unit: number): Vector
  * water, a lighter band just off the shore, and broken floes drifting thickest near it.
  */
 export function paintBrokenShore(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   bounds: { readonly width: number; readonly height: number },
   waters: readonly (readonly Vector2[])[],
   palette: CivilMapPalette,
@@ -186,7 +186,7 @@ export function paintBrokenShore(
  * Surf-washed rocks along a shore, seen from above: dark boulders lit on top, each ringed by white
  * foam, scattered just off the outline (outside it) and thickest close in.
  */
-export function paintShoreRocks(graphics: Phaser.GameObjects.Graphics, outline: readonly Vector2[], unit: number, count: number, seed: number): void {
+export function paintShoreRocks(graphics: Art.Graphics, outline: readonly Vector2[], unit: number, count: number, seed: number): void {
   const perimeter = outline.map((point, i) => Math.hypot(outline[(i + 1) % outline.length].x - point.x, outline[(i + 1) % outline.length].y - point.y));
   const total = perimeter.reduce((sum, length) => sum + length, 0);
   const middle = outline.reduce((sum, point) => ({ x: sum.x + point.x / outline.length, y: sum.y + point.y / outline.length }), { x: 0, y: 0 });
@@ -237,7 +237,7 @@ export function nearRiver(river: readonly Vector2[], width: number, point: Vecto
  * A control tower beside the apron tip nearest the terminal, with two fuel tanks: a square
  * shaft with shaded walls, an octagonal glazed cab on top, and one shadow cast from both.
  */
-export function paintControlTower(graphics: Phaser.GameObjects.Graphics, layout: TowerAirfield, palette: CivilMapPalette): void {
+export function paintControlTower(graphics: Art.Graphics, layout: TowerAirfield, palette: CivilMapPalette): void {
   const unit = Math.min(layout.width, layout.height);
   const terminal = layout.buildings.find((building) => building.kind === 'terminal');
   if (!terminal || !layout.apron.length) return;

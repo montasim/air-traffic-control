@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, wri
 import { join } from 'node:path';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
+import { MAP_IDS } from '../src/game/maps/mapIds.ts';
 
 /**
  * Draws the menu's airfield pictures once, at build time, into public/menu-pictures, so phones show
@@ -10,7 +11,7 @@ import { createServer } from 'vite';
  * last run. Without a browser it warns and leaves the game to draw pictures on the device as before.
  */
 const OUT = 'public/menu-pictures';
-const SOURCES = ['src/game', 'src/ui/mapPreviews.ts', 'src/ui/shippedPictures.ts', 'public/assets'];
+const SOURCES = ['src/game', 'src/ui/mapPreviews.ts', 'src/ui/previewImage.ts', 'src/ui/shippedPictures.ts', 'public/assets'];
 
 const files = (path) => statSync(path).isDirectory() ? readdirSync(path).sort().flatMap((name) => files(join(path, name))) : [path];
 const hash = createHash('sha256');
@@ -47,6 +48,9 @@ try {
   const focus = {};
   for (const set of await page.evaluate(() => window.sets())) {
     const pictures = await page.evaluate((name) => window.drawSet(name), set);
+    if (pictures.length !== MAP_IDS.length || MAP_IDS.some(id => !pictures.some(picture => picture.id === id))) {
+      throw new Error(`Menu pictures: incomplete ${set}; expected all ${MAP_IDS.length} maps`);
+    }
     mkdirSync(join(OUT, set), { recursive: true });
     focus[set] = {};
     for (const { id, url, focus: point } of pictures) {

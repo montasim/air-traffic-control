@@ -1,15 +1,16 @@
+import { mountPerformanceSettings } from './ui/performanceSettings';
 import { LIVERIES } from './progression/liveries';
 import { DIFFICULTY_LABELS, isDifficulty, type DifficultyId } from './core/difficulty';
 import { ACHIEVEMENTS, type ShiftEvidence } from './progression/achievements';
 import { renderCareer as renderCareerPage } from "./ui/career";
 import { clearActiveShift, loadActiveShift, saveActiveShift, type ActiveShift } from "./storage/activeShift";
-import Phaser from "phaser";
 import type { FeedbackEvent } from "./app/feedbackEvents";
 import { GameAudio, WebAudioBackend } from "./audio";
 import type { GameOverReason, SimulationSnapshot } from "./core/types";
 import { DEFAULT_MAP_ID, type MapId } from "./game/maps/mapIds";
 import { mapDefinitionById } from "./game/maps/registry";
-import { PlayScene } from "./game/scenes/PlayScene";
+import { DeferredRuntime } from './game/runtime/DeferredRuntime';
+import type { GameplayRuntime, GameplaySession, FrameSource } from './game/runtime/types';
 import { GAME_FONT_LOAD_DESCRIPTORS } from "./game/typography";
 import {
   needsNewShiftLayout,
@@ -22,7 +23,6 @@ import {
   profileForViewport,
   type ViewportProfile,
 } from "./game/viewport";
-import { capFrameRate } from "./game/frameRate";
 import {
   RANK_CATALOG,
   isMapUnlocked,
@@ -87,7 +87,6 @@ const elements = {
   hud: document.querySelector<HTMLElement>(".hud")!,
   scoreTile: document.querySelector<HTMLElement>(".hud-score")!,
   score: document.querySelector<HTMLElement>("#score")!,
-  best: document.querySelector<HTMLElement>("#best")!,
   routeCoachmark: document.querySelector<HTMLElement>("#route-coachmark")!,
   routeCoachmarkCopy: document.querySelector<HTMLElement>(
     "#route-coachmark-copy",
@@ -190,6 +189,10 @@ const menuPictures = mountMenuPictures({
   selectedId: () => activeMapId,
   listing: () => !utilityScreen.hidden && (utilityScreen.dataset.page === "airfields" || utilityScreen.dataset.page === "career"),
   liveFrameComing: () => !sceneReady,
+  activeShift: () => {
+    const phase = playScene()?.getPhase();
+    return phase === 'running' || phase === 'paused';
+  },
 });
 const previews = menuPictures.pictures;
 if (
@@ -199,6 +202,7 @@ if (
 }
 
 const audio = new GameAudio(new WebAudioBackend(), currentSave.settings.audio);
+mountPerformanceSettings();
 const audioSettings = mountAudioSettings(audio, async patch => (currentSave = await updateAudioSettings(patch)).settings.audio);
 await audio.prepare();
 // iPhone Safari starts audio only while it handles the end of a tap, so each tap and key press unlocks it
@@ -246,7 +250,7 @@ function resetResizeState(): void {
 let renderScale = 1;
 /** The world in layout units, as the scene and saved shifts use it. */
 function worldSize(): { width: number; height: number } {
-  return { width: game.scale.gameSize.width / renderScale, height: game.scale.gameSize.height / renderScale };
+  return game.world;
 }
 function fieldPlayable(): boolean {
   return isFieldPlayable(worldSize(), availableViewport());
@@ -270,7 +274,7 @@ let speedIndex = 0;
 elements.gameCanvas.inert = true;
 elements.hud.inert = true;
 
-function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShift): Phaser.Game {
+function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShift): GameplayRuntime {
   activeLivery = currentSave.settings.livery;
   // A restored shift keeps the world and runway mode it started with.
   activeTwoEndLanding = restore?.twoEndLanding ?? currentSave.settings.twoEndLanding;
@@ -279,38 +283,26 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
   const world = restore?.world ?? worldSizeForViewport(window.innerWidth, window.innerHeight);
   // Draw at the display's real pixel density instead of stretching a world-sized canvas.
   renderScale = renderScaleFor(world, { width: window.innerWidth, height: window.innerHeight }, window.devicePixelRatio);
-  const nextGame = new Phaser.Game({
-    type: Phaser.AUTO,
-    parent: "game",
-    width: world.width * renderScale,
-    height: world.height * renderScale,
-    backgroundColor: "#263f3c",
-    render: { antialias: true, roundPixels: false },
-    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    input: { activePointers: 2 },
-    // All sound goes through GameAudio; Phaser's own sound system would open a second AudioContext
-    // per game (iOS Safari caps them) and add its own tap-unlock handling beside ours.
-    audio: { noAudio: true },
-    scene: [new PlayScene(mapDefinitionById(mapId), activeTwoEndLanding, activeLivery, renderScale, activeNight)],
+  const runtimeOptions = {
+    map: mapDefinitionById(mapId), world, renderScale,
+    twoEndLanding: activeTwoEndLanding, livery: activeLivery, night: activeNight,
+    mobile: profile.detailLevel === 'mobile', detailLevel: profile.detailLevel, onContextRestored: redrawAfterContextLoss,
+  };
+  const nextGame = new DeferredRuntime(world, async () => {
+    const { ThreeRuntime } = await import('./game/three/ThreeRuntime');
+    return new ThreeRuntime(runtimeOptions);
+  });
+  nextGame.events.once('runtime-error', (error: unknown) => {
+    console.error('Gameplay runtime could not load.', error);
+    document.dispatchEvent(new CustomEvent('game-load-error', { detail: error }));
   });
 
   // A menu covers a still picture: the game draws only until the frames still owed are shown, then sleeps.
   stillFrames = Infinity;
-  nextGame.events.on(Phaser.Core.Events.POST_RENDER, () => {
-    if (document.body.dataset.screen !== "play" && --stillFrames <= 0) nextGame.loop.sleep();
+  nextGame.events.on('frame', () => {
+    if (document.body.dataset.screen !== "play" && --stillFrames <= 0) nextGame.sleep();
   });
-  nextGame.events.once(Phaser.Core.Events.READY, () => {
-    if (nextGame.renderer instanceof Phaser.Renderer.WebGL.WebGLRenderer) {
-      nextGame.renderer.on(Phaser.Renderer.Events.RESTORE_WEBGL, () => window.setTimeout(redrawAfterContextLoss));
-    }
-  });
-  let frameRateCapped = false;
   nextGame.events.on("scene-ready", () => {
-    // Phones step at 30 frames a second (aircraft move slowly), and at full rate while a finger draws a route.
-    if (!frameRateCapped && profile.detailLevel === "mobile") {
-      frameRateCapped = true;
-      capFrameRate(nextGame.loop, () => nextGame.input.pointers.some((pointer) => pointer.isDown));
-    }
     sceneReady = true;
     stillFrames = 0;
     redraw(30);
@@ -391,9 +383,7 @@ function createGame(profile: ViewportProfile, mapId: MapId, restore?: ActiveShif
 let stillFrames = Infinity;
 /** Wakes the game, resetting its clock so the time it slept never reaches the world as one big step. */
 function wakeGame(): void {
-  if (game.loop.running) return;
-  game.loop.wake();
-  game.loop.resetDelta();
+  game.wake();
 }
 /** Draws a few frames behind a menu (its look changed), then lets the game sleep again. */
 function redraw(frames = 10): void {
@@ -407,9 +397,9 @@ new MutationObserver(() => (document.body.dataset.screen === "play" ? wakeGame()
 window.addEventListener("resize", () => redraw());
 updateResumeOffer();
 
-function playScene(): PlayScene | undefined {
+function playScene(): GameplaySession | undefined {
   if (!sceneReady) return undefined;
-  return game.scene.getScene("play") as PlayScene;
+  return game.getSession();
 }
 
 function showOnly(panel?: HTMLElement): void {
@@ -481,7 +471,6 @@ function activeRecord() {
 
 function updateBestDisplays(): void {
   const best = formatScore(activeRecord().difficultyScores[activeDifficulty][activeProfile.id]);
-  elements.best.textContent = best;
   elements.finalBest.textContent = best;
   elements.selectedMapName.textContent =
     mapDefinitionById(activeMapId).metadata.name;
@@ -556,8 +545,8 @@ function beginRun(): void {
   clearActiveShift();
   updateResumeOffer();
   scene.startRun(activeDifficulty, activeRunId);
+  menuPictures.suspendDrawing();
   updateBestDisplays();
-  document.querySelector('#hud-difficulty')!.textContent = `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   audio.handle({ type: "ui-confirm", action: "play" });
   scene.setTimeScale(GAME_SPEEDS[speedIndex].scale);
   elements.pauseButton.disabled = false;
@@ -591,7 +580,7 @@ function rebuildForTarget(
   elements.startButton.disabled = true;
   elements.pauseButton.disabled = true;
   elements.speedButton.disabled = true;
-  game.destroy(true);
+  game.destroy();
   game = createGame(profile, mapId, restore);
   renderShell();
 }
@@ -603,15 +592,17 @@ function rebuildForTarget(
  */
 function redrawAfterContextLoss(): void {
   pauseRun();
-  const scene = playScene();
-  const shift = scene && activeRunId && scene.getPhase() === "paused" ? loadActiveShift() : undefined;
-  rebuildForTarget(activeProfile, activeMapId, false, shift ?? undefined);
+  // The renderer pauses immediately on context loss, before the app can show its pause panel.
+  // Retain that exact state in memory even if browser storage is unavailable.
+  const shift = capturePausedShift();
+  if (shift) saveActiveShift(shift);
+  rebuildForTarget(activeProfile, activeMapId, false, shift);
 }
 
-function persistShift(): void {
+function capturePausedShift(): ActiveShift | undefined {
   const scene = playScene();
   if (!scene || !activeRunId || scene.getPhase() !== "paused") return;
-  saveActiveShift({
+  return {
     version: 1,
     savedAt: Date.now(),
     mapId: activeMapId,
@@ -620,7 +611,12 @@ function persistShift(): void {
     world: worldSize(),
     twoEndLanding: activeTwoEndLanding,
     ...scene.exportShift(),
-  });
+  };
+}
+
+function persistShift(): void {
+  const shift = capturePausedShift();
+  if (shift) saveActiveShift(shift);
 }
 
 function updateResumeOffer(): void {
@@ -663,7 +659,6 @@ function finishRestore(shift: ActiveShift): void {
   finishingRunId = '';
   scene.setTimeScale(GAME_SPEEDS[speedIndex].scale);
   updateBestDisplays();
-  document.querySelector('#hud-difficulty')!.textContent = `Best · ${DIFFICULTY_LABELS[activeDifficulty]}`;
   elements.score.textContent = formatScore(shift.simulation.score);
   elements.pauseButton.disabled = false;
   elements.speedButton.disabled = false;
@@ -883,7 +878,9 @@ elements.pauseButton.addEventListener("click", () => {
 });
 
 // Dismiss secondary menus without consuming the outside click or tap.
-document.addEventListener("pointerdown", (event) => {
+// Close after the target's click action. Closing on pointerdown moves centered panels
+// between press and release, which can swallow Restart when a More menu is open.
+document.addEventListener("click", (event) => {
   if (!(event.target instanceof Node)) return;
   for (const menu of document.querySelectorAll<HTMLDetailsElement>(".menu-more[open]")) {
     if (!menu.contains(event.target)) menu.open = false;
@@ -1075,7 +1072,7 @@ if (isUtilityName(initialUtility)) {
   openUtility(initialUtility);
 }
 /** The selected airfield is already on screen at startup, so its picture is cut from that frame instead of drawn again. */
-function offerLivePreview(source: Phaser.Game): void {
+function offerLivePreview(source: FrameSource): void {
   const scene = playScene();
   // Only a frame that matches what a fresh picture would show: same window, runway mode, and settings.
   if (!scene || createdViewport.width !== window.innerWidth || createdViewport.height !== window.innerHeight || activeTwoEndLanding !== currentSave.settings.twoEndLanding || activeNight !== currentSave.settings.night) return;

@@ -1,5 +1,5 @@
 import type { MapId } from "../game/maps/mapIds";
-import { createMapPreviews, type PreviewSettings } from "./mapPreviews";
+import type { PreviewSettings } from "./mapPreviews";
 import { SHIPPED_ROOT, shippedSet, type ShippedManifest } from "./shippedPictures";
 
 export interface MapPicture {
@@ -28,6 +28,7 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
   /** Airfields in the drawing under way. */
   const inFlight = new Set<MapId>();
   let drawing: (() => void) | undefined;
+  let createMapPreviews: typeof import('./mapPreviews')['createMapPreviews'] | undefined;
 
   if (cacheName) {
     // Pictures from earlier releases are never read again.
@@ -64,21 +65,35 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
     void caches.open(cacheName).then((cache) => cache.put(key, new Response(JSON.stringify(picture), { headers: { "Content-Type": "application/json" } }))).catch(() => {});
   }
 
-  function drawQueued(): void {
+  async function drawQueued(): Promise<void> {
     if (drawing || !settings || queue.length === 0) return;
     const maps = queue.splice(0);
     for (const id of maps) inFlight.add(id);
     const key = settingsKey;
+    let cancelled = false;
+    drawing = () => { cancelled = true; };
+    const options = { ...settings };
+    try {
+      createMapPreviews ??= (await import('./mapPreviews')).createMapPreviews;
+    } catch (error) {
+      if (!cancelled) {
+        drawing = undefined;
+        for (const id of maps) inFlight.delete(id);
+        console.warn('Map preview renderer could not load.', error);
+      }
+      return;
+    }
+    if (cancelled) return;
     drawing = createMapPreviews((id, url, focus) => {
       if (key !== settingsKey) return;
       inFlight.delete(id);
       keep(id, { url, focus });
     }, {
-      ...settings,
+      ...options,
       maps,
       onDone: () => {
         drawing = undefined;
-        drawQueued();
+        void drawQueued();
       },
     });
   }
@@ -116,7 +131,7 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
           queue.push(id);
         }
       }
-      drawQueued();
+      await drawQueued();
     },
     /**
      * Marks a picture as coming from elsewhere (the live game's frame), so requests wait for it rather
@@ -134,6 +149,12 @@ export function createPreviewLibrary(show: (id: MapId, picture: MapPicture) => v
     },
     dispose(): void {
       queue.length = 0;
+      drawing?.();
+      drawing = undefined;
+    },
+    suspendDrawing(): void {
+      queue.length = 0;
+      inFlight.clear();
       drawing?.();
       drawing = undefined;
     },

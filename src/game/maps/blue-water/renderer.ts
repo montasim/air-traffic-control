@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { WorldDetailLevel } from '../../palette';
 import {
   addDriftingClouds,
@@ -45,7 +45,7 @@ export const BLUE_WATER_PALETTE: CivilMapPalette = {
 };
 
 /** Broad, soft patches of deeper and shallower-looking water, so the open sea never reads as one flat colour. */
-function paintDepthPatches(graphics: Phaser.GameObjects.Graphics, layout: BlueWaterLayout, unit: number): void {
+function paintDepthPatches(graphics: Art.Graphics, layout: BlueWaterLayout, unit: number): void {
   for (let i = 0; i < 12; i += 1) {
     const x = deterministicUnit(i, 901) * layout.width;
     const y = deterministicUnit(i, 907) * layout.height;
@@ -83,12 +83,12 @@ function escortPlacements(layout: BlueWaterLayout) {
 }
 
 /** A broad, soft band of sun glint across the sea, brightest along its middle. */
-function paintSunGlint(graphics: Phaser.GameObjects.Graphics, layout: BlueWaterLayout, unit: number): void {
+function paintSunGlint(graphics: Art.Graphics, layout: BlueWaterLayout, unit: number): void {
   graphics.fillStyle(0xe8f6f8, 0.03);
   for (let ring = 1; ring >= 0.25; ring -= 0.15) graphics.fillEllipse(layout.width * 0.72, layout.height * 0.28, unit * 1.3 * ring, unit * 0.55 * ring);
 }
 
-export function renderBlueWaterMap(scene: Phaser.Scene, layout: BlueWaterLayout, detailLevel: WorldDetailLevel): void {
+export function renderBlueWaterMap(scene: Art.Scene, layout: BlueWaterLayout, detailLevel: WorldDetailLevel): void {
   // Open ocean with a fine sparkle of foam-white and deep shade.
   paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [] }, {
     base: BLUE_WATER_PALETTE.water,

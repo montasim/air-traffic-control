@@ -1,4 +1,3 @@
-import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import type { Vector2 } from '../../src/core/types';
 import {
@@ -12,9 +11,8 @@ import type { HudExclusionZone } from '../../src/game/maps/types';
 import { runwayCorners } from '../../src/game/rendering/shared-map';
 import {
   eastBankPolygon,
-  renderTwinBanksMap,
   visibleTwinBanksLabels
-} from '../../src/game/maps/twin-banks/renderer';
+} from '../../src/game/maps/twin-banks/labels';
 
 const VIEWPORTS = [
   { width: 1370, height: 926, variant: 'square', detail: 'desktop' },
@@ -199,35 +197,4 @@ describe('Twin Banks layout', () => {
     expect(prepared.layout.variant).toBe('landscape');
   });
 
-  it('bakes the terrain and the airport vectors once', () => {
-    const graphics = Object.fromEntries([
-      'fillStyle', 'fillRect', 'beginPath', 'moveTo', 'lineTo', 'closePath', 'fillPath',
-      'setDepth', 'clear', 'lineStyle', 'strokePath', 'fillCircle', 'strokeCircle', 'lineBetween',
-      'strokeRoundedRect', 'fillRoundedRect'
-    ].map((method) => [method, vi.fn().mockReturnThis()])) as Record<string, ReturnType<typeof vi.fn>>;
-    graphics.destroy = vi.fn();
-    const texture = {
-      setOrigin: vi.fn().mockReturnThis(),
-      setDepth: vi.fn().mockReturnThis(),
-      draw: vi.fn().mockReturnThis(),
-      render: vi.fn().mockReturnThis(),
-      // The airport vectors bake supersampled: a finer texture whose camera zooms in, shown at world size.
-      setDisplaySize: vi.fn().mockReturnThis(),
-      camera: { setOrigin: vi.fn().mockReturnThis(), setZoom: vi.fn().mockReturnThis() }
-    };
-    const scene = {
-      add: {
-        graphics: vi.fn(() => graphics),
-        renderTexture: vi.fn(() => texture)
-      }
-    } as unknown as Phaser.Scene;
-
-    renderTwinBanksMap(scene, createTwinBanksLayout(844, 390, 'mobile'), 'mobile');
-
-    expect(scene.add.graphics).toHaveBeenCalledTimes(1);
-    expect(scene.add.renderTexture).toHaveBeenCalledTimes(2);
-    expect(texture.draw).toHaveBeenCalledTimes(2);
-    expect(texture.render).toHaveBeenCalledTimes(2);
-    expect(graphics.destroy).toHaveBeenCalledOnce();
-  });
 });

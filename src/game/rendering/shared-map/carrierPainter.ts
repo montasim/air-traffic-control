@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from "../../../core/types";
 import type { Carrier, CarrierLanePaint } from "../../maps/shared/carrier";
 import { pointInPolygon } from "../../maps/shared/apronLayout";
@@ -40,7 +40,7 @@ const along = (lane: CarrierLanePaint, distance: number, offset = 0): Vector2 =>
   y: lane.center.y + Math.sin(lane.angle) * distance + Math.cos(lane.angle) * offset,
 });
 
-function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint, unit: number): void {
+function paintLane(graphics: Art.Graphics, lane: CarrierLanePaint, unit: number): void {
   const half = lane.length / 2;
   const edge = lane.width / 2;
   const line = Math.max(1, unit * 0.0018);
@@ -71,7 +71,7 @@ function paintLane(graphics: Phaser.GameObjects.Graphics, lane: CarrierLanePaint
  * with its seams, deck-edge elevators, and the landing lane. Deck parking and taxi guides are
  * painted after.
  */
-export function paintCarrierDeck(graphics: Phaser.GameObjects.Graphics, carrier: Carrier, unit: number): void {
+export function paintCarrierDeck(graphics: Art.Graphics, carrier: Carrier, unit: number): void {
   const at = (x: number, y: number) => onCarrier(carrier, x, y);
   // A deck line from one share position to another, kept to the parts that lie on the deck.
   const deckLine = (x0: number, y0: number, x1: number, y1: number) => {
@@ -120,7 +120,7 @@ export function paintCarrierDeck(graphics: Phaser.GameObjects.Graphics, carrier:
  * a stepped block with its shaded side, the bridge glazing facing forward, a radar mast, and the
  * square and round radar antennas on top.
  */
-export function paintCarrierIsland(graphics: Phaser.GameObjects.Graphics, carrier: Carrier, unit: number): void {
+export function paintCarrierIsland(graphics: Art.Graphics, carrier: Carrier, unit: number): void {
   const { center, width, height, angle } = carrier.island;
   const corner = (x: number, y: number) => ({
     x: center.x + Math.cos(angle) * x - Math.sin(angle) * y,
@@ -159,7 +159,7 @@ export function paintCarrierIsland(graphics: Phaser.GameObjects.Graphics, carrie
  * `kind` "supply" draws a fuller replenishment ship with cargo hatches instead.
  */
 export function paintEscortShip(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   center: Vector2,
   angle: number,
   length: number,

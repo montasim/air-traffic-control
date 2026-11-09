@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from '../../../core/types';
 import type { MapRunway } from '../../maps/shared/airfield';
 
@@ -11,7 +11,7 @@ export function deterministicUnit(index: number, salt: number): number {
 }
 
 export function tracePolygon(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   points: readonly Vector2[]
 ): void {
   if (points.length < 2) return;
@@ -24,7 +24,7 @@ export function tracePolygon(
 }
 
 export function strokePolyline(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   points: readonly Vector2[]
 ): void {
   if (points.length < 2) return;

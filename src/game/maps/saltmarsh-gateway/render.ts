@@ -6,7 +6,7 @@ FIRST VIEWPORT: The airfield occupies the high/right half; quiet fields and at l
 FORM: Reference-one composition abstracted into original responsive vector geometry.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 */
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import {
   addDriftingClouds,
   clearOfAirfield,
@@ -55,7 +55,7 @@ export const SALTMARSH_GATEWAY_PALETTE: CivilMapPalette = {
 };
 
 function paintSaltmarshGateway(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: SaltmarshGatewayLayout,
   detailLevel: WorldDetailLevel
 ): void {
@@ -80,7 +80,7 @@ function paintSaltmarshGateway(
 
  }
 
-function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: SaltmarshGatewayLayout, detailLevel: WorldDetailLevel): void {
+function paintGatewayAirport(graphics: Art.Graphics, layout: SaltmarshGatewayLayout, detailLevel: WorldDetailLevel): void {
   const palette = SALTMARSH_GATEWAY_PALETTE;
   const budget = MAP_DETAIL_BUDGETS[detailLevel];
   paintAirfieldGround(graphics, layout, palette, detailLevel);
@@ -97,7 +97,7 @@ function paintGatewayAirport(graphics: Phaser.GameObjects.Graphics, layout: Salt
 }
 
 export function renderSaltmarshGateway(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   layout: SaltmarshGatewayLayout,
   detailLevel: WorldDetailLevel
 ): void {

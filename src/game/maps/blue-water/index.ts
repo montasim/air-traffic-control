@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createBlueWaterLayout, type BlueWaterLayout } from './layout';
-import { renderBlueWaterMap } from './renderer';
 
 export { createBlueWaterLayout, type BlueWaterLayout } from './layout';
 
@@ -15,5 +14,5 @@ export const BLUE_WATER_DEFINITION = defineMap<BlueWaterLayout>({
   },
   trafficProfileId: 'blue-water',
   createLayout: ({ width, height }) => createBlueWaterLayout(width, height),
-  render: (scene, layout, { detailLevel }) => renderBlueWaterMap(scene, layout, detailLevel),
+
 });

@@ -1,4 +1,3 @@
-import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import type { LandingZone } from '../../src/core/types';
 import { MAP_IDS, type MapId } from '../../src/game/maps/mapIds';
@@ -40,7 +39,7 @@ function variantFor(width: number, height: number): MapLayoutVariant {
   return 'square';
 }
 
-function testDefinition(id: MapId, render = vi.fn()) {
+function testDefinition(id: MapId) {
   return defineMap<TestLayout>({
     id,
     metadata: {
@@ -61,15 +60,13 @@ function testDefinition(id: MapId, render = vi.fn()) {
       ],
       privateLandmark: `${id}-landmark`
     }),
-    render
   });
 }
 
 describe('map contract', () => {
-  it('accepts every frozen map id through one prepare/render interface', () => {
+  it('accepts every frozen map id through one geometry preparation interface', () => {
     for (const id of MAP_IDS) {
-      const render = vi.fn();
-      const definition = testDefinition(id, render);
+      const definition = testDefinition(id);
       const prepared = definition.prepare({
         width: 1600,
         height: 900,
@@ -80,12 +77,6 @@ describe('map contract', () => {
       expect(prepared.mapId).toBe(id);
       expect(prepared.layout.variant).toBe('landscape');
       expect(prepared.layout.landingZones).toEqual([zone]);
-      definition.render({} as Phaser.Scene, prepared);
-      expect(render).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ privateLandmark: `${id}-landmark` }),
-        { detailLevel: 'tablet' }
-      );
     }
   });
 
@@ -101,19 +92,6 @@ describe('map contract', () => {
     });
 
     expect(prepared.layout).toMatchObject({ width, height, variant });
-  });
-
-  it('prevents definitions from rendering foreign or forged prepared maps', () => {
-    const saltmarsh = testDefinition('saltmarsh-gateway');
-    const river = testDefinition('river-bend');
-    const prepared = saltmarsh.prepare({ width: 900, height: 1600, detailLevel: 'mobile' });
-
-    expect(() => river.render({} as Phaser.Scene, prepared)).toThrow(
-      'Cannot render saltmarsh-gateway with river-bend'
-    );
-    expect(() => saltmarsh.render({} as Phaser.Scene, { ...prepared })).toThrow(
-      'can only render maps prepared by the same definition'
-    );
   });
 
   it('rejects invalid viewport dimensions and incomplete guidance', () => {
@@ -139,7 +117,6 @@ describe('map contract', () => {
         hudExclusionZones: [],
         privateLandmark: 'river'
       }),
-      render: vi.fn()
     });
 
     expect(() => incomplete.prepare({ width: 1600, height: 900, detailLevel: 'desktop' }))
@@ -166,4 +143,3 @@ describe('Saltmarsh shared contract', () => {
     );
   });
 });
-

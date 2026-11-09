@@ -1,5 +1,5 @@
-import { PHASER_TEXT_STYLES } from '../../typography';
-import type Phaser from 'phaser';
+import { CANVAS_TEXT_STYLES } from '../../typography';
+import * as Art from '../../art/CanvasScene';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS, type WorldDetailLevel } from '../../palette';
 import { composeStaticMap, paintAirfieldGround, paintAirfieldGuides, paintMarkedRunway, paintSurfaceTexture, paintHelipad, clearOfAirfield, paintCanopy, paintWhitecaps, deterministicUnit, fieldPatchwork, MAP_DETAIL_BUDGETS, addDriftingClouds, addMovingWaves, paintControlTower, paintShoreRocks, raggedOutline, strokePolyline, paintForests, paintGroundTexture, paintHedgerows, paintRaisedBuilding, paintShadedTree, paintShoredPool, type MapBuilding } from '../../rendering/shared-map';
@@ -90,7 +90,7 @@ const COUNTRYSIDE: Record<Exclude<SpecialistKind, 'rescue'>, {
   cargo: { base: 0xa29a83, fields: [0xa69e87, 0x9e967f, 0xaba38c, 0x9a927c], light: 0xe0d8bf, dark: 0x6b6452, vegetation: 0x5e6a4a, vegetationLight: 0x8f9a70, forest: 0.12, pond: false },
 };
 
-export function renderSpecialistAirfield(scene: Phaser.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
+export function renderSpecialistAirfield(scene: Art.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
   if (layout.kind === 'rescue') return renderRescueAirfield(scene, layout, detailLevel);
   const { width: w, height: h, kind } = layout;
   const u = Math.min(w, h);
@@ -161,7 +161,7 @@ export function renderSpecialistAirfield(scene: Phaser.Scene, layout: Specialist
 }
 
 /** The small apron fixtures in a row by the terminal: shelters, containers, gates or kiosks. */
-function paintFixtures(g: Phaser.GameObjects.Graphics, layout: SpecialistLayout): void {
+function paintFixtures(g: Art.Graphics, layout: SpecialistLayout): void {
   const { kind } = layout;
   const u = Math.min(layout.width, layout.height);
   for (const { center: { x, y }, width: fw, height: fh, index: i } of layout.fixtures) {
@@ -193,7 +193,7 @@ const scaledAbout = (outline: readonly Vector2[], factor: number) => {
   return outline.map(p => ({ x: c.x + (p.x - c.x) * factor, y: c.y + (p.y - c.y) * factor }));
 };
 
-function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
+function renderRescueAirfield(scene: Art.Scene, layout: SpecialistLayout, detailLevel: WorldDetailLevel): void {
   const { width:w, height:h } = layout;
   const u = Math.min(w,h);
   const sea = 0x5e93a2;
@@ -255,5 +255,5 @@ function renderRescueAirfield(scene: Phaser.Scene, layout: SpecialistLayout, det
   paintSurfaceTexture(scene, { ...layout, cutouts: layout.fixtures }, { raisedBuildings: true });
   // Clouds drifting over the field, thinning to a haze over its runways and apron.
   addDriftingClouds(scene, layout, { thinOver: (point, radius) => !clearOfAirfield(layout, point, radius) });
-  layout.helipads.forEach((pad,i) => scene.add.text(pad.center.x, pad.center.y+pad.radius+u*.008, `H${i+1}`, { ...PHASER_TEXT_STYLES.airfieldMarking, fontSize: `${Math.max(10,u*.021)}px`, color: '#203d39', backgroundColor: '#fff5df', padding: { x: 3, y: 1 } }).setOrigin(.5,0).setDepth(-19));
+  layout.helipads.forEach((pad,i) => scene.add.text(pad.center.x, pad.center.y+pad.radius+u*.008, `H${i+1}`, { ...CANVAS_TEXT_STYLES.airfieldMarking, fontSize: `${Math.max(10,u*.021)}px`, color: '#203d39', backgroundColor: '#fff5df', padding: { x: 3, y: 1 } }).setOrigin(.5,0).setDepth(-19));
 }

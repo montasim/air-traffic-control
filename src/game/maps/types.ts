@@ -1,5 +1,4 @@
 import type { AirportCategory } from './categories';
-import type Phaser from 'phaser';
 import type { AircraftType, LandingZone, Vector2 } from '../../core/types';
 import type { RankId } from '../../progression/ranks';
 import type { WorldDetailLevel } from '../palette';
@@ -104,21 +103,19 @@ export interface PlayableMapLayout {
 }
 
 /** A viewport-resolved map whose private layout is retained by its definition. */
-export interface PreparedMap {
+export interface PreparedMap<Layout extends PlayableMapLayout = PlayableMapLayout> {
   readonly mapId: MapId;
   readonly detailLevel: WorldDetailLevel;
-  readonly layout: PlayableMapLayout;
+  readonly layout: Layout;
 }
 
 /**
- * The single runtime seam for every playable map. Callers prepare a map for a
- * viewport, then give that exact result back to the same definition to render.
+ * The shared geometry seam for every playable map. Runtime and preview rendering
+ * consume the same prepared layout for a viewport.
  */
-export interface MapDefinition {
+export interface MapDefinition<Layout extends PlayableMapLayout = PlayableMapLayout> {
   readonly id: MapId;
   readonly metadata: MapMetadata;
   readonly trafficProfileId: string;
-  prepare(input: MapPreparationInput): PreparedMap;
-  render(scene: Phaser.Scene, map: PreparedMap): void;
+  prepare(input: MapPreparationInput): PreparedMap<Layout>;
 }
-

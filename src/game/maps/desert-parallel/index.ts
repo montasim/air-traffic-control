@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createDesertParallelLayout } from './layout';
-import { renderDesertParallelMap } from './renderer';
 
 export * from './layout';
 
@@ -16,8 +15,7 @@ export const DESERT_PARALLEL_DEFINITION = defineMap({
   trafficProfileId: 'desert-parallel',
   createLayout: ({ width, height, detailLevel }) =>
     createDesertParallelLayout(width, height, detailLevel),
-  render: (scene, layout, { detailLevel }) =>
-    renderDesertParallelMap(scene, layout, detailLevel)
+
 });
 
 /** Compatibility alias for callers that name selectable definitions as maps. */

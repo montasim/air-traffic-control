@@ -3,7 +3,6 @@ import { withBidirectionalApproaches } from './bidirectional';
 import { apronPolygons, createApronMarkings, DECK_LANE_CLEARANCE, deckRunwayIds } from './apronLayout';
 import { clearAirfieldSite } from './siteCleanup';
 import { createGroundRoutes, groundObstacles, hasGroundNetwork, taxiwayExits, type GroundNetwork, type GroundObstacle } from './groundRoutes';
-import type Phaser from 'phaser';
 import type {
   MapDefinition,
   MapMetadata,
@@ -13,17 +12,12 @@ import type {
 } from '../types';
 import type { MapId } from '../mapIds';
 
-export interface MapRenderContext {
-  readonly detailLevel: MapPreparationInput['detailLevel'];
-}
-
 /** Typed, map-private implementation used to construct an erased definition. */
 export interface MapAdapter<Layout extends PlayableMapLayout> {
   readonly id: MapId;
   readonly metadata: MapMetadata;
   readonly trafficProfileId: string;
   createLayout(input: MapPreparationInput): Layout;
-  render(scene: Phaser.Scene, layout: Layout, context: MapRenderContext): void;
 }
 
 function requirePositiveDimension(value: number, name: 'width' | 'height'): void {
@@ -118,22 +112,21 @@ function groundTraffic<T extends PlayableMapLayout & GroundNetwork>(authored: T,
 
 /**
  * Hides each adapter's rich layout while preserving a small uniform interface
- * for selection, preparation, rendering, and tests.
+ * for selection, preparation, and tests.
  */
 export function defineMap<Layout extends PlayableMapLayout>(
   adapter: MapAdapter<Layout>
-): MapDefinition {
-  const privateLayouts = new WeakMap<PreparedMap, Layout>();
+): MapDefinition<Layout> {
   // Preparing is pure but costly (apron stands, ground routes, site clean-up), and the same size is
   // asked for repeatedly: the scene's preload and create, a menu picture, a resize back. Layouts are
   // read-only, so recent results are shared.
-  const recent = new Map<string, PreparedMap>();
+  const recent = new Map<string, PreparedMap<Layout>>();
 
   return {
     id: adapter.id,
     metadata: adapter.metadata,
     trafficProfileId: adapter.trafficProfileId,
-    prepare(input): PreparedMap {
+    prepare(input): PreparedMap<Layout> {
       requirePositiveDimension(input.width, 'width');
       requirePositiveDimension(input.height, 'height');
       const key = `${input.width}x${input.height}:${input.detailLevel}:${input.twoEndLanding}`;
@@ -146,26 +139,14 @@ export function defineMap<Layout extends PlayableMapLayout>(
         ? settleHelipadsOnApron(withGroundTraffic(approaches, input), Math.min(input.width, input.height))
         : approaches;
       assertPreparedLayout(layout, input, adapter.id);
-      const prepared: PreparedMap = {
+      const prepared: PreparedMap<Layout> = {
         mapId: adapter.id,
         detailLevel: input.detailLevel,
         layout
       };
-      privateLayouts.set(prepared, layout);
       recent.set(key, prepared);
       if (recent.size > 4) recent.delete(recent.keys().next().value!);
       return prepared;
     },
-    render(scene, map): void {
-      if (map.mapId !== adapter.id) {
-        throw new Error(`Cannot render ${map.mapId} with ${adapter.id}`);
-      }
-      const layout = privateLayouts.get(map);
-      if (!layout) {
-        throw new Error(`${adapter.id} can only render maps prepared by the same definition`);
-      }
-      adapter.render(scene, layout, { detailLevel: map.detailLevel });
-    }
   };
 }
-

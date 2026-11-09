@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import {
   addDriftingClouds,
   composeStaticMap,
@@ -70,7 +70,7 @@ export function visibleDesertLabels(layout: DesertParallelLayout): readonly Airf
 }
 
 function paintVectorLabel(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   sign: AirfieldSign,
   unit: number
 ): void {
@@ -103,7 +103,7 @@ function paintVectorLabel(
 }
 
 /** Wind-laid dune ripples: a lit crest with its shaded lee just downwind, broken wherever they would cross the airfield. */
-function paintDuneRipples(graphics: Phaser.GameObjects.Graphics, layout: DesertParallelLayout, unit: number, count: number): void {
+function paintDuneRipples(graphics: Art.Graphics, layout: DesertParallelLayout, unit: number, count: number): void {
   const wind = -0.42;
   const along = { x: Math.cos(wind), y: Math.sin(wind) };
   const across = { x: -along.y, y: along.x };
@@ -129,7 +129,7 @@ function paintDuneRipples(graphics: Phaser.GameObjects.Graphics, layout: DesertP
 }
 
 /** Sandstone outcrops: an uneven boulder with a cast shadow, a shaded base and a sunlit top. */
-function paintOutcrops(graphics: Phaser.GameObjects.Graphics, layout: DesertParallelLayout, unit: number, count: number): void {
+function paintOutcrops(graphics: Art.Graphics, layout: DesertParallelLayout, unit: number, count: number): void {
   const rock = 0xb08e66;
   for (let i = 0; i < count; i += 1) {
     const center = { x: deterministicUnit(i, 541) * layout.width, y: deterministicUnit(i, 547) * layout.height };
@@ -155,7 +155,7 @@ function paintOutcrops(graphics: Phaser.GameObjects.Graphics, layout: DesertPara
 }
 
 function paintTerrain(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: DesertParallelLayout,
   unit: number,
   detailLevel: WorldDetailLevel
@@ -193,7 +193,7 @@ const facilityBuildings = (layout: DesertParallelLayout): MapBuilding[] => [
 ];
 
 function paintFacilities(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: DesertParallelLayout,
   unit: number
 ): void {
@@ -221,7 +221,7 @@ function paintFacilities(
 }
 
 export function renderDesertParallelMap(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   layout: DesertParallelLayout,
   detailLevel: WorldDetailLevel
 ): void {

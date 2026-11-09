@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from '../../../core/types';
 import {
   clearOfAirfield,
@@ -24,7 +24,7 @@ import { castAlpha, castReach } from '../../rendering/shared-map/lighting';
  * runways, aprons and pads.
  */
 
-type Graphics = Phaser.GameObjects.Graphics;
+type Graphics = Art.Graphics;
 const unitOf = (layout: SpecialistLayout) => Math.min(layout.width, layout.height);
 const lerp = (a: Vector2, b: Vector2, t: number): Vector2 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
 const fill = (graphics: Graphics, points: readonly Vector2[], color: number, alpha = 1) => {
@@ -117,7 +117,7 @@ export function paintQuarry(graphics: Graphics, layout: SpecialistLayout, palett
 }
 
 /** Turbines turning on a hilltop row, each with its pad, tower shadow and nacelle; the blades are animated. */
-export function addWindFarm(scene: Phaser.Scene, graphics: Graphics, layout: SpecialistLayout, avoid: (point: Vector2, radius: number) => boolean, depth = -19.6): (point: Vector2, radius: number) => boolean {
+export function addWindFarm(scene: Art.Scene, graphics: Graphics, layout: SpecialistLayout, avoid: (point: Vector2, radius: number) => boolean, depth = -19.6): (point: Vector2, radius: number) => boolean {
   const unit = unitOf(layout);
   const turbines: Vector2[] = [];
   for (const at of openSites(layout, unit * 0.045, avoid)) {
@@ -443,7 +443,7 @@ export function paintPerimeter(graphics: Graphics, layout: SpecialistLayout): vo
 }
 
 /** A radar station on a free patch near the base: a white dome and a dish that keeps turning. */
-export function addRadarStation(scene: Phaser.Scene, graphics: Graphics, layout: SpecialistLayout, avoid: (point: Vector2, radius: number) => boolean, depth = -19.6): void {
+export function addRadarStation(scene: Art.Scene, graphics: Graphics, layout: SpecialistLayout, avoid: (point: Vector2, radius: number) => boolean, depth = -19.6): void {
   const unit = unitOf(layout);
   const terminal = layout.buildings[0].center;
   let site: Vector2 | undefined;

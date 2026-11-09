@@ -1,10 +1,10 @@
-import type Phaser from "phaser";
+import * as Art from '../art/CanvasScene';
 import type { Vector2 } from "../../core/types";
 import type { RunwayGuidanceSurface } from "../maps/shared/guidance";
 import type { PlayableMapLayout } from "../maps/types";
 import { sceneRenderTexture } from "./shared-map/composer";
 
-// Phaser.BlendModes values; a type-only import keeps this file loadable in tests.
+// Blend operations understood by the artwork compositor.
 const BLEND_ADD = 1;
 const BLEND_MULTIPLY = 2;
 
@@ -65,7 +65,7 @@ export function nightLightPoints(layout: NightLayout): NightLight[] {
 }
 
 /** Darkens the map art (below depth 0) and bakes its lights once; aircraft, routes and warnings stay above. */
-export function drawNight(scene: Phaser.Scene, layout: NightLayout, tint = NIGHT_TINT): [Phaser.GameObjects.Rectangle, Phaser.GameObjects.RenderTexture] {
+export function drawNight(scene: Art.Scene, layout: NightLayout, tint = NIGHT_TINT): [Art.Rectangle, Art.RenderTexture] {
   const shade = scene.add
     .rectangle(0, 0, layout.width, layout.height, tint)
     .setOrigin(0, 0)

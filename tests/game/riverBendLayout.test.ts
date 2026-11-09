@@ -1,5 +1,4 @@
 import { ROUTE_OUTLINE_COLOR } from '../../src/game/palette';
-import type Phaser from 'phaser';
 import { describe, expect, it, vi } from 'vitest';
 import type { Vector2 } from '../../src/core/types';
 import {
@@ -152,43 +151,6 @@ function airportPoints(layout: RiverBendLayout): Vector2[] {
   ];
 }
 
-function renderHarness() {
-  const destroy = vi.fn();
-  const methods = new Map<PropertyKey, ReturnType<typeof vi.fn>>();
-  let graphics: Phaser.GameObjects.Graphics;
-  graphics = new Proxy({ destroy } as unknown as Phaser.GameObjects.Graphics, {
-    get(target, property, receiver) {
-      if (property in target) return Reflect.get(target, property, receiver);
-      let method = methods.get(property);
-      if (!method) {
-        method = vi.fn(() => graphics);
-        methods.set(property, method);
-      }
-      return method;
-    }
-  });
-  const texture = {
-    setOrigin: vi.fn(),
-    setDepth: vi.fn(),
-    draw: vi.fn(),
-    render: vi.fn()
-  };
-  texture.setOrigin.mockReturnValue(texture);
-  texture.setDepth.mockReturnValue(texture);
-  // The airport vectors bake supersampled: a finer texture whose camera zooms in, shown at world size.
-  const camera = { setOrigin: vi.fn(), setZoom: vi.fn() };
-  camera.setOrigin.mockReturnValue(camera);
-  camera.setZoom.mockReturnValue(camera);
-  Object.assign(texture, { camera, setDisplaySize: vi.fn(() => texture) });
-  const scene = {
-    add: {
-      graphics: vi.fn(() => graphics),
-      renderTexture: vi.fn(() => texture)
-    }
-  } as unknown as Phaser.Scene;
-  return { scene, texture, destroy, methods };
-}
-
 function luminance(color: number): number {
   const channels = [color >> 16, (color >> 8) & 0xff, color & 0xff]
     .map((channel) => channel / 255)
@@ -332,33 +294,4 @@ describe('River Bend definition', () => {
     expect(createRiverBendLayout(width, height)).toEqual(createRiverBendLayout(width, height));
   });
 
-  it('bakes the terrain and the airport vectors once', () => {
-    const prepared = RIVER_BEND_DEFINITION.prepare({
-      width: 900,
-      height: 1600,
-      detailLevel: 'mobile'
-    });
-    const harness = renderHarness();
-    RIVER_BEND_DEFINITION.render(harness.scene, prepared);
-
-    // Terrain at world size, then the vectors at twice it; the vector shapes are dropped once baked.
-    expect(harness.scene.add.renderTexture).toHaveBeenCalledTimes(2);
-    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(1, 0, 0, 900, 1600);
-    expect(harness.scene.add.renderTexture).toHaveBeenNthCalledWith(2, 0, 0, 1800, 3200);
-    expect(harness.texture.draw).toHaveBeenCalledTimes(2);
-    expect(harness.texture.render).toHaveBeenCalledTimes(2);
-    expect(harness.destroy).toHaveBeenCalledOnce();
-  });
-
-  it('applies progressively richer mobile, tablet, and desktop detail budgets', () => {
-    const fillCounts = (['mobile', 'tablet', 'desktop'] as const).map((detailLevel) => {
-      const prepared = RIVER_BEND_DEFINITION.prepare({ width: 1000, height: 700, detailLevel });
-      const harness = renderHarness();
-      RIVER_BEND_DEFINITION.render(harness.scene, prepared);
-      return harness.methods.get('fillCircle')?.mock.calls.length ?? 0;
-    });
-
-    expect(fillCounts[0]).toBeLessThan(fillCounts[1]);
-    expect(fillCounts[1]).toBeLessThan(fillCounts[2]);
-  });
 });

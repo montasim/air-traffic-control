@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { WorldDetailLevel } from '../../palette';
 import {
   addDriftingClouds,
@@ -45,7 +45,7 @@ export const FROST_CROSSING_PALETTE: CivilMapPalette = {
 };
 
 /** Soft drifts: wide pale and shaded ellipses that break up the snow painted underneath. */
-function paintDrifts(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossingLayout, unit: number): void {
+function paintDrifts(graphics: Art.Graphics, layout: FrostCrossingLayout, unit: number): void {
   for (let i = 0; i < 14; i += 1) {
     const x = deterministicUnit(i, 811) * layout.width;
     const y = deterministicUnit(i, 821) * layout.height;
@@ -55,7 +55,7 @@ function paintDrifts(graphics: Phaser.GameObjects.Graphics, layout: FrostCrossin
 }
 
 /** Pine forest seen from above: dark crowns crowded together under a dusting of snow. */
-function paintSnowyGroves(graphics: Phaser.GameObjects.Graphics, crowns: readonly { center: Vector2; radius: number }[]): void {
+function paintSnowyGroves(graphics: Art.Graphics, crowns: readonly { center: Vector2; radius: number }[]): void {
   const palette = FROST_CROSSING_PALETTE;
   graphics.fillStyle(palette.shadow, castAlpha(0.3));
   for (const { center, radius } of crowns) graphics.fillCircle(center.x + radius * 0.55 * castReach(), center.y + radius * 0.6 * castReach(), radius);
@@ -69,7 +69,7 @@ function paintSnowyGroves(graphics: Phaser.GameObjects.Graphics, crowns: readonl
   });
 }
 
-export function renderFrostCrossingMap(scene: Phaser.Scene, layout: FrostCrossingLayout, detailLevel: WorldDetailLevel): void {
+export function renderFrostCrossingMap(scene: Art.Scene, layout: FrostCrossingLayout, detailLevel: WorldDetailLevel): void {
   // Ice-blue snow with a fine sparkle of white and blue shade.
   paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: [] }, {
     base: FROST_CROSSING_PALETTE.terrain,

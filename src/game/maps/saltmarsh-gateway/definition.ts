@@ -1,0 +1,1 @@
+export { SALTMARSH_GATEWAY_DEFINITION as SALTMARSH_GEOMETRY } from './index';

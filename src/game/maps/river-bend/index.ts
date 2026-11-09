@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createRiverBendLayout } from './layout';
-import { renderRiverBend } from './render';
 
 export const RIVER_BEND_DEFINITION = defineMap({
   id: 'river-bend',
@@ -13,9 +12,7 @@ export const RIVER_BEND_DEFINITION = defineMap({
   },
   trafficProfileId: 'river-bend',
   createLayout: ({ width, height }) => createRiverBendLayout(width, height),
-  render: (scene, layout, { detailLevel }) => {
-    renderRiverBend(scene, layout, detailLevel);
-  }
+
 });
 
 /** Compatibility alias for callers that name selectable definitions as maps. */
@@ -29,4 +26,4 @@ export type {
   RiverRunwayId,
   RiverTaxiwayId
 } from './layout';
-export { renderRiverBend, RIVER_BEND_PALETTE } from './render';
+export { RIVER_BEND_PALETTE } from './palette';

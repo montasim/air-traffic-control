@@ -1,9 +1,9 @@
-import Phaser from "phaser";
+import type { FrameSource } from '../game/runtime/types';
 import type { LandingZone } from "../core/types";
 import { MAP_IDS, type MapId } from "../game/maps/mapIds";
 import { profileForViewport, worldSizeForViewport } from "../game/viewport";
 import type { GameSettings } from "../storage/gameSave";
-import { airfieldFocus, shrink } from "./mapPreviews";
+import { airfieldFocus, shrink } from "./previewImage";
 import { createPreviewLibrary } from "./previewLibrary";
 
 /** Read when needed, never at mount, so callers can pass state that is set up later. */
@@ -14,6 +14,8 @@ export interface MenuPictureState {
   readonly listing: () => boolean;
   /** The live game is being built for the selected airfield; its first frame will become that picture. */
   readonly liveFrameComing: () => boolean;
+  /** Active or paused gameplay must not allocate a second engine just to regenerate menu art. */
+  readonly activeShift?: () => boolean;
 }
 
 /** The world a new shift would get on this window; pictures are drawn at it so they match play. */
@@ -53,7 +55,7 @@ export function mountMenuPictures(state: MenuPictureState) {
   function show(ids: readonly MapId[]): void {
     const selected = state.selectedId();
     const waitForLive = state.liveFrameComing();
-    void library.request(ids.filter((id) => !waitForLive || id !== selected));
+    void library.request(ids.filter((id) => !waitForLive || id !== selected), !state.activeShift?.());
     if (waitForLive && ids.includes(selected)) void library.request([selected], false);
   }
   function refresh(): void {
@@ -65,6 +67,7 @@ export function mountMenuPictures(state: MenuPictureState) {
 
   return {
     pictures: pictures as ReadonlyMap<MapId, string>,
+    suspendDrawing: () => library.suspendDrawing(),
     /** Settings that change the pictures (night, weather, runway ends) have changed. */
     refresh,
     /** The window changed; pictures are redrawn only if a new shift would get a different world. */
@@ -83,17 +86,16 @@ export function mountMenuPictures(state: MenuPictureState) {
      * drawn again, once the browser is idle so startup is never delayed. `current` says whether that
      * frame still shows it.
      */
-    takeFromFrame(source: Phaser.Game, zones: readonly LandingZone[], current: () => boolean): void {
+    takeFromFrame(source: FrameSource, zones: readonly LandingZone[], current: () => boolean): void {
       const { world } = newShiftWorld();
       const deliver = library.expect(state.selectedId());
       const idle = window.requestIdleCallback ?? ((callback: () => void) => window.setTimeout(callback, 600));
       idle(() => {
-        source.events.once(Phaser.Core.Events.POST_RENDER, () => {
+        source.captureFrame((canvas) => {
           if (!current()) return deliver();
-          deliver({ url: shrink(source.canvas, world.width, world.height), focus: airfieldFocus(zones, world.width, world.height) });
+          deliver({ url: shrink(canvas, world.width, world.height), focus: airfieldFocus(zones, world.width, world.height) });
         });
         // Behind a menu the game sleeps; one more frame is drawn for the picture, then it sleeps again.
-        source.loop.wake();
       });
     },
   };

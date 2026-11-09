@@ -85,3 +85,16 @@ void import('./main').catch((error: unknown) => {
   showFailure('Your airfield could not load. Check your connection and try again.');
   console.error('Game startup failed', error);
 });
+
+document.addEventListener('game-load-error', () => {
+  window.clearTimeout(timeout);
+  if (ready) {
+    ready = false;
+    bootScreen.classList.remove('is-ready');
+    bootScreen.removeAttribute('aria-hidden');
+    bootScreen.inert = false;
+    document.body.append(bootScreen);
+    document.querySelector<HTMLElement>('#app')!.inert = true;
+  }
+  showFailure('Your airfield could not load. Check your connection and try again.');
+});

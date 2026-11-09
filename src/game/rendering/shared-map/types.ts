@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { WorldDetailLevel } from '../../palette';
 
 export interface CivilMapPalette {
@@ -23,7 +23,7 @@ export interface CivilMapPalette {
 }
 
 export interface StaticMapPaintContext<Layout> {
-  readonly graphics: Phaser.GameObjects.Graphics;
+  readonly graphics: Art.Graphics;
   readonly layout: Layout;
   readonly detailLevel: WorldDetailLevel;
   readonly unit: number;

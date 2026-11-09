@@ -6,7 +6,7 @@ FIRST VIEWPORT: The airport sits high/right; a broad organic river curves around
 FORM: The reference river landmark is re-authored as responsive Catmull-Rom vector geography.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
 */
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { WorldDetailLevel } from '../../palette';
 import {
   addDriftingClouds,
@@ -56,7 +56,7 @@ export const RIVER_BEND_PALETTE: CivilMapPalette = {
 };
 
 function paintScenery(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: RiverBendLayout,
   detailLevel: WorldDetailLevel
 ): void {
@@ -73,7 +73,7 @@ function paintScenery(
 }
 
 function paintOperational(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: RiverBendLayout,
   detailLevel: WorldDetailLevel
 ): void {
@@ -89,7 +89,7 @@ function paintOperational(
 }
 
 function paintDetail(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   layout: RiverBendLayout,
   detailLevel: WorldDetailLevel
 ): void {
@@ -155,7 +155,7 @@ function paintDetail(
 }
 
 export function renderRiverBend(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   layout: RiverBendLayout,
   detailLevel: WorldDetailLevel
 ): void {

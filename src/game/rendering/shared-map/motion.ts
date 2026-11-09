@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 
 /** The player asked for less motion: map effects hold still, drawn once. */
 export function prefersStillMotion(): boolean {
@@ -10,7 +10,7 @@ export function prefersStillMotion(): boolean {
  * cleared away, as between map previews or shifts) or the scene shuts down, then calls `onStop` once.
  * Every moving map effect runs through here, so none outlives the map it belongs to.
  */
-export function animateWhileAlive(scene: Phaser.Scene, alive: () => boolean, step: (delta: number) => void, onStop?: () => void): void {
+export function animateWhileAlive(scene: Art.Scene, alive: () => boolean, step: (delta: number) => void, onStop?: () => void): void {
   let running = true;
   const stop = () => {
     if (!running) return;
@@ -30,7 +30,7 @@ export function animateWhileAlive(scene: Phaser.Scene, alive: () => boolean, ste
  * Redraws `graphics` with `draw(seconds)` each frame, starting from `start` seconds, until it is cleared
  * away; drawn once and left still when the player prefers less motion.
  */
-export function animateDrawing(scene: Phaser.Scene, graphics: Phaser.GameObjects.Graphics, draw: (seconds: number) => void, start = 0): void {
+export function animateDrawing(scene: Art.Scene, graphics: Art.Graphics, draw: (seconds: number) => void, start = 0): void {
   draw(start);
   if (prefersStillMotion()) return;
   let clock = start;

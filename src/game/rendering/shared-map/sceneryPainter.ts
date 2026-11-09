@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from "../../../core/types";
 import { tracePolygon } from "./geometry";
 import { addCanvasTexture, removeCanvasTexture } from "./surfaceTexture";
@@ -16,7 +16,7 @@ const toward = (points: readonly Vector2[], k: number): Vector2[] => {
  * a ridge line along the rock's long axis and is shaded by how it faces the
  * north-west light, with snow lying on the lit faces.
  */
-export function paintRockRidge(graphics: Phaser.GameObjects.Graphics, ridge: readonly Vector2[], unit: number): void {
+export function paintRockRidge(graphics: Art.Graphics, ridge: readonly Vector2[], unit: number): void {
   graphics.fillStyle(0x23384a, 0.3);
   tracePolygon(graphics, ridge.map((p) => ({ x: p.x + unit * 0.008, y: p.y + unit * 0.012 })));
   graphics.fillPath();
@@ -54,7 +54,7 @@ export function paintRockRidge(graphics: Phaser.GameObjects.Graphics, ridge: rea
 }
 
 /** A snow-laden pine seen from above: a muted green crown with a white cap offset toward the light. */
-export function paintSnowyPine(graphics: Phaser.GameObjects.Graphics, center: Vector2, radius: number, index: number): void {
+export function paintSnowyPine(graphics: Art.Graphics, center: Vector2, radius: number, index: number): void {
   graphics.fillStyle(0x51707a, 0.16);
   graphics.fillCircle(center.x + radius * 0.35, center.y + radius * 0.45, radius);
   graphics.fillStyle(index % 3 === 0 ? 0x6f8f80 : 0x5c7d6d, 0.85);
@@ -64,7 +64,7 @@ export function paintSnowyPine(graphics: Phaser.GameObjects.Graphics, center: Ve
 }
 
 /** A small sandbar islet: a pale beach ring around a scrub-green middle. */
-export function paintIslet(graphics: Phaser.GameObjects.Graphics, outline: readonly Vector2[]): void {
+export function paintIslet(graphics: Art.Graphics, outline: readonly Vector2[]): void {
   graphics.fillStyle(0xbfe2ea, 0.45);
   tracePolygon(graphics, toward(outline, 1.18));
   graphics.fillPath();
@@ -78,7 +78,7 @@ export function paintIslet(graphics: Phaser.GameObjects.Graphics, outline: reado
 
 /** Faint whitecaps scattered over open water, skipping anything `keep` rejects. */
 export function paintWhitecaps(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   bounds: { readonly width: number; readonly height: number },
   count: number,
   unit: number,
@@ -96,7 +96,7 @@ export function paintWhitecaps(
 
 /** Broad, soft swell bands across the sea, aligned to `angle`. */
 export function paintSwellBands(
-  graphics: Phaser.GameObjects.Graphics,
+  graphics: Art.Graphics,
   bounds: { readonly width: number; readonly height: number },
   angle: number,
   color: number,
@@ -122,7 +122,7 @@ export function paintSwellBands(
 let waveSerial = 0;
 
 /** One seamless tile of soft wave crests: short pale arcs, wrapped across the edges so it repeats invisibly. */
-function waveTile(scene: Phaser.Scene, size: number, crests: number, seed: number): string {
+function waveTile(scene: Art.Scene, size: number, crests: number, seed: number): string {
   const key = `wave-tile-${(waveSerial += 1)}`;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
@@ -154,7 +154,7 @@ function waveTile(scene: Phaser.Scene, size: number, crests: number, seed: numbe
  * and speeds so the sea seems to move. Drawn between the painted ground and the scenery, so ships
  * and wakes ride on top; held still when the player prefers reduced motion.
  */
-export function addMovingWaves(scene: Phaser.Scene, bounds: { readonly width: number; readonly height: number }, angle: number, depth = -20.5): void {
+export function addMovingWaves(scene: Art.Scene, bounds: { readonly width: number; readonly height: number }, angle: number, depth = -20.5): void {
   if (typeof document === "undefined" || !scene.textures || !scene.add?.tileSprite) return;
   const reach = Math.hypot(bounds.width, bounds.height);
   const still = prefersStillMotion();
@@ -189,7 +189,7 @@ export interface WashingShip {
 }
 
 /** A small white ellipse, drawn once per game, that every wash fleck reuses. */
-function washFleckTexture(scene: Phaser.Scene): string {
+function washFleckTexture(scene: Art.Scene): string {
   const key = "wash-fleck";
   if (scene.textures.exists(key)) return key;
   const canvas = document.createElement("canvas");
@@ -211,7 +211,7 @@ function washFleckTexture(scene: Phaser.Scene): string {
  * player prefers reduced motion. Each fleck is a reused image that only moves, fades and grows:
  * redrawing them as vector ellipses every frame was the heaviest cost on the carrier maps.
  */
-export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], depth = -19.95): void {
+export function addShipWash(scene: Art.Scene, ships: readonly WashingShip[], depth = -19.95): void {
   if (!scene.add?.image || !scene.textures || typeof document === "undefined" || !ships.length) return;
   const key = washFleckTexture(scene);
   const BOW = 36;
@@ -221,7 +221,7 @@ export function addShipWash(scene: Phaser.Scene, ships: readonly WashingShip[], 
     const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
     return value - Math.floor(value);
   };
-  const place = (image: Phaser.GameObjects.Image, x: number, y: number, width: number, height: number, alpha: number) =>
+  const place = (image: Art.Image, x: number, y: number, width: number, height: number, alpha: number) =>
     image.setPosition(x, y).setDisplaySize(width, height).setAlpha(alpha);
   const draw = (seconds: number) => {
     ships.forEach((ship, s) => {
@@ -262,7 +262,7 @@ const CLOUD_SIZE = { width: 512, height: 320 };
  * grey-blue shaded underside offset away from the light, a white body over it, and a bright cap
  * toward the north-west sun, so the cloud has volume and soft cauliflower edges.
  */
-function cloudTexture(scene: Phaser.Scene, seed: number): string {
+function cloudTexture(scene: Art.Scene, seed: number): string {
   // A seed always draws the same cloud, so each game builds a texture once and every map reuses it.
   const key = `cloud-${seed}`;
   if (scene.textures.exists(key)) return key;
@@ -321,7 +321,7 @@ function cloudTexture(scene: Phaser.Scene, seed: number): string {
  * moonlit blue-grey and cast no shadows; with weather off ("weather-mode") they are hidden. Drawn once, still, when the player prefers reduced motion.
  */
 export function addDriftingClouds(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   bounds: { readonly width: number; readonly height: number },
   { count = 4, wind = 0.35, speed = 10, depth = 3.5, shadowDepth = -19.5, thinOver }: {
     count?: number; wind?: number; speed?: number; depth?: number; shadowDepth?: number;
@@ -346,7 +346,7 @@ export function addDriftingClouds(
     return value - Math.floor(value);
   };
   type Cloud = {
-    cloud: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image;
+    cloud: Art.Image; shadow: Art.Image;
     opacity: number; haze: number; radius: number; distance: number; offset: number; pace: number;
   };
   /** Gives a cloud a new build, size, stretch, tilt, line across the wind and pace. */

@@ -1,9 +1,9 @@
 import type { LiveryId } from '../../progression/liveries';
-import Phaser from "phaser";
+import * as Art from '../art/CanvasScene';
 import { AIRCRAFT_OUTLINES } from "../../core/aircraftCollision";
 import type { Aircraft } from "../../core/types";
 import { AIRCRAFT_STYLE } from "../content";
-import { withoutAbandonedTexture } from "./shared-map/composer";
+
 import { initialRotorPhase, rotorMotion } from "../animation/rotorMotion";
 import {
   AIRCRAFT_VISUAL_TOKENS as INK,
@@ -74,20 +74,20 @@ const NIGHT_LIGHTS: Readonly<Record<Aircraft["type"], { readonly reach: number; 
  * light, built from faint layers so it is brightest along its middle and fades out at its edges and far end.
  * Drawn with additive blending, it lights the ground it falls on.
  */
-function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number, type: Aircraft["type"]): void {
+function paintHeadlightBeam(graphics: Art.Graphics, nose: number, type: Aircraft["type"]): void {
   const { reach, spread: angle, glow, pool } = NIGHT_LIGHTS[type];
   const color = 0xfff4d6;
   for (let layer = 0; layer < 6; layer += 1) {
     const share = 1 - layer * 0.14;
     const spread = Math.tan(angle * share);
     const far = nose + reach * share;
-    const points = [new Phaser.Math.Vector2(nose - 2, -2.5)];
+    const points = [new Art.Vector2(nose - 2, -2.5)];
     // The far edge is a gentle arc rather than a straight cut.
     for (let i = 0; i <= 8; i += 1) {
       const t = i / 8 - 0.5;
-      points.push(new Phaser.Math.Vector2(far - Math.abs(t) * reach * 0.12 * share, t * 2 * reach * spread));
+      points.push(new Art.Vector2(far - Math.abs(t) * reach * 0.12 * share, t * 2 * reach * spread));
     }
-    points.push(new Phaser.Math.Vector2(nose - 2, 2.5));
+    points.push(new Art.Vector2(nose - 2, 2.5));
     graphics.fillStyle(color, glow);
     graphics.fillPoints(points, true);
   }
@@ -107,7 +107,7 @@ function paintHeadlightBeam(graphics: Phaser.GameObjects.Graphics, nose: number,
 }
 
 /** The airframe in flight colours (landed 0) or landed colours (1), in its own coordinates. */
-function paintAirframe(body: Phaser.GameObjects.Graphics, outline: Phaser.Math.Vector2[], type: Aircraft["type"], livery: LiveryId, military: boolean, landed: number): void {
+function paintAirframe(body: Art.Graphics, outline: Art.Vector2[], type: Aircraft["type"], livery: LiveryId, military: boolean, landed: number): void {
     const paint = aircraftLiveryPaint(livery, type);
     const keyline = mixColor(INK.keyline, LANDED.keyline, landed);
     const edge = mixColor(paint.edge, LANDED.keyline, landed);
@@ -171,10 +171,10 @@ function paintAirframe(body: Phaser.GameObjects.Graphics, outline: Phaser.Math.V
  * texture pixels per unit, and returns the key. Every aircraft of a kind shows the same texture: live
  * vector shapes were re-triangulated every frame for every aircraft, the main cost of a busy shift.
  */
-function bakedTexture(scene: Phaser.Scene, key: string, half: number, scale: number, draw: (graphics: Phaser.GameObjects.Graphics) => void): string {
+function bakedTexture(scene: Art.Scene, key: string, half: number, scale: number, draw: (graphics: Art.Graphics) => void): string {
   if (scene.textures.exists(key)) return key;
   const size = Math.ceil(half * 2 * scale);
-  const texture = withoutAbandonedTexture(scene, () => scene.textures.addDynamicTexture(key, size, size)!, (made) => made);
+  const texture = scene.textures.addDynamicTexture(key, size, size);
   texture.camera.setOrigin(0, 0).setZoom(scale);
   const graphics = scene.make.graphics({ x: half, y: half }, false);
   draw(graphics);
@@ -186,34 +186,34 @@ function bakedTexture(scene: Phaser.Scene, key: string, half: number, scale: num
 
 /** Aircraft artwork baked once per type, livery and look into textures, then moved and turned. */
 export class AircraftView {
-  readonly container: Phaser.GameObjects.Container;
-  readonly ring: Phaser.GameObjects.Arc;
-  private readonly innerRing: Phaser.GameObjects.Arc;
+  readonly container: Art.Container;
+  readonly ring: Art.Arc;
+  private readonly innerRing: Art.Arc;
   private readonly presentationScale: number;
-  private readonly rotorAssembly?: Phaser.GameObjects.Image;
+  private readonly rotorAssembly?: Art.Image;
   private rotorAngle: number;
   private reducedMotion: boolean;
   private readonly livery: LiveryId;
   private readonly type: Aircraft["type"];
   private readonly military: boolean;
-  private readonly shadow: Phaser.GameObjects.Image;
-  private readonly body: Phaser.GameObjects.Image;
+  private readonly shadow: Art.Image;
+  private readonly body: Art.Image;
   /** The landed colours, fading in over the flight colours after touchdown. */
-  private readonly landedBody: Phaser.GameObjects.Image;
+  private readonly landedBody: Art.Image;
   private shadowFill = 0.28;
   /** 0 = flight colours, 1 = landed colours. */
   private landedBlend = -1;
   /** Scale on the ground, at most GROUND_SCALE and small enough to fit this type's stand. */
   private groundScale = GROUND_SCALE;
   /** Night lights: landing lights at the nose throwing a beam ahead, and a red beacon that flashes. */
-  private readonly headlight: Phaser.GameObjects.Image;
-  private readonly noseLight: Phaser.GameObjects.Arc;
-  private readonly beacon: Phaser.GameObjects.Arc[];
+  private readonly headlight: Art.Image;
+  private readonly noseLight: Art.Arc;
+  private readonly beacon: Art.Arc[];
   private night = false;
   private grounded = false;
   private strobeClock = 0;
   constructor(
-    scene: Phaser.Scene,
+    scene: Art.Scene,
     aircraft: Aircraft,
     options: AircraftViewOptions = {},
   ) {
@@ -247,7 +247,7 @@ export class AircraftView {
     this.type = aircraft.type;
     this.military = Boolean(options.military);
     const outline = (this.military ? MILITARY_OUTLINES : AIRCRAFT_OUTLINES)[aircraft.type];
-    const points = outline.map(([x, y]) => new Phaser.Math.Vector2(x, y));
+    const points = outline.map(([x, y]) => new Art.Vector2(x, y));
     // Texture pixels per unit: as many as the screen shows, doubled so turned edges stay smooth.
     const shown = (scene.cameras?.main?.zoom ?? 1) * this.presentationScale;
     const sharp = Math.round(shown * 2 * 100) / 100;
@@ -266,8 +266,8 @@ export class AircraftView {
     const nose = Math.max(...outline.map(([x]) => x));
     const beamScale = Math.round(shown * 100) / 100;
     this.headlight = image(bakedTexture(scene, `aircraft-beam-${kind}-${beamScale}`, nose + NIGHT_LIGHTS[aircraft.type].reach + 4, beamScale,
-      (graphics) => paintHeadlightBeam(graphics, nose, aircraft.type)), beamScale).setBlendMode(Phaser.BlendModes.ADD);
-    const children: Phaser.GameObjects.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body, this.landedBody];
+      (graphics) => paintHeadlightBeam(graphics, nose, aircraft.type)), beamScale).setBlendMode(1);
+    const children: Art.GameObject[] = [shadow, this.headlight, this.ring, this.innerRing, body, this.landedBody];
     if (aircraft.type === "rotor") {
       // A centered, symmetric rotor avoids the lopsided atlas wobble.
       this.rotorAssembly = image(bakedTexture(scene, `aircraft-rotor-${this.livery}-${sharp}`, 27, sharp, (graphics) => {
@@ -285,7 +285,7 @@ export class AircraftView {
     this.noseLight = scene.add.circle(nose - 3, 0, 2.4, 0xfffbe8);
     const beaconX = outline.filter(([, y]) => y === 0).reduce((best, [x]) => Math.min(best, x), Infinity);
     this.beacon = [
-      scene.add.circle(beaconX, 0, 6.5, 0xff2a1f, 0.35).setBlendMode(Phaser.BlendModes.ADD),
+      scene.add.circle(beaconX, 0, 6.5, 0xff2a1f, 0.35).setBlendMode(1),
       scene.add.circle(beaconX, 0, 2.6, 0xff3b30),
     ];
     children.push(this.noseLight, ...this.beacon);
@@ -408,7 +408,7 @@ export class AircraftView {
   }
 }
 export function createAircraftView(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   aircraft: Aircraft,
   options?: AircraftViewOptions,
 ): AircraftView {

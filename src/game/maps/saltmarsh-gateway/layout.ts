@@ -17,7 +17,7 @@ import type {
   PlayableMapLayout
 } from '../types';
 import type { MapBuilding } from '../../rendering/shared-map';
-import { deterministicUnit } from '../../rendering/shared-map';
+import { deterministicUnit } from '../../rendering/shared-map/geometry';
 import { lerpPoint, scalePoint } from '../../../core/geometry';
 
 export type GatewayRunwayId = 'gateway-main' | 'gateway-commuter';

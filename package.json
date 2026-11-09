@@ -4,6 +4,9 @@
   "version": "0.1.6",
   "type": "module",
   "scripts": {
+    "blender:layouts": "node scripts/blender/export-layouts.mjs",
+    "blender:assets": "node scripts/blender/build-assets.mjs",
+    "test:three": "node scripts/test-three-runtime.mjs",
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && npm run pictures && vite build",
     "preview": "vite preview --host 0.0.0.0",
@@ -29,7 +32,9 @@
     "test:resize:maps": "node scripts/test-resize-maps.mjs",
     "test:runway-mode": "node scripts/test-runway-mode.mjs",
     "test:runway-ends": "node scripts/test-runway-ends.mjs",
-    "test:mobile-boot": "node scripts/test-mobile-boot.mjs"
+    "test:mobile-boot": "node scripts/test-mobile-boot.mjs",
+    "test:routes": "node scripts/test-route-drawing.mjs",
+    "test:performance": "node scripts/test-performance-settings.mjs"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
@@ -38,11 +43,12 @@
     "@capacitor/core": "8.5.2",
     "@capacitor/splash-screen": "8.0.2",
     "@hugeicons/core-free-icons": "4.3.0",
-    "phaser": "4.2.1"
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@capacitor/cli": "8.5.2",
     "@playwright/test": "1.62.1",
+    "@types/three": "0.187.0",
     "electron": "44.4.5",
     "electron-builder": "26.15.3",
     "typescript": "7.0.2",

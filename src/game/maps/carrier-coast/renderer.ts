@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import * as Art from '../../art/CanvasScene';
 import type { Vector2 } from '../../../core/types';
 import type { WorldDetailLevel } from '../../palette';
 import {
@@ -76,7 +76,7 @@ function coastGround(layout: CarrierCoastLayout, unit: number): Vector2[][] {
 }
 
 /** An islet ringed like the shore: pale shallows, a sandy beach, then grass. */
-function paintRingedIslet(graphics: Phaser.GameObjects.Graphics, islet: readonly Vector2[]): void {
+function paintRingedIslet(graphics: Art.Graphics, islet: readonly Vector2[]): void {
   for (const [outline, color] of [[scaledAbout(islet, 1.25), CARRIER_COAST_PALETTE.waterShallow], [islet, BEACH], [scaledAbout(islet, 0.6), DUNE_GRASS]] as const) {
     graphics.fillStyle(color, 1);
     tracePolygon(graphics, outline);
@@ -84,7 +84,7 @@ function paintRingedIslet(graphics: Phaser.GameObjects.Graphics, islet: readonly
   }
 }
 
-export function renderCarrierCoastMap(scene: Phaser.Scene, layout: CarrierCoastLayout, detailLevel: WorldDetailLevel): void {
+export function renderCarrierCoastMap(scene: Art.Scene, layout: CarrierCoastLayout, detailLevel: WorldDetailLevel): void {
   const unit = Math.min(layout.width, layout.height);
   // The land underneath; the sea is painted over it in the scenery layer, along a broken shore.
   paintGroundTexture(scene, { width: layout.width, height: layout.height, fieldPolygons: coastGround(layout, unit) }, {

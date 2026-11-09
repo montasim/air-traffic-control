@@ -153,10 +153,6 @@
             <span>Score</span>
             <strong id="score">00</strong>
           </div>
-          <div class="hud-stat hud-best">
-            <span id="hud-difficulty">Best · Medium</span>
-            <strong id="best">00</strong>
-          </div>
           <button
             id="speed-button"
             class="icon-button"
@@ -401,24 +397,23 @@
           <div id="utility-scroll" class="utility-scroll">
           <div id="settings-content" hidden>
             <section class="sound-panel" aria-labelledby="sound-title">
-              <header class="sound-panel-heading">
-                <span class="sound-emblem button-icon" data-ui-icon="settings" aria-hidden="true"></span>
-                <div><p class="settings-eyebrow">Controller preferences</p><h3 id="sound-title">Airfield audio</h3></div>
-              </header>
               <div class="audio-settings" aria-label="Sound settings">
-                <div class="sound-toggle-row">
-                  <div><h4>Sound effects</h4><p>Flight cues, landings, and alerts.</p></div>
-                  <button class="audio-toggle" type="button" data-audio-toggle aria-label="Sound effects" aria-pressed="true">
-                    <span class="button-icon" data-audio-icon aria-hidden="true"></span>
-                    <span data-audio-label>Sound on</span>
-                    <span class="sound-switch" aria-hidden="true"></span>
-                  </button>
-                </div>
                 <div class="sound-volume">
-                  <label for="settings-volume"><span>Effects volume</span><output for="settings-volume" data-audio-value>80%</output></label>
+                  <label for="settings-volume"><span id="sound-title">Effects volume</span><output for="settings-volume" data-audio-value>80%</output></label>
                   <input id="settings-volume" type="range" min="0" max="100" step="5" value="80" data-audio-volume />
                   <div class="volume-scale" aria-hidden="true"><span>Silent</span><span>Full volume</span></div>
                 </div>
+              </div>
+            </section>
+            <section class="sound-panel performance-settings" aria-labelledby="performance-title">
+              <div class="audio-settings">
+                <div class="sound-toggle-row">
+                  <div><h4 id="performance-title">Performance stats</h4><p>Show FPS, frame time, processing time, and memory at the top right during play.</p></div>
+                  <button id="performance-toggle" class="audio-toggle" type="button" aria-label="Show performance stats" aria-pressed="true">
+                    <span data-performance-label>Stats on</span><span class="sound-switch" aria-hidden="true"></span>
+                  </button>
+                </div>
+                <p class="performance-note">Memory values are estimates. Process CPU usage is shown as unavailable when the browser does not expose it.</p>
               </div>
             </section>
             <section class="developer-info" aria-labelledby="developer-heading">

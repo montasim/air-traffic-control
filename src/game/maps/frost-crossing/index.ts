@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createFrostCrossingLayout, type FrostCrossingLayout } from './layout';
-import { renderFrostCrossingMap } from './renderer';
 
 export { createFrostCrossingLayout, type FrostCrossingLayout } from './layout';
 
@@ -15,5 +14,5 @@ export const FROST_CROSSING_DEFINITION = defineMap<FrostCrossingLayout>({
   },
   trafficProfileId: 'frost-crossing',
   createLayout: ({ width, height }) => createFrostCrossingLayout(width, height),
-  render: (scene, layout, { detailLevel }) => renderFrostCrossingMap(scene, layout, detailLevel),
+
 });

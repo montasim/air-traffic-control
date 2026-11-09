@@ -1,4 +1,3 @@
-import type Phaser from "phaser";
 import type { MapId } from "../maps/mapIds";
 import type { MapLayoutVariant } from "../maps/types";
 
@@ -23,19 +22,4 @@ export function presentationAssetFor({ mapId }: PresentationAssetRequest): {
     key: `terrain:arcade:${material}`,
     url: `/assets/arcade/${material}.webp`,
   };
-}
-
-const queued = new WeakMap<Phaser.Scene, Set<string>>();
-
-export function queuePresentationAssets(
-  scene: Phaser.Scene,
-  request: PresentationAssetRequest,
-): void {
-  const asset = presentationAssetFor(request);
-  const keys = queued.get(scene) ?? new Set<string>();
-  if (!scene.textures.exists(asset.key) && !keys.has(asset.key)) {
-    keys.add(asset.key);
-    queued.set(scene, keys);
-    scene.load.image(asset.key, asset.url);
-  }
 }

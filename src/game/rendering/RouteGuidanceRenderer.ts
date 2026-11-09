@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Art from '../art/CanvasScene';
 import {
   createGuidanceGeometry,
   guidanceTransientDuration,
@@ -51,7 +51,7 @@ const RUNWAY_LIGHT_COUNT = 6;
  * short, bounded acknowledgements that need time-based progression.
  */
 export class RouteGuidanceRenderer {
-  private readonly graphics: Phaser.GameObjects.Graphics;
+  private readonly graphics: Art.Graphics;
   private state: RouteGuidanceState = 'neutral';
   private restingState: RouteGuidanceRestingState = 'neutral';
   private elapsedMilliseconds = 0;
@@ -64,7 +64,7 @@ export class RouteGuidanceRenderer {
   private transientStroke: GuidanceStrokeMetrics;
 
   constructor(
-    scene: Phaser.Scene,
+    scene: Art.Scene,
     target: RouteGuidanceTarget,
     options: RouteGuidanceRendererOptions = {}
   ) {

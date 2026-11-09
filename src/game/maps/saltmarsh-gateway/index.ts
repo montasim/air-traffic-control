@@ -1,6 +1,5 @@
 import { defineMap } from '../shared/definition';
 import { createSaltmarshGatewayLayout } from './layout';
-import { renderSaltmarshGateway } from './render';
 
 export const SALTMARSH_GATEWAY_DEFINITION = defineMap({
   id: 'saltmarsh-gateway',
@@ -13,9 +12,7 @@ export const SALTMARSH_GATEWAY_DEFINITION = defineMap({
   },
   trafficProfileId: 'saltmarsh-gateway',
   createLayout: ({ width, height }) => createSaltmarshGatewayLayout(width, height),
-  render: (scene, layout, { detailLevel }) => {
-    renderSaltmarshGateway(scene, layout, detailLevel);
-  }
+
 });
 
 /** Compatibility alias for callers that name selectable definitions as maps. */
@@ -29,4 +26,4 @@ export type {
   GatewayTaxiwayId,
   SaltmarshGatewayLayout
 } from './layout';
-export { renderSaltmarshGateway, SALTMARSH_GATEWAY_PALETTE } from './render';
+export { SALTMARSH_GATEWAY_PALETTE } from './palette';

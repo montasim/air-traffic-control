@@ -1,4 +1,4 @@
-import type Phaser from "phaser";
+import * as Art from '../../art/CanvasScene';
 import type { LandingZone, Vector2 } from "../../../core/types";
 import type { MapRunway, MapTaxiway } from "../../maps/shared/airfield";
 import type { MapBuilding } from "./airfieldPainter";
@@ -41,13 +41,13 @@ export function releaseCanvas(canvas: HTMLCanvasElement): void {
  * pixel into a second editable copy (over half a second for a full map on a slow phone), this only
  * uploads it.
  */
-export function addCanvasTexture(scene: Phaser.Scene, key: string, canvas: HTMLCanvasElement): void {
-  // The whole-canvas frame Phaser's image loader would add, so the key works like any other texture.
+export function addCanvasTexture(scene: Art.Scene, key: string, canvas: HTMLCanvasElement): void {
+  // Register the whole canvas as a texture frame.
   scene.textures.create(key, canvas, canvas.width, canvas.height)?.add("__BASE", 0, 0, 0, canvas.width, canvas.height);
 }
 
 /** Removes a texture made with `addCanvasTexture` and frees its canvas with it. */
-export function removeCanvasTexture(scene: Phaser.Scene, key: string): void {
+export function removeCanvasTexture(scene: Art.Scene, key: string): void {
   if (!scene.textures?.exists(key)) return;
   const source = scene.textures.get(key).getSourceImage();
   scene.textures.remove(key);
@@ -145,10 +145,10 @@ function surfaceLayer(layout: SurfaceLayout, scale: number, paint: (context: Can
  */
 /** `raisedBuildings`: the map draws buildings with paintRaisedBuilding, so cut-outs follow the lifted roof too. */
 export function paintSurfaceTexture(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   layout: SurfaceLayout,
   { depth = -19.85, raisedBuildings = false }: { readonly depth?: number; readonly raisedBuildings?: boolean } = {},
-): Phaser.GameObjects.Image | undefined {
+): Art.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
   const { width, height } = layout;
   const unit = Math.min(width, height);
@@ -274,11 +274,11 @@ export interface GroundLayout {
  * patchwork of flat fields in a few close shades, fine grass speckle, and soft light falloff.
  */
 export function paintGroundTexture(
-  scene: Phaser.Scene,
+  scene: Art.Scene,
   ground: GroundLayout,
   shades: { readonly base: number; readonly fields: readonly number[]; readonly light: number; readonly dark: number },
   depth = -21,
-): Phaser.GameObjects.Image | undefined {
+): Art.Image | undefined {
   if (typeof document === "undefined" || !scene.textures) return undefined;
   const { width, height } = ground;
   const unit = Math.min(width, height);
