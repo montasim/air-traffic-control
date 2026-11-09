@@ -182,7 +182,7 @@ Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** locally with 
 | Path | Responsibility |
 | --- | --- |
 | `src/core/` | Framework-independent traffic simulation, holding, and geometry |
-| `src/game/` | Phaser rendering, pointer input, airfield layouts, and scenery |
+| `src/game/` | Three.js rendering, pointer input, airfield layouts, and scenery |
 | `src/progression/` | Career ranks, achievements, and liveries |
 | `src/storage/` | IndexedDB saves, migrations, and the saved unfinished shift |
 | `src/audio/` | Game audio |
@@ -194,9 +194,9 @@ Build the Windows x64 MSIX for **Sky Routes: Air Traffic Control** locally with 
 | `tests/` | Simulation, map, device-size, progression, storage, audio, and UI tests |
 | `public/` | Bundled fonts, graphics, and public assets |
 
-The DOM menus configure a shift; Phaser translates pointer input into routes for the simulation. Simulation events drive aircraft rendering, sound, and landing feedback. Completed shifts feed progression and local save storage.
+The DOM menus configure a shift; Three.js translates pointer input into routes for the simulation. Simulation events drive aircraft rendering, sound, and landing feedback. Completed shifts feed progression and local save storage.
 
-Built with TypeScript, Phaser, Vite, Vitest, and Hugeicons; Electron supplies the desktop shell and Capacitor the Android shell. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
+Built with TypeScript, Three.js, Vite, Vitest, and Hugeicons; Electron supplies the desktop shell and Capacitor the Android shell. [DESIGN.md](DESIGN.md) describes the visual direction. Historical plans in `docs/` describe development decisions, not promises of future features. Some storage identifiers retain the former name, Vector Approach, to preserve existing saves.
 
 ## Documentation
 
@@ -225,3 +225,7 @@ Built and maintained by [Montasim](https://github.com/montasim).
 ## License
 
 The project is available under the [MIT license](LICENSE). Bundled fonts retain their own notices in [public/fonts/licenses](public/fonts/licenses); dependencies retain their respective licenses. Store badges and logos have separate attribution and terms documented in [public/assets/stores/README.md](public/assets/stores/README.md).
+
+All 12 maps use Three.js with the original map painters and aircraft artwork. Static artwork is rasterized once; the original cloud, water, and aircraft animations remain live. The experimental Blender atlases are retained in art/blender but are not used by the game.
+
+The gameplay HUD shows a compact score and performance stats. Use Settings ? Performance to show or hide the stats; the choice is saved on this device. Run `npm run test:routes` against the development server to check mouse/touch routes, runway labels, selection rings, and confirmation feedback on every map.

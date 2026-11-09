@@ -15,6 +15,7 @@ dist-desktop/
 release/
 
 dist-android/
+dist-three-profile/
 
 # Android upload key and its local signing settings stay outside version control.
 *.jks

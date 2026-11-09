@@ -1,6 +1,6 @@
 # Offline font assets
 
-These fonts are bundled with Vector Approach so the interface and Phaser canvas
+These fonts are bundled with Vector Approach so the interface and game canvas
 never depend on a runtime font service.
 
 ## Barlow Condensed

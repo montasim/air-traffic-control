@@ -24,7 +24,7 @@ The game is played full-screen with mouse, touch, or pen. Sessions are short, ai
 
 ## Capabilities and Constraints
 
-- Phaser and TypeScript power four original maps whose runways, landing zones, collision geometry, and responsive layouts remain code-native; terrain materials are bundled locally and remain presentation-only.
+- Three.js and TypeScript power twelve maps, using the original map and aircraft artwork rasterized into textures, whose runways, landing zones, collision geometry, and responsive layouts remain code-native; terrain materials are bundled locally and remain presentation-only.
 - Every map supplies responsive portrait, landscape, and near-square geometry while sharing the same aircraft types, landing semantics, guidance language, and offline rendering pipeline.
 - The local career contains seven controller ranks. Saltmarsh Gateway and River Bend are available to a Control Trainee; Desert Parallel unlocks at Control Assistant; Twin Banks unlocks at Tower Controller; later ranks extend the career without hiding additional maps.
 - Promotions combine cumulative safe landings, shifts played, qualifying best scores, and performance across distinct maps.
