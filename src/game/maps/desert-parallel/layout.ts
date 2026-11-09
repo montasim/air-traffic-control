@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { AircraftType, LandingZone, Vector2 } from '../../../core/types';
 import type { WorldDetailLevel } from '../../palette';
 import type {
@@ -84,7 +85,6 @@ export const DESERT_PARALLEL_PALETTE = {
 interface NormalizedRunway {
   readonly center: Vector2;
   readonly length: number;
-  readonly width: number;
   readonly angle: number;
   readonly landingAlong: number;
 }
@@ -105,8 +105,8 @@ interface DesertProfile {
 
 const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
   landscape: {
-    liner: { center: { x: 0.72, y: 0.2 }, length: 0.84, width: 0.052, angle: 0.07, landingAlong: -0.36 },
-    commuter: { center: { x: 0.64, y: 0.57 }, length: 0.62, width: 0.044, angle: 0.07, landingAlong: -0.34 },
+    liner: { center: { x: 0.72, y: 0.2 }, length: 0.84, angle: 0.07, landingAlong: -0.36 },
+    commuter: { center: { x: 0.64, y: 0.57 }, length: 0.62, angle: 0.07, landingAlong: -0.34 },
     helipad: { x: 0.9, y: 0.45 },
     apron: [
       { x: 0.5, y: 0.2 },
@@ -125,8 +125,8 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
     ]
   },
   portrait: {
-    liner: { center: { x: 0.51, y: 0.17 }, length: 0.82, width: 0.054, angle: 0.04, landingAlong: -0.36 },
-    commuter: { center: { x: 0.47, y: 0.45 }, length: 0.64, width: 0.045, angle: 0.04, landingAlong: -0.34 },
+    liner: { center: { x: 0.51, y: 0.17 }, length: 0.82, angle: 0.04, landingAlong: -0.36 },
+    commuter: { center: { x: 0.47, y: 0.45 }, length: 0.64, angle: 0.04, landingAlong: -0.34 },
     helipad: { x: 0.87, y: 0.34 },
     apron: [
       { x: 0.16, y: 0.18 },
@@ -145,8 +145,8 @@ const PROFILES: Record<MapLayoutVariant, DesertProfile> = {
     ]
   },
   square: {
-    liner: { center: { x: 0.59, y: 0.2 }, length: 0.8, width: 0.052, angle: 0.06, landingAlong: -0.36 },
-    commuter: { center: { x: 0.54, y: 0.54 }, length: 0.63, width: 0.044, angle: 0.06, landingAlong: -0.34 },
+    liner: { center: { x: 0.59, y: 0.2 }, length: 0.8, angle: 0.06, landingAlong: -0.36 },
+    commuter: { center: { x: 0.54, y: 0.54 }, length: 0.63, angle: 0.06, landingAlong: -0.34 },
     helipad: { x: 0.92, y: 0.47 },
     apron: [
       { x: 0.3, y: 0.2 },
@@ -214,7 +214,7 @@ function createRunway(
     accepts,
     center: scalePoint(spec.center, width, height),
     length: spec.length * unit,
-    width: spec.width * unit,
+    width: runwayWidthFor(width, height, accepts),
     angle: spec.angle,
     designators,
     zoneId

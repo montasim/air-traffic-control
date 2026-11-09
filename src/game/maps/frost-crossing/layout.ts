@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS } from '../../palette';
 import type { MapBuilding } from '../../rendering/shared-map';
@@ -63,12 +64,12 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
 
   const liner: MapRunway = {
     id: 'frost-liner', accepts: 'liner', zoneId: 'frost-liner-zone', designators: ['09', '27'],
-    center: frame.point(LINER.x, LINER.y), length: frame.length(LINER.length), width: unit * 0.045, angle: frame.angle(0),
+    center: frame.point(LINER.x, LINER.y), length: frame.length(LINER.length), width: runwayWidthFor(width, height, 'liner'), angle: frame.angle(0),
   };
   // Landings come in from the right.
   const commuter: MapRunway = {
     id: 'frost-commuter', accepts: 'commuter', zoneId: 'frost-commuter-zone', designators: ['22', '04'],
-    center: frame.point(COMMUTER.x, COMMUTER.y), length: frame.length(COMMUTER_LENGTH), width: unit * 0.04, angle: frame.angle(COMMUTER_HEADING + Math.PI),
+    center: frame.point(COMMUTER.x, COMMUTER.y), length: frame.length(COMMUTER_LENGTH), width: runwayWidthFor(width, height, 'commuter'), angle: frame.angle(COMMUTER_HEADING + Math.PI),
   };
   const runways = [liner, commuter];
   const helipad: MapHelipad = { center: point([HELIPAD.x, HELIPAD.y]), radius: unit * 0.045, zoneId: 'frost-helipad' };
@@ -83,7 +84,8 @@ export function createFrostCrossingLayout(width: number, height: number): FrostC
     { id: helipad.zoneId, label: 'H', accepts: 'rotor', position: helipad.center, angle: 0, captureRadius: 41 * captureScale, color: AIRCRAFT_COLORS.rotor },
   ];
 
-  const apron = APRON.map(point);
+  // Extra apron room in the compact frame keeps the helipad clear of wider runways.
+  const apron = APRON.map(([x,y]) => point([frame.variant === 'square' ? x * 1.12 : x, y]));
   const apronCenter = frame.point(-0.04, -0.06);
   // Authored roughly; preparation rebuilds them as square connectors.
   const taxiways: MapTaxiway[] = [

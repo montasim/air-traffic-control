@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../../src/game/maps/shared/runwaySizing';
 import { describe, expect, it, vi } from 'vitest';
 import type { Vector2 } from '../../src/core/types';
 import {
@@ -67,7 +68,7 @@ describe('Desert Parallel layout', () => {
     expect(layout).toMatchObject({ width, height, variant });
 
     for (const runway of layout.runways) {
-      expect(runway.length / runway.width).toBeGreaterThan(14);
+      expect(runway.width).toBe(runwayWidthFor(width, height, runway.accepts));
       for (const corner of runwayCorners(runway)) {
         expect(inBounds(corner, layout)).toBe(true);
         expect(layout.hudExclusionZones.some((hud) => inside(corner, hud))).toBe(false);

@@ -15,6 +15,8 @@ export interface CarrierSpec {
   readonly pads: 1 | 2;
   readonly padRadius: number;
   readonly taxiwayWidth: number;
+  /** Match the land runway width; deck length and landing-lane length stay authored. */
+  readonly runwayWidth?: number;
 }
 
 /** A painted deck lane; operational ones are also the carrier's runways. */
@@ -74,7 +76,10 @@ function insidePolygon(point: Vector2, polygon: readonly Vector2[]): boolean {
  */
 export function createCarrier(spec: CarrierSpec): Carrier {
   const length = spec.length;
-  const beam = length * BEAM;
+  const originalBeam = length * BEAM;
+  // The runway occupies a useful share of the deck, rather than scaling the
+  // entire ship up to preserve the old narrow painted stripe.
+  const beam = Math.max(originalBeam, (spec.runwayWidth ?? 0) / 0.32);
   const [cos, sin] = [Math.cos(spec.angle), Math.sin(spec.angle)];
   const world = (x: number, y: number): Vector2 => ({
     x: spec.center.x + x * cos - y * sin,
@@ -83,7 +88,9 @@ export function createCarrier(spec: CarrierSpec): Carrier {
   /** A point given as shares of length (x) and beam (y). */
   const at = (x: number, y: number) => world(x * length, y * beam);
 
-  const deck = DECK.map(([x, y]) => at(x, y));
+  // Keep the port edge alongside the widened lane until its forward end.
+  const deckShape = DECK.map(([x, y]) => [x === 0.22 ? 0.36 : x, y] as const);
+  const deck = deckShape.map(([x, y]) => at(x, y));
   // The waterline hull: narrower than the flight deck it carries, with a long knife bow running
   // out past the deck's forward edge.
   const hull = [
@@ -91,16 +98,19 @@ export function createCarrier(spec: CarrierSpec): Carrier {
     [0.42, -0.12], [0.2, -0.24], [-0.2, -0.32],
   ].map(([x, y]) => at(x, y));
 
-  const laneWidth = beam * 0.16;
+  const laneWidth = spec.runwayWidth ?? beam * 0.16;
   // One landing lane along the port side, as on a real carrier; the starboard side keeps the island
   // and a single row of parked aircraft along its edge.
   const laneStart = { x: -0.48 * length, y: -0.12 * beam };
-  const localDeck = DECK.map(([x, y]) => ({ x: x * length, y: y * beam }));
+  const localDeck = deckShape.map(([x, y]) => ({ x: x * length, y: y * beam }));
   // The lane runs only as far as the deck allows, its painted shoulder included, so no part of it
   // hangs over the sea.
-  const shoulder = Math.max(2, laneWidth * 0.08);
-  const margin = laneWidth * 0.5 + shoulder + 1;
-  const fits = (x: number) => [-margin, margin].every((side) => insidePolygon({ x, y: laneStart.y + side }, localDeck));
+  // Preserve the original longitudinal endpoints while widening only the deck beam.
+  const originalWidth = originalBeam * 0.16;
+  const originalDeck = DECK.map(([x, y]) => ({ x: x * length, y: y * originalBeam }));
+  const shoulder = Math.max(2, originalWidth * 0.08);
+  const margin = originalWidth * 0.5 + shoulder + 1;
+  const fits = (x: number) => [-margin, margin].every((side) => insidePolygon({ x, y: -0.12 * originalBeam + side }, originalDeck));
   const step = length * 0.005;
   let from = laneStart.x;
   let to = laneStart.x + 0.8 * length;

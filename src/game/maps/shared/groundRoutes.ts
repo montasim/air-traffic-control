@@ -16,7 +16,7 @@ export interface GroundObstacle {
 
 /** The airfield data every map layout already carries for its scenery. */
 export interface GroundNetwork {
-  readonly runways: readonly Pick<MapRunway, 'id' | 'center' | 'length' | 'width' | 'angle'>[];
+  readonly runways: readonly Pick<MapRunway, 'id' | 'center' | 'length' | 'width' | 'angle' | 'singleTaxiGuide'>[];
   readonly taxiways: readonly Pick<MapTaxiway, 'path' | 'connects'>[];
   readonly parkingStands?: readonly Pick<ParkingStand, 'id' | 'position' | 'angle'>[];
 }
@@ -309,10 +309,12 @@ export function createGroundRoutes(
 /** The taxi guide starts at the runway exit curve, omitting rollout and back-taxi. */
 export function taxiGuidePaths(layout: PlayableMapLayout & GroundNetwork): Vector2[][] {
   const guides: Vector2[][] = [];
+  const paintedRunways = new Set<string>();
   for (const zone of layout.landingZones) {
     const route = layout.groundRoutes?.[zone.id];
     const runway = layout.runways.find((item) => item.id === zone.approach?.runwayId);
     if (!route || !runway) continue;
+    if (runway.singleTaxiGuide && paintedRunways.has(runway.id)) continue;
     const axis = { x: Math.cos(runway.angle), y: Math.sin(runway.angle) };
     const firstOffAxis = route.points.findIndex((point) => distanceToLine(point, runway.center, axis) > 0.01);
     if (firstOffAxis < 1) continue;
@@ -324,6 +326,7 @@ export function taxiGuidePaths(layout: PlayableMapLayout & GroundNetwork): Vecto
     // An exit too close to one landing end is reached by rolling past and turning back, which would
     // repeat the other direction's curve; paint the lead-in from this side instead, as junctions do.
     guides.push(guides.some((other) => distance(other[0], guide[0]) < 0.5) ? mirroredExit(guide, axis) : guide);
+    paintedRunways.add(runway.id);
   }
   return guides;
 }

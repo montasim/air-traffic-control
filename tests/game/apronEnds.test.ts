@@ -9,7 +9,7 @@ const VIEWPORTS = [[1600, 900], [900, 1600], [900, 900], [844, 390], [390, 844]]
 // (it keeps the usual placement) and on maps with a single building.
 const CASES = [
   ...VIEWPORTS.map(([width, height]) => ({ map: 'saltmarsh-gateway' as MapId, width, height, stands: 4, ends: true })),
-  ...VIEWPORTS.map(([width, height], i) => ({ map: 'river-bend' as MapId, width, height, stands: [4, 4, 3, 2, 4][i], ends: i !== 3 })),
+  ...VIEWPORTS.map(([width, height], i) => ({ map: 'river-bend' as MapId, width, height, stands: [4, 4, 3, 2, 4][i], ends: i !== 0 && i !== 3 })),
   ...VIEWPORTS.map(([width, height], i) => ({ map: 'freight-junction' as MapId, width, height, stands: [4, 4, 4, 3, 4][i], ends: i < 3 })),
   ...VIEWPORTS.map(([width, height], i) => ({ map: 'metro-international' as MapId, width, height, stands: [4, 4, 4, 4, 4][i], ends: false })),
   ...VIEWPORTS.map(([width, height], i) => ({ map: 'falcon-air-base' as MapId, width, height, stands: [4, 4, 4, 3, 4][i], ends: false })),

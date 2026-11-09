@@ -3,7 +3,7 @@ import { GroundTraffic } from '../../src/game/ground/groundTraffic';
 import { AIRCRAFT_OUTLINES } from '../../src/core/aircraftCollision';
 import type { LandingZone, Vector2 } from '../../src/core/types';
 import { MAP_DEFINITIONS } from '../../src/game/maps/registry';
-import { createGroundRoutes, taxiGuidePaths, filletCorners, groundObstacles, PIVOT_TURN, segmentEntry, type GroundNetwork } from '../../src/game/maps/shared/groundRoutes';
+import { createGroundRoutes, hasGroundNetwork, taxiGuidePaths, filletCorners, groundObstacles, PIVOT_TURN, segmentEntry, type GroundNetwork } from '../../src/game/maps/shared/groundRoutes';
 import { DECK_LANE_CLEARANCE, apronPolygons, deckRunwayIds, onApron, rectCorners, standFootprint, rectsOverlap, runwayApronGap } from '../../src/game/maps/shared/apronLayout';
 
 const SHAPES = [[900, 1600], [1600, 900], [900, 900], [1948, 900], [1600, 1520], [1280, 720], [800, 1000]] as const;
@@ -248,4 +248,26 @@ describe('runway exits on the landing side', () => {
       }
     });
   }
+});
+
+
+describe('River Bend shared commuter taxi guide', () => {
+  it.each(SHAPES)('paints one commuter connector and retains both ground routes at %sx%s', (width, height) => {
+    const definition = MAP_DEFINITIONS.find(map => map.id === 'river-bend')!;
+    for (const twoEndLanding of [false, true]) {
+      const {layout} = definition.prepare({width, height, detailLevel:'desktop', twoEndLanding});
+      if (!hasGroundNetwork(layout)) throw new Error('River Bend must have a taxiway network');
+      const commuterZones = layout.landingZones.filter(zone => zone.accepts === 'commuter');
+      expect(commuterZones).toHaveLength(twoEndLanding ? 2 : 1);
+      const commuterLayout = {...layout, landingZones:commuterZones};
+      const guides = taxiGuidePaths(commuterLayout);
+      expect(guides).toHaveLength(1);
+      for (const zone of commuterZones) {
+        expect(layout.groundRoutes?.[zone.id].points.length).toBeGreaterThan(2);
+        expect(layout.groundRoutes?.[zone.id].stands.length).toBeGreaterThan(0);
+      }
+      const linerLayout = {...layout, landingZones:layout.landingZones.filter(zone => zone.accepts === 'liner')};
+      expect(taxiGuidePaths(linerLayout)).toHaveLength(twoEndLanding ? 2 : 1);
+    }
+  });
 });

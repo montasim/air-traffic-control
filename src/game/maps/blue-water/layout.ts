@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS } from '../../palette';
 import type { MapHelipad, MapRunway, MapTaxiway } from '../shared/airfield';
@@ -39,6 +40,7 @@ export function createBlueWaterLayout(width: number, height: number): BlueWaterL
     pads: 2,
     padRadius: unit * 0.034,
     taxiwayWidth: unit * 0.012,
+    runwayWidth: runwayWidthFor(width, height, 'commuter'),
   });
 
   const touchdown = (runway: MapRunway): Vector2 => ({

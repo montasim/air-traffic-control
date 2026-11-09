@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { AircraftType, LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS } from '../../palette';
 import type {
@@ -40,7 +41,6 @@ export interface GatewayTree {
 interface NormalizedRunway {
   readonly center: Vector2;
   readonly length: number;
-  readonly width: number;
   readonly angle: number;
   readonly landingAlong: number;
 }
@@ -87,14 +87,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
     main: {
       center: { x: 0.7, y: 0.27 },
       length: 0.72,
-      width: 0.054,
       angle: 0.035,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.755, y: 0.61 },
       length: 0.55,
-      width: 0.046,
       angle: 0.035,
       landingAlong: -0.32
     },
@@ -116,14 +114,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
     main: {
       center: { x: 0.56, y: 0.22 },
       length: 0.78,
-      width: 0.058,
       angle: 0.025,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.68, y: 0.46 },
       length: 0.57,
-      width: 0.047,
       angle: 0.025,
       landingAlong: -0.32
     },
@@ -144,14 +140,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, GatewayProfile>> = {
     main: {
       center: { x: 0.58, y: 0.26 },
       length: 0.75,
-      width: 0.056,
       angle: 0.035,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.7, y: 0.61 },
       length: 0.56,
-      width: 0.046,
       angle: 0.035,
       landingAlong: -0.32
     },
@@ -210,7 +204,7 @@ function createRunway(
     accepts,
     center: scalePoint(spec.center, width, height),
     length: spec.length * unit,
-    width: spec.width * unit,
+    width: runwayWidthFor(width, height, accepts),
     angle: spec.angle,
     zoneId,
     designators

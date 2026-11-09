@@ -19,6 +19,8 @@ export interface MapRunway<
   readonly width: number;
   readonly angle: number;
   readonly zoneId: string;
+  /** Paint one shared taxi guide even when both landing directions are enabled. */
+  readonly singleTaxiGuide?: boolean;
   /** Designators at the negative and positive ends of the runway axis. */
   readonly designators: readonly [RunwayDesignator, RunwayDesignator];
 }

@@ -1,3 +1,4 @@
+import { runwayWidthFor } from './runwaySizing';
 import { CANVAS_TEXT_STYLES } from '../../typography';
 import * as Art from '../../art/CanvasScene';
 import type { LandingZone, Vector2 } from '../../../core/types';
@@ -46,12 +47,12 @@ export function createSpecialistLayout(width: number, height: number, kind: Spec
   const point = (x: number, y: number) => ({ x: x * width, y: y * height });
   const runways: MapRunway[] = plan.runways.map(([x,y,length,angle], i) => ({
     id: `${kind}-runway-${i}`, zoneId: `${kind}-zone-${i}`, accepts: i === 0 ? 'liner' : 'commuter',
-    center: point(x,y), length: length * u, width: (i === 0 ? .045 : .038) * u, angle,
+    center: point(x,y), length: length * u, width: runwayWidthFor(width, height, i === 0 ? 'liner' : 'commuter'), angle,
     designators: ['09', '27']
   }));
   const terminal = point(...plan.terminal);
   // With buildings at the ends the apron runs a little longer, leaving its middle for the stands.
-  const reach = kind === 'rescue' ? 0 : .05;
+  const reach = kind === 'rescue' ? 0 : kind === 'business' && variant === 'square' ? .08 : .05;
   const apron = [[-.2-reach,-.09],[.2+reach,-.09],[.22+reach,.1],[-.18-reach,.11]].map(([x,y]) => ({ x: terminal.x + x*u, y: terminal.y + y*u }));
   const helipads = plan.pads.map(([x,y], i) => ({ center: point(x,y), radius: u * .037, zoneId: `${kind}-pad-${i}` }));
   const buildings: MapBuilding[] = [{ id: 'terminal', center: terminal, width: u * (kind === 'passenger' ? .22 : .13), height: u * .045, angle: 0, kind: 'terminal' }];

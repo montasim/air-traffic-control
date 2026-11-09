@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { AircraftType, LandingZone, Vector2 } from '../../../core/types';
 import type { WorldDetailLevel } from '../../palette';
 import type {
@@ -94,7 +95,6 @@ export const TWIN_BANKS_PALETTE = {
 interface NormalizedRunway {
   readonly center: Vector2;
   readonly length: number;
-  readonly width: number;
   readonly angle: number;
   readonly landingAlong: number;
 }
@@ -112,9 +112,9 @@ interface TwinBanksProfile {
 
 const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
   landscape: {
-    east: { center: { x: 0.735, y: 0.25 }, length: 0.76, width: 0.05, angle: 0.09, landingAlong: -0.36 },
-    west: { center: { x: 0.25, y: 0.39 }, length: 0.58, width: 0.043, angle: -0.13, landingAlong: -0.34 },
-    scenic: { center: { x: 0.25, y: 0.25 }, length: 0.44, width: 0.032, angle: -0.13 },
+    east: { center: { x: 0.735, y: 0.25 }, length: 0.76, angle: 0.09, landingAlong: -0.36 },
+    west: { center: { x: 0.25, y: 0.39 }, length: 0.58, angle: -0.13, landingAlong: -0.34 },
+    scenic: { center: { x: 0.25, y: 0.25 }, length: 0.44, angle: -0.13 },
     helipad: { x: 0.81, y: 0.48 },
     eastApron: [{ x: 0.65, y: 0.31 }, { x: 0.83, y: 0.32 }, { x: 0.88, y: 0.51 }, { x: 0.7, y: 0.56 }, { x: 0.63, y: 0.43 }],
     westApron: [{ x: 0.12, y: 0.31 }, { x: 0.33, y: 0.29 }, { x: 0.39, y: 0.48 }, { x: 0.18, y: 0.54 }, { x: 0.1, y: 0.44 }],
@@ -122,9 +122,9 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
     routingArea: { x: 0, y: 0.61, width: 1, height: 0.39 }
   },
   portrait: {
-    east: { center: { x: 0.68, y: 0.25 }, length: 0.75, width: 0.052, angle: 1.5, landingAlong: -0.36 },
-    west: { center: { x: 0.25, y: 0.34 }, length: 0.58, width: 0.044, angle: 1.62, landingAlong: -0.34 },
-    scenic: { center: { x: 0.1, y: 0.34 }, length: 0.41, width: 0.032, angle: 1.62 },
+    east: { center: { x: 0.68, y: 0.25 }, length: 0.75, angle: 1.5, landingAlong: -0.36 },
+    west: { center: { x: 0.25, y: 0.34 }, length: 0.58, angle: 1.62, landingAlong: -0.34 },
+    scenic: { center: { x: 0.1, y: 0.34 }, length: 0.41, angle: 1.62 },
     helipad: { x: 0.83, y: 0.48 },
     eastApron: [{ x: 0.64, y: 0.25 }, { x: 0.89, y: 0.24 }, { x: 0.91, y: 0.48 }, { x: 0.7, y: 0.53 }, { x: 0.61, y: 0.4 }],
     westApron: [{ x: 0.05, y: 0.28 }, { x: 0.37, y: 0.25 }, { x: 0.42, y: 0.45 }, { x: 0.15, y: 0.51 }, { x: 0.04, y: 0.42 }],
@@ -132,9 +132,9 @@ const PROFILES: Record<MapLayoutVariant, TwinBanksProfile> = {
     routingArea: { x: 0, y: 0.6, width: 1, height: 0.4 }
   },
   square: {
-    east: { center: { x: 0.70, y: 0.31 }, length: 0.56, width: 0.05, angle: 1.4, landingAlong: -0.36 },
-    west: { center: { x: 0.28, y: 0.38 }, length: 0.52, width: 0.043, angle: 1.7, landingAlong: -0.34 },
-    scenic: { center: { x: 0.12, y: 0.38 }, length: 0.36, width: 0.032, angle: 1.7 },
+    east: { center: { x: 0.70, y: 0.31 }, length: 0.56, angle: 1.4, landingAlong: -0.36 },
+    west: { center: { x: 0.28, y: 0.38 }, length: 0.52, angle: 1.7, landingAlong: -0.34 },
+    scenic: { center: { x: 0.12, y: 0.38 }, length: 0.36, angle: 1.7 },
     helipad: { x: 0.89, y: 0.50 },
     eastApron: [{ x: 0.63, y: 0.31 }, { x: 0.84, y: 0.31 }, { x: 0.9, y: 0.5 }, { x: 0.7, y: 0.56 }, { x: 0.61, y: 0.43 }],
     westApron: [{ x: 0.1, y: 0.32 }, { x: 0.35, y: 0.29 }, { x: 0.41, y: 0.49 }, { x: 0.17, y: 0.55 }, { x: 0.08, y: 0.45 }],
@@ -191,7 +191,7 @@ function runway(
     accepts,
     center: scalePoint(spec.center, width, height),
     length: spec.length * unit,
-    width: spec.width * unit,
+    width: runwayWidthFor(width, height, accepts),
     angle: spec.angle,
     designators,
     zoneId
@@ -316,7 +316,7 @@ export function createTwinBanksLayout(
     id: 'west-relief-strip',
     center: scalePoint(scenicSpec.center, width, height),
     length: scenicSpec.length * unit,
-    width: scenicSpec.width * unit,
+    width: runwayWidthFor(width, height, 'commuter'),
     angle: scenicSpec.angle,
     designators: ['04', '22']
   }];

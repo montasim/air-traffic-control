@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { AircraftType, LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS } from '../../palette';
 import { deterministicUnit, type MapBuilding } from '../../rendering/shared-map';
@@ -32,7 +33,6 @@ export interface RiverBankTree {
 interface NormalizedRunway {
   readonly center: Vector2;
   readonly length: number;
-  readonly width: number;
   readonly angle: number;
   readonly landingAlong: number;
 }
@@ -80,14 +80,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     main: {
       center: { x: 0.72, y: 0.24 },
       length: 0.59,
-      width: 0.046,
       angle: 0.04,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.78, y: 0.53 },
       length: 0.44,
-      width: 0.038,
       angle: 0.32,
       landingAlong: -0.32
     },
@@ -115,14 +113,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     main: {
       center: { x: 0.58, y: 0.19 },
       length: 0.74,
-      width: 0.057,
       angle: 0.025,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.7, y: 0.46 },
       length: 0.53,
-      width: 0.045,
       angle: 0.32,
       landingAlong: -0.32
     },
@@ -150,14 +146,12 @@ const PROFILES: Readonly<Record<MapLayoutVariant, RiverProfile>> = {
     main: {
       center: { x: 0.64, y: 0.23 },
       length: 0.67,
-      width: 0.052,
       angle: 0.035,
       landingAlong: -0.34
     },
     commuter: {
       center: { x: 0.73, y: 0.57 },
       length: 0.49,
-      width: 0.041,
       angle: 0.32,
       landingAlong: -0.32
     },
@@ -215,7 +209,8 @@ function createRunway(
     accepts,
     center: scalePoint(spec.center, width, height),
     length: spec.length * unit,
-    width: spec.width * unit,
+    width: runwayWidthFor(width, height, accepts),
+    singleTaxiGuide: accepts === 'commuter',
     angle: spec.angle,
     zoneId,
     designators
@@ -318,7 +313,9 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
     unit
   );
   const runways = [main, commuter] as const;
-  const apron = scalePolygon(profile.apron, width, height);
+  // Keep room for buildings at both ends beside the standardized wider strips.
+  const apronMiddleX = profile.apron.reduce((sum, point) => sum + point.x, 0) / profile.apron.length;
+  const apron = scalePolygon(profile.apron.map(point => ({ ...point, x: apronMiddleX + (point.x - apronMiddleX) * (variant === 'portrait' ? 1.12 : 1) })), width, height);
   const helipad = {
     center: scalePoint(profile.helipad, width, height),
     radius: unit * 0.043,
@@ -489,7 +486,8 @@ export function createRiverBendLayout(width: number, height: number): RiverBendL
     fieldPolygons: fieldPolygons(width, height, variant),
     bankTrees: clearOfHud(bankTrees(riverPath, unit), hud),
     buildings,
-    buildingsAtApronEnds: true,
+    // The narrower landscape apron uses regular placement to retain its parking capacity.
+    buildingsAtApronEnds: variant !== 'landscape',
     accessRoad: [
       scalePoint({ x: 0.98, y: variant === 'portrait' ? 0.45 : 0.55 }, width, height),
       apron[3]

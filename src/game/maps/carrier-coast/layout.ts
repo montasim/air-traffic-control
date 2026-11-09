@@ -1,3 +1,4 @@
+import { runwayWidthFor } from '../shared/runwaySizing';
 import type { LandingZone, Vector2 } from '../../../core/types';
 import { AIRCRAFT_COLORS } from '../../palette';
 import type { MapBuilding } from '../../rendering/shared-map';
@@ -53,17 +54,19 @@ export function createCarrierCoastLayout(width: number, height: number): Carrier
 
   const liner: MapRunway = {
     id: 'coast-liner', accepts: 'liner', zoneId: 'coast-liner-zone', designators: ['09', '27'],
-    center: frame.point(LINER.x, LINER.y), length: frame.length(LINER.length), width: unit * 0.045, angle: frame.angle(0),
+    center: frame.point(LINER.x, LINER.y), length: frame.length(LINER.length), width: runwayWidthFor(width, height, 'liner'), angle: frame.angle(0),
   };
   const landPad: MapHelipad = { center: point([LAND_PAD.x, LAND_PAD.y]), radius: unit * 0.042, zoneId: 'coast-field-pad' };
   const carrier = createCarrier({
     id: 'coast-carrier',
-    center: frame.point(CARRIER.x, CARRIER.y),
+    // The wider deck stays below the top HUD on portrait screens.
+    center: frame.point(CARRIER.x + (frame.variant === 'portrait' ? .03 : 0), CARRIER.y),
     length: frame.length(CARRIER.length),
     angle: frame.angle(CARRIER.heading),
     pads: 1,
     padRadius: unit * 0.032,
     taxiwayWidth: unit * 0.012,
+    runwayWidth: runwayWidthFor(width, height, 'commuter'),
   });
   const deckLane = carrier.runways[0];
 
