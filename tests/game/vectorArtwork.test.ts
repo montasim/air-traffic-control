@@ -31,4 +31,16 @@ describe('live vector feedback buffers',()=>{
   expect(colors.getW(count-1)).toBeGreaterThan(.74);
   expect([...positions.array].every(Number.isFinite)).toBe(true);view.dispose();
  });
+ it('keeps an aircraft route unchanged when a distant destination ring is appended',()=>{
+  const g=new Scene(1600,1000).add.graphics(),view=new VectorArtwork();
+  g.lineStyle(5,0xffaa33).strokePoints([{x:100,y:200},{x:150,y:205},{x:250,y:250}]);
+  view.update(g);
+  const routeCount=view.geometry.drawRange.count;
+  const routeVertices=Array.from(view.geometry.getAttribute('position').array.slice(0,routeCount*3));
+  g.lineStyle(2,0xffffff).strokeCircle(1000,700,10);
+  view.update(g);
+  expect(Array.from(view.geometry.getAttribute('position').array.slice(0,routeCount*3))).toEqual(routeVertices);
+  view.dispose();
+ });
+
 });

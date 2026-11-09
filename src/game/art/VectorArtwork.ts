@@ -84,7 +84,9 @@ export class VectorArtwork {
       if(path.length===2&&this.lineCap==='round')this.segment(path[0],path[1]);
       else if(path.length>1){
         this.reserve(this.count+path.length*128+256);
-        const write=()=>SVGLoader.pointsToStrokeWithBuffers(path,style,8,.001,this.positions as unknown as number[],undefined,undefined,this.count)/3;
+        // SVGLoader's closed-path join fixups use indices relative to zero.
+        // Give each stroke its own view so a ring cannot overwrite an earlier route.
+        const write=()=>SVGLoader.pointsToStrokeWithBuffers(path,style,8,.001,this.positions.subarray(this.count*3) as unknown as number[],undefined,undefined,0)/3;
         // SVGLoader returns the coordinate count, despite its vertex-count documentation.
         const written=write();
         if(this.count+written>this.capacity){this.reserve(this.count+written);write();}
