@@ -210,7 +210,6 @@ function createRunway(
     center: scalePoint(spec.center, width, height),
     length: spec.length * unit,
     width: runwayWidthFor(width, height, accepts),
-    singleTaxiGuide: accepts === 'commuter',
     angle: spec.angle,
     zoneId,
     designators

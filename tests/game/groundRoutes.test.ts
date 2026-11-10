@@ -222,12 +222,25 @@ describe('ground route geometry', () => {
     expect(segmentEntry({ x: 0, y: 0 }, { x: 100, y: 0 }, rect)).toBeCloseTo(0.4);
     expect(segmentEntry({ x: 0, y: 30 }, { x: 100, y: 30 }, rect)).toBeUndefined();
   });
-  it.each(MAP_DEFINITIONS.map((definition) => definition.id))('%s paints each landing direction exit from its own side with both runway ends on', (id) => {
+  it.each(MAP_DEFINITIONS.map((definition) => definition.id))('%s paints a distinct taxi connector for every enabled runway end', (id) => {
     const definition = MAP_DEFINITIONS.find((item) => item.id === id)!;
-    for (const [width, height] of SHAPES) {
-      const { layout } = definition.prepare({ width, height, detailLevel: 'desktop', twoEndLanding: true });
-      const starts = taxiGuidePaths(layout as never).map((guide) => `${Math.round(guide[0].x)},${Math.round(guide[0].y)}`);
-      expect(new Set(starts).size, `${id} ${width}x${height}`).toBe(starts.length);
+    for (const [width, height] of [...SHAPES, [430, 735], [430, 932]]) for (const twoEndLanding of [false, true]) {
+      const { layout } = definition.prepare({ width, height, detailLevel: width < 520 ? 'mobile' : 'desktop', twoEndLanding });
+      if (!hasGroundNetwork(layout)) throw new Error(id + ' must have a taxiway network');
+      for (const runway of layout.runways) {
+        const zones = layout.landingZones.filter(zone => zone.approach?.runwayId === runway.id);
+        // Decorative strips and one-way carrier lanes only need their enabled approaches.
+        const guides = taxiGuidePaths({...layout, landingZones: zones});
+        const context = id + '/' + runway.id + ' ' + width + 'x' + height + ' both ends=' + twoEndLanding;
+        expect(guides, context).toHaveLength(zones.length);
+        const starts = guides.map(guide => Math.round(guide[0].x) + ',' + Math.round(guide[0].y));
+        expect(new Set(starts).size, context + ' distinct exits').toBe(zones.length);
+        for (const guide of guides) {
+          expect(guide.length, context).toBeGreaterThan(2);
+          expect(pathLength(guide), context).toBeGreaterThan(runway.width / 2);
+          expect(zones.some(zone => layout.groundRoutes?.[zone.id]?.stands.length), context + ' parking').toBe(true);
+        }
+      }
     }
   });
 });
@@ -251,8 +264,8 @@ describe('runway exits on the landing side', () => {
 });
 
 
-describe('River Bend shared commuter taxi guide', () => {
-  it.each(SHAPES)('paints one commuter connector and retains both ground routes at %sx%s', (width, height) => {
+describe('River Bend commuter taxi guides', () => {
+  it.each(SHAPES)('paints a connector for each enabled landing direction at %sx%s', (width, height) => {
     const definition = MAP_DEFINITIONS.find(map => map.id === 'river-bend')!;
     for (const twoEndLanding of [false, true]) {
       const {layout} = definition.prepare({width, height, detailLevel:'desktop', twoEndLanding});
@@ -261,7 +274,11 @@ describe('River Bend shared commuter taxi guide', () => {
       expect(commuterZones).toHaveLength(twoEndLanding ? 2 : 1);
       const commuterLayout = {...layout, landingZones:commuterZones};
       const guides = taxiGuidePaths(commuterLayout);
-      expect(guides).toHaveLength(1);
+      expect(guides).toHaveLength(twoEndLanding ? 2 : 1);
+      if (twoEndLanding) {
+        const [left, right] = guides.map(guide => guide[0]);
+        expect(Math.hypot(left.x-right.x, left.y-right.y)).toBeGreaterThan(1);
+      }
       for (const zone of commuterZones) {
         expect(layout.groundRoutes?.[zone.id].points.length).toBeGreaterThan(2);
         expect(layout.groundRoutes?.[zone.id].stands.length).toBeGreaterThan(0);
