@@ -1,7 +1,7 @@
 const STORAGE_KEY = 'vector-approach:performance-stats';
 export const PERFORMANCE_SETTINGS_EVENT = 'performance-settings-changed';
-let enabled = true;
-try { enabled = localStorage.getItem(STORAGE_KEY) !== 'off'; } catch { /* Keep the in-memory preference. */ }
+let enabled = false;
+try { enabled = localStorage.getItem(STORAGE_KEY) === 'on'; } catch { /* Keep the in-memory preference. */ }
 
 export function performanceStatsEnabled(): boolean { return enabled; }
 

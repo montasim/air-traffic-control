@@ -9,7 +9,12 @@ try{for(const viewport of [{width:1280,height:800},{width:390,height:844}]){
  const page=await browser.newPage({viewport});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const ready=()=>expect(page.locator('#start-button')).toBeEnabled({timeout:30000});
  await page.goto(base);await ready();await expect(page.locator('.hud-best')).toHaveCount(0);
- await page.locator('#start-button').click();await expect(page.locator('.game-diagnostics')).toBeVisible();
+ await page.locator('#start-button').click();await expect(page.locator('.game-diagnostics')).toBeHidden();
+ await page.goto(base+'#settings');await ready();
+ await expect(page.locator('#performance-toggle')).toHaveAttribute('aria-pressed','false');
+ assert.ok(await page.evaluate(()=>{const dev=document.querySelector('.developer-info').getBoundingClientRect();return [...document.querySelectorAll('.sound-panel .audio-settings')].every(el=>{const box=el.getBoundingClientRect(),style=getComputedStyle(el);return Math.abs(box.left+parseFloat(style.paddingLeft)-dev.left)<1&&Math.abs(box.right-parseFloat(style.paddingRight)-dev.right)<1;});}));
+ await page.locator('#performance-toggle').click();
+ await page.goto(base);await ready();await page.locator('#start-button').click();await expect(page.locator('.game-diagnostics')).toBeVisible();
  await expect.poll(async()=>/\b[1-9]\d* FPS/.test(await page.locator('.game-diagnostics').innerText())).toBe(true);
  const metrics=await page.locator('.game-diagnostics').innerText();assert.match(metrics,/FPS \u00b7 MEM (?:~[\d.]+ MB|N\/A) \u00b7 GPU ~[\d.]+ MB/);assert.ok(!metrics.includes('\n'));assert.doesNotMatch(metrics,/NaN|undefined/);
  assert.ok(await page.evaluate(()=>{const p=document.querySelector('.game-diagnostics').getBoundingClientRect(),s=document.querySelector('.hud-score').getBoundingClientRect();return p.left>=s.right&&p.right<=innerWidth&&p.top<25;}));

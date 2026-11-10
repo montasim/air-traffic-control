@@ -1310,7 +1310,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 
 /* Settings sections sit directly on the page background. */
 .sound-panel { background: transparent; color: var(--paper); }.sound-panel h3 { margin: 0; font: 700 var(--section-title-size)/1.1 var(--font-display); }
-.sound-panel .audio-settings { margin: 0; padding: 24px 32px; gap: 24px; }
+.sound-panel .audio-settings { margin: 0; padding: 24px 0; gap: 24px; }
 .sound-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
 .sound-toggle-row h4 { margin: 0 0 4px; font: 700 1.5rem/1.2 var(--font-display); }
 .sound-toggle-row p { margin: 0; font-size: 0.875rem; color: #d2ddc7; }
@@ -1345,7 +1345,7 @@ body[data-screen="utility"] .route-coachmark { visibility: hidden; }
 @media (max-width: 500px) {
   .utility-support, .developer-info { align-items: flex-start; flex-direction: column; gap: 16px; }
 }
-@media (max-width: 600px) {  .sound-panel .audio-settings { padding: 24px 20px; }
+@media (max-width: 600px) {  .sound-panel .audio-settings { padding: 24px 0; }
   .sound-toggle-row { align-items: flex-start; flex-direction: column; gap: 16px; }
   .sound-panel .audio-toggle { width: 100%; }
   .sound-switch { margin-left: auto; }
